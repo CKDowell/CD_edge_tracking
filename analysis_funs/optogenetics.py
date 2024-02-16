@@ -74,10 +74,27 @@ class opto:
         plt.xlim([-500,500])
         plt.plot(x,y,color='k')
         plt.scatter(x[pon],y[pon], color = [0.8, 0.8 ,0.2])
+    def plot_traj_scatter(self,df):
+        # Simple plot to show tajectory and scatter of when experiencing odour 
+        # and LED
+        # Useful for when there is not much information about the experiment
+        plt.figure(figsize=(16,16))
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        led_on = df['led1_stpt']==0
+        in_s = df['instrip']
+        x,y = self.fictrac_repair(x,y)
+        plt.plot(x,y,color = 'k')
+        plt.scatter(x[in_s],y[in_s],color=[0.5, 0.5, 0.5])
+        plt.scatter(x[led_on],y[led_on],color= [1,0.5,0.5],marker='+')
+        plt.gca().set_aspect('equal')
+        plt.show()
     def plot_plume_simple(self,meta_data,df):
         
         x = pd.Series.to_numpy(df['ft_posx'])
         y = pd.Series.to_numpy(df['ft_posy'])
+        led_on = df['led1_stpt']==0
+        
         x,y = self.fictrac_repair(x,y)
         s_type = meta_data['stim_type']
         plt.figure(figsize=(16,16))
@@ -105,17 +122,24 @@ class opto:
                 led_colour = [0.8, 1, 0.8]
             
             #xmplume = yrange[1]/np.tan(pi*(pa/180))
-            xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
             
+            if pa ==90:
+                xp = [xrange[0], xrange[1],xrange[1], xrange[0]]
+                yp = [psize/2, psize/2,-psize/2,-psize/2]
+                xo = [-xlm,xlm,xlm,-xlm, -xlm ]
+            else :
+                    xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
+                    yp = [yrange[0], yrange[1], yrange[1],yrange[0],yrange[0]]
+                    xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             #pan = meta_data['PlumeAngle']
             
-            yp = [yrange[0], yrange[1], yrange[1],yrange[0],yrange[0]] 
+             
             
-            xo = [-xlm,xlm,xlm,-xlm, -xlm ]
-            if meta_data['ledONy']=='all':
+            
+            if meta_data['ledOny']=='all':
                 lo = yrange[0]
             else:
-                lo = meta_data['ledONy']
+                lo = meta_data['ledOny']
             
             if meta_data['ledOffy']=='all':
                 loff = yrange[1]
@@ -123,21 +147,24 @@ class opto:
             else:
                 loff = meta_data['ledOffy']
             yo = [lo,lo,loff,loff,lo]
-            
-            plt.fill(xo,yo,color = led_colour)
+            if meta_data['LEDoutplume']:
+                plt.fill(xo,yo,color = led_colour,alpha =0.5)
             
             if loff<yrange[1]:
                 while loff<yrange[1]:
                     loff = loff+1000
                     lo = lo+1000
                     yo = [lo,lo,loff,loff,lo]
-                    plt.fill(xo,yo,color = led_colour)
+                    plt.fill(xo,yo,color = led_colour,alpha=0.5)
             
             plt.fill(xp,yp,color =[0.8,0.8,0.8])
             # Add in extra for repeated trials
             plt.plot(x[pw[0][0]:],y[pw[0][0]:],color='k')
             plt.plot(x[0:pw[0][0]],y[0:pw[0][0]],color=[0.5,0.5,0.5])
-            #plt.scatter(x[pon],y[pon], color = [0.8, 0.8 ,0.2])
+            if meta_data['LEDinplume']:
+                plt.fill(xo,yo,color = led_colour,alpha= 0.5)
+            
+                plt.scatter(x[led_on],y[led_on], color = [0.8, 0.8 ,0.2])
             #yxlm = np.max(np.abs(np.append(yrange,xrange)))
             #ymn = np.mean(yrange)
             plt.ylim([np.min(y),np.max(y)])
@@ -149,6 +176,64 @@ class opto:
             plt.plot(x,y,color='k')
         plt.gca().set_aspect('equal')
         plt.show()
+        
+    def plot_plume_horizontal(self,meta_data,df):
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        
+        
+        x,y = self.fictrac_repair(x,y)
+        
+        pon = pd.Series.to_numpy(df['instrip']>0)
+        pw = np.where(pon)
+        x = x-x[pw[0][0]]
+        y = y-y[pw[0][0]]
+        
+        pa = meta_data['PlumeWidth']
+        plt.figure(figsize=(16,16))
+        yrange = [min(y), max(y)]
+        xrange = [min(x), max(x)]
+        x_plm = [xrange[0], xrange[0], xrange[1],xrange[1]]
+        y_plm = [-pa/2, pa/2, pa/2, -pa/2]
+        
+        plt.fill(x_plm,y_plm,color =[0.8,0.8,0.8])
+        x_on = meta_data['ledOnx']
+        x_off = meta_data['ledOffx']
+        y_on = meta_data['ledOny']
+        y_off= meta_data['ledOffy']
+        y_stm = [y_on, y_off, y_off,y_on]
+        rep_int = meta_data['RepeatInterval']
+        
+        a_s = meta_data['act_inhib']
+        if a_s=='act':
+            led_colour = [1,0.8,0.8]
+        elif a_s=='inhib':
+            led_colour = [0.8, 1, 0.8]
+        if xrange[0]<0:
+            
+            xr = -np.arange(0,np.abs(xrange[0]),rep_int)
+            print(xr)
+            for i in xr:
+                
+                x_stm = [i-x_on, i-x_on,i-x_off,i-x_off]
+                plt.fill(x_stm,y_stm,color=led_colour)
+        if xrange[1]>0:
+            
+            xr = np.arange(0,np.abs(xrange[1]),rep_int)
+            print(xr)
+            for i in xr:
+                
+                x_stm = [i+x_on, i+x_on,i+x_off,i+x_off]
+                plt.fill(x_stm,y_stm,color=led_colour)
+        led_on = df['led1_stpt']<1
+        plt.scatter(x[led_on],y[led_on],color='r')    
+        plt.plot(x,y,color='k')
+        
+        
+        plt.gca().set_aspect('equal')
+        plt.show()
+    
+        
     def light_pulse_pre_post(self,meta_data,df):
         plt.figure(figsize=(10,10))
         x = pd.Series.to_numpy(df['ft_posx'])
@@ -301,3 +386,5 @@ class opto:
                     'median data': mdn_data
             }
         return out_dict
+    
+    

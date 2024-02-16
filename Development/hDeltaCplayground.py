@@ -9,13 +9,14 @@ import numpy as np
 
 import os
 import pandas as pd
+
 import pickle as pkl
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import cm
 from src.utilities import funcs as fn
 from scipy import stats
-datadir = "Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv\\20220627_hdc_split_Fly1\\et"
+datadir = "Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv\\20220627_hdc_split_Fly2\\et"
 
 savepath = os.path.join(datadir,"all_info_eb_fb.csv")
 
@@ -136,9 +137,10 @@ fb = data['offset_phase_fb_upper']
 db = fn.wrap(fb-eb)
 c = data['fitted_amplitude_fb_upper']
 plt.figure()
-plt.plot(t,h,color='k')
+#plt.plot(t,h,color='k')
 plt.plot(t,eb,color=[0.5,0.5,1])
 #plt.plot(t,fb,color='r')
+plt.plot(t,fb,color='k')
 plt.scatter(t,fb,s=c*100,color='r')
 plt.plot(t,s,color=[0.3,0.3,0.3])
 
@@ -222,6 +224,22 @@ for fly,f in enumerate(folders):
     
     
     plt.close('all')
+    plt.figure()
+    plt.plot()
+    plt.plot(entry_phase_epg[1:,:num_incl].transpose(),entry_phase[1:,:num_incl].transpose(),color='k',alpha=0.1)
+    plt.plot(entry_phase_epg[1:,num_incl:].transpose(),entry_phase[1:,num_incl:].transpose(),color='r',alpha=0.1)
+    plt.plot(m_ep_epg[:num_incl],m_ep[:num_incl],color='k')
+    plt.plot(m_ep_epg[num_incl:],m_ep[num_incl:],color='r')
+    plt.yticks(yt,labels=['-$\pi$','-$\pi$/2','0','$\pi$/2','$\pi$'])
+    ax.yaxis.set_major_formatter('$\pi$')
+    plt.xticks(yt,labels=['-$\pi$','-$\pi$/2','0','$\pi$/2','$\pi$'])
+    ax.xaxis.set_major_formatter('$\pi$')
+    plt.xlabel('EPG phase')
+    plt.ylabel('FSB phase')
+    plt.plot([-pi,pi],[-pi, pi],color='k',linestyle='--')
+    plt.show()
+    plt.savefig(os.path.join(savedir,'Phase_vs_Phase' + str(fly) + '.png'))
+    
     plt.figure()
     plt.plot(t_plot,np.transpose(c_phase[1:,:]),color=[0.5, 0.5, 0.5])
     plt.plot(t_plot,c_phasemn,color='k')
@@ -308,8 +326,144 @@ for fly,f in enumerate(folders):
     plt.show()
     
     
+#%% Make a movie of how FSB and EPG activity changes relative to each other in the plume
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from functools import partial
+import matplotlib
+from matplotlib.animation import PillowWriter
+from PIL import Image, ImageSequence
+phase = data['offset_phase_fb_upper']
+phase_eb =data['offset_phase_eb']
+inplume = data['instrip']
+fig = plt.figure()
+plt.plot([-np.pi, np.pi],[-np.pi, np.pi],linestyle='--',color = 'k')
+line1, = plt.plot([], [], 'k')
+line2, = plt.plot([],[],'r')
+
+metadata = dict(title='Movie Test', artist='Matplotlib', comment='Movie support!')
+fps = 15
+duration = 1 / fps
+
+t_s = np.linspace(0, len(phase)-10, len(phase)-11, dtype=int)
+images = []
+
+for t in t_s:
+    i_s = inplume[t:t+10] > 0
+    i_s_n = inplume[t:t+10] < 1
+    x_seg = phase_eb[t:t+10]
+    y_seg = phase[t:t+10]
+
+    line2.set_data(x_seg[i_s], y_seg[i_s])
+    line1.set_data(x_seg[i_s_n], y_seg[i_s_n])
+
+    # Save each frame as an image
+    fig.canvas.draw()
+    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    images.append(Image.fromarray(image))
+    print(t)
+
+# Save the images as a GIF
+images[0].save("Y:\\Data\\FCI\\FCI_summaries\\hDeltaC\\To_plume_transition\\writer_test.gif",
+               save_all=True, append_images=images[1:], optimize=False, duration=duration, loop=0)
+
+
+
+
+
+#%%
+matplotlib.use("QT5Agg")
+#fig, ax = plt.subplots()
+fig = plt.figure()
+plt.plot([-np.pi, np.pi],[-np.pi, np.pi],linestyle='--',color = 'k')
+line1, = plt.plot([], [], 'k')
+line2, = plt.plot([],[],'r')
+phase = data['offset_phase_fb_upper']
+phase_eb =data['offset_phase_eb']
+inplume = data['instrip']
+inplume[:10] = 1
+metadata = dict(title='Movie Test', artist='Matplotlib',
+                comment='Movie support!')
+writer = PillowWriter(fps=15, metadata=metadata)
+
+t_s = np.linspace(0, len(phase)-10, len(phase)-11,dtype=int)
+writer.setup(fig,"Y:\\Data\\FCI\\FCI_summaries\\hDeltaC\\To_plume_transition\\writer_test.mp4", len(phase)-11)
+print('La')
+
+for t in t_s:
+    i_s = inplume[t:t+10]>0
+    i_s_n = inplume[t:t+10]<1
+    x_seg = phase_eb[t:t+10]
+    y_seg = phase[t:t+10]
     
-   
+    line2.set_data(x_seg[i_s], y_seg[i_s])
+    line1.set_data(x_seg[i_s_n], y_seg[i_s_n])
+    print('La la')
+    writer.grab_frame()
+
+#%%
+import numpy as np
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from matplotlib.animation import FFMpegWriter
+
+# Fixing random state for reproducibility
+np.random.seed(19680801)
+
+
+metadata = dict(title='Movie Test', artist='Matplotlib',
+                comment='Movie support!')
+writer = FFMpegWriter(fps=15, metadata=metadata)
+
+fig = plt.figure()
+l, = plt.plot([], [], 'k-o')
+
+plt.xlim(-5, 5)
+plt.ylim(-5, 5)
+
+x0, y0 = 0, 0
+
+with writer.saving(fig, "writer_test.mp4", 100):
+    for i in range(100):
+        x0 += 0.1 * np.random.randn()
+        y0 += 0.1 * np.random.randn()
+        l.set_data(x0, y0)
+        writer.grab_frame()
+
+
+
+
+#%%
+
+def init():
+    ax.set_xlim(-np.pi, np.pi)
+    ax.set_ylim(-np.pi, np.pi)
+    return line1,
+
+def update(frame, ln1,ln2, x, y,inplume):
+    i_s = inplume[frame:frame+10]>0
+    i_s_n = inplume[frame:frame+10]<1
+    x_seg = x[frame:frame+10]
+    y_seg = y[frame:frame+10]
+    
+    ln2.set_data(x_seg[i_s], y_seg[i_s])
+    ln1.set_data(x_seg[i_s_n], y_seg[i_s_n])
+    #ln.set_data(x)
+    return ln1, ln2
+
+ani = FuncAnimation(
+    fig, partial(update, ln1=line1,ln2=line2, x=phase_eb, y=phase,inplume=instrip),
+    frames=np.linspace(0, len(phase)-10, len(phase)-11,dtype=int),
+    init_func=init, blit=False)
+
+plt.show()
+#%%
 #%% scatters of mean phase for entry versus exit angles for t-1, t0, t+1
 rootdir = "Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv"
 folders = os.listdir(rootdir)
