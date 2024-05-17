@@ -83,7 +83,7 @@ savedir_n = "Y:\Data\FCI\FCI_summaries\TangentialRegression\FB4R"
 plt.close('all')
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                'angular velocity pos','x pos','x neg','y pos', 'y neg','ramp down since exit','ramp to entry'] 
+                                'angular velocity pos','translational vel','ramp down since exit','ramp to entry'] 
 
 flies = ['Y:\\Data\FCI\\AndyData\\47H09_GDrive\\47H09\\20220128_47H09jGCaMP7f_Fly1-002\\processed\\processed',
          #'Y:\\Data\FCI\\AndyData\\47H09_GDrive\\47H09\\20220130_47H09sytjGCaMP7f_Fly2-001\\processed\\processed',
@@ -100,7 +100,8 @@ for i,f in enumerate(flies):
     post_processing_file = os.path.join(f,'postprocessing.h5')
     pv2 = pd.read_hdf(post_processing_file, 'pv2')
     ft2 = pd.read_hdf(post_processing_file, 'ft2')
-    fc = fci_regmodel(pv2['fb4r_dff'],ft2,pv2)
+    fc = fci_regmodel(pv2['fb4r_dff'].to_numpy(),ft2,pv2)
+    fc.rebaseline(span=500,plotfig=False)
     fc.run(regchoice)
     fc.run_dR2(20,fc.xft)
     weights_c[i,:] = fc.coeff_cv
@@ -177,7 +178,24 @@ plt.savefig(os.path.join(savedir,'FB4R_weights.pdf'))
 plt.show()
 
 plt.figure()
-plt.plot([0, 14],[0, 0],color='k',linestyle='--')   
+plt.plot([0, len(regchoice)],[0, 0],color='k',linestyle='--')   
+for a in range(len(r2)):
+    plt.plot(np.linspace(0,len(regchoice),len(regchoice)),np.transpose(-weights[a,:]*np.sign(weights_c[a,:-1])),color=colours[r2dx[a],:])
+wm = np.mean(weights,axis=0)
+wm_c = np.mean(weights_c[:,:-1],axis=0)
+plt.plot(np.linspace(0,len(regchoice),len(regchoice)),-wm[:]*np.sign(wm_c[:]),color='k',linewidth=2)
+plt.xticks(np.linspace(0,len(regchoice),len(regchoice)),labels=regchoice,rotation=45,ha='right')
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('delta R2 * sign(coeffs)')
+plt.title('FB4R')
+plt.show()
+plt.savefig(os.path.join(savedir,'FB4R_signed_dR2.png'))
+plt.rcParams['pdf.fonttype'] = 42 
+plt.savefig(os.path.join(savedir,'FB4R_signed_dR2.pdf'))
+
+
+plt.figure()
+plt.plot([0,len(regchoice)],[0, 0],color='k',linestyle='--')   
 for a in range(len(r2)):
     plt.plot(np.linspace(0,len(regchoice),len(regchoice)),np.transpose(weights[a,:]),color=colours[r2dx[a],:])
 wm = np.mean(weights,axis=0)
@@ -190,6 +208,8 @@ plt.show()
 plt.savefig(os.path.join(savedir,'FB4R_dR2.png'))
 plt.rcParams['pdf.fonttype'] = 42 
 plt.savefig(os.path.join(savedir,'FB4R_dR2.pdf'))
+
+
 plt.figure()
 plt.plot([0, 14],[0.05, 0.05],color='k',linestyle='--')   
 for a in range(len(r2)):
@@ -204,13 +224,15 @@ plt.title('FB4R')
 plt.savefig(os.path.join(savedir,'FB4R_p_val.png'))
 plt.rcParams['pdf.fonttype'] = 42 
 plt.savefig(os.path.join(savedir,'FB4R_p_val.pdf'))
+
+
 #%% Run regression model by all fb5AB neurons
 plt.close('all')
 savedir_n = "Y:\Data\FCI\FCI_summaries\TangentialRegression\FB5AB"
 savedir = "Y:\Data\FCI\FCI_summaries\TangentialRegression"
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                'angular velocity pos','x pos','x neg','y pos', 'y neg','ramp down since exit','ramp to entry']
+                                'angular velocity pos','translational vel','ramp down since exit','ramp to entry']
 
 flies =['Y:\\Data\\FCI\\AndyData\\21D07\\20220103_21D07_sytjGCaMP7f_Fly1_001\\processed',
         'Y:\\Data\\FCI\\AndyData\\21D07\\20220107_21D07_sytjGCaMP7f_Fly1_001\\processed',

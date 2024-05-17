@@ -16,12 +16,58 @@ import matplotlib as mpl
 from matplotlib import cm
 from src.utilities import funcs as fn
 from scipy import stats
+from analysis_funs.CX_imaging import CX
+from analysis_funs.CX_analysis_col import CX_a
 datadir = "Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv\\20220627_hdc_split_Fly2\\et"
 
 savepath = os.path.join(datadir,"all_info_eb_fb.csv")
 
 
 data = pd.read_csv(savepath)
+
+#%% Get average of Andy's data
+et_dir = [-1,-1,1,1,1,-1]
+rootdir = 'Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv'
+folders = ['20220517_hdc_split_60d05_sytgcamp7f',
+ '20220627_hdc_split_Fly1',
+ '20220627_hdc_split_Fly2',
+ '20220628_HDC_sytjGCaMP7f_Fly1',
+ #'20220628_HDC_sytjGCaMP7f_Fly1_45-004', 45 degree plume
+ '20220629_HDC_split_sytjGCaMP7f_Fly1',
+ '20220629_HDC_split_sytjGCaMP7f_Fly3']
+plt.close('all')
+for i,f in enumerate(folders):
+    datadir = os.path.join(rootdir,f,"et")
+    cxa = CX_a(datadir,Andy=True)
+    plt_mn,plt_mn_eb,t = cxa.mean_phase_trans(give_data='True')
+    if i==0:
+        fsb_array = np.zeros((len(t),len(folders)))
+        eb_array = np.zeros_like(fsb_array)
+    fsb_array[:,i] = plt_mn*et_dir[i]
+    eb_array[:,i] = plt_mn_eb*et_dir[i]
+plt.close('all')
+#%%
+plt.rcParams['pdf.fonttype'] = 42 
+plt.plot(eb_array,t,color='k',alpha=0.5)
+plt.plot(fsb_array,t,color =[0.6, 0.6, 1],alpha = 0.5)
+plt.plot(stats.circmean(eb_array,high=np.pi,low=-np.pi,axis=1),t,color='k',linewidth=3)
+
+plt.plot(stats.circmean(fsb_array,high=np.pi,low=-np.pi,axis=1),t,color =[0.6, 0.6, 1],linewidth=3)
+plt.ylabel('Time (s)')
+plt.xlabel('Phase')
+mn = -np.pi
+mx = np.pi
+plt.xticks([mn,mn/2,0,mx/2,mx],labels=['-$\pi$','-$\pi$/2','0','$\pi$/2','$\pi$'])
+plt.xlim([mn,mx])
+plt.ylim([min(t), max(t)])
+plt.plot([mn,mx],[0,0],color='k',linestyle='--')
+plt.plot([0,0],[min(t), max(t)],color='k',linestyle='--')
+savedir = "Y:\\Presentations\\2024\\MarchLabMeeting\\Figures"
+sname = os.path.join(savedir,'hDeltaC_mean.png')
+plt.savefig(sname)
+sname = os.path.join(savedir,'hDeltaC_mean.pdf')
+plt.savefig(sname)
+#%% old
 
 
 #%% repair csv data  as is a nightmare

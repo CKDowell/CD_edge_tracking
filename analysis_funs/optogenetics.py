@@ -129,7 +129,7 @@ class opto:
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             else :
                     xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
-                    yp = [yrange[0], yrange[1], yrange[1],yrange[0],yrange[0]]
+                    yp = [0, yrange[1], yrange[1],0,0]
                     xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             #pan = meta_data['PlumeAngle']
             

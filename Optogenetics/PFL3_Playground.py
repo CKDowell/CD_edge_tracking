@@ -17,7 +17,7 @@ plt.close('all')
 meta_data = {'stim_type': 'plume',
               'act_inhib':'inhib',
     'ledOny': 700,
-              'ledOffy':10000,
+              'ledOffy':'all',
               'ledOnx': -1000,
               'ledOffx': 1000,
               'LEDoutplume': True,
@@ -49,6 +49,8 @@ for i in range(len(savedirs)):
     plt.savefig(os.path.join(figsavedir,savename))
     
     plt.rcParams['pdf.fonttype'] = 42 
+    plt.ylim([-500, 2500])
+    plt.xlim([-1000, 1000])
     savename = snames[-3] + '_' + snames[-2] + '_' +snames[-1] + '.pdf'
     plt.savefig(os.path.join(figsavedir,savename))
 #%% 

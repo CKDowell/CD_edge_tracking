@@ -28,6 +28,7 @@ class fci_regmodel:
         self.ts = pv2['relative_time']
     def rebaseline(self,span=500,plotfig=False):
         y = self.ca
+        y[np.isnan(y)] = 0
         frac = float(span)/np.max(self.ts)
         lowess = sm.nonparametric.lowess
         
@@ -123,6 +124,16 @@ class fci_regmodel:
                 x[x<-xp] = -xp
                 x = np.append([0],x)
                 x[x<0] = 0
+            elif r == 'translational vel':
+                x1 = self.ft2['ft_posx'].copy()
+                y1 = self.ft2['ft_posy'].copy()
+                dx = np.diff(x1)
+                dy = np.diff(y1)
+                trans_diff = np.sqrt(dx**2+dy**2)
+                x = np.append([0],trans_diff)
+                xp = np.percentile(np.abs(x),99)
+                x[x>xp] = xp
+                x[x<-xp] = -xp
             elif r == 'stationary':
                 x1 = pd.Series.to_numpy(self.ft2['x_velocity'].copy())
                 x2 = pd.Series.to_numpy(self.ft2['y_velocity'].copy()) 
@@ -421,9 +432,17 @@ class fci_regmodel:
         colour = self.ca
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
+        
         x,y = self.fictrac_repair(x,y)
+        acv = self.ft2['instrip'].to_numpy()
+        inplume = acv>0
+        st  = np.where(inplume)[0][0]
+        x = x-x[st]
+        y = y-y[st]
+        
         xrange = np.max(x)-np.min(x)
         yrange = np.max(y)-np.min(y)
+        
         mrange = np.max([xrange,yrange])+100
         y_med = yrange/2
         x_med = xrange/2
@@ -431,22 +450,37 @@ class fci_regmodel:
    
         xlims = [x_med-mrange/2, x_med+mrange/2]
 
-        acv = self.ft2['instrip']
-        inplume = acv>0
+        
+        
+        
         c_map = plt.get_cmap('coolwarm')
         if cmin==cmax:
             cmax = np.round(np.percentile(colour[~np.isnan(colour)],97.5),decimals=1)
         cnorm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
         scalarMap = cm.ScalarMappable(cnorm, c_map)
         c_map_rgb = scalarMap.to_rgba(colour)
-        x = x-x[0]
-        y = y -y[0]
+        #x = x-x[0]
+       # y = y -y[0]
         plt.rcParams['pdf.fonttype'] = 42 
         plt.rcParams['ps.fonttype'] = 42 
         fig = plt.figure(figsize=(15,15))
-
+        
         ax = fig.add_subplot(111)
-        ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
+        #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
+        ax.fill([-5,-5,5,5],[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+        mnx = min(x)
+        mxx = max(x)
+        if mnx<-210:
+            prange = mnx
+            m_mod = np.mod(mnx,-210)
+            m_add = mnx-m_mod
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+        if mxx>210:
+            prange = mxx
+            m_mod = np.mod(mxx,210)
+            m_add = mxx-m_mod
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+        
         for i in range(len(x)-1):
             ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
         plt.xlim(xlims)

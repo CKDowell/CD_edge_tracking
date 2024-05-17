@@ -133,16 +133,16 @@ class CX:
         phase_offset = fn.wrap(phase-offset)
         
         return phase, phase_offset, amp
-    def phase_yoke(self,yoke_roi,tether_roi):
+    def phase_yoke(self,yoke_roi,tether_roi,ft2,pv2):
         # Function will output phase and amplitude of columnar regions.
         # Specify a yoke and tether ROI to do the determination
         self.yoke_roi = yoke_roi
         self.tether_roi = tether_roi
-        pv2, ft, ft2, ix  = self.load_postprocessing()
+        #pv2, ft, ft2, ix  = self.load_postprocessing()
         self.pv2 = pv2
-        self.ft = ft
+        #self.ft = ft
         self.ft2 = ft2
-        self.ix = ix
+        #self.ix = ix
         print('Yoking to: ', yoke_roi)        
         yoke_wedges = pv2.filter(regex=yoke_roi)
         yoke_wedges.fillna(method='ffill', inplace=True)
@@ -151,8 +151,11 @@ class CX:
         offset = self.continuous_offset(yoke_wedges,ft2)
         phase_yoke_offset = fn.wrap(phase-offset)
         fit_wedges, all_params = self.wedges_to_cos(yoke_wedges,phase_offset = offset)
+        rot_wedges = self.rotate_wedges(yoke_wedges,phase_offset =offset)
         d = {
         'wedges_' + yoke_roi: yoke_wedges,
+        'wedges_offset_' + yoke_roi: rot_wedges,
+        'phase_' + yoke_roi: phase,
         'offset': offset,
         'offset_' + yoke_roi +'_phase': phase_yoke_offset,
         'fit_wedges_' + yoke_roi: fit_wedges,
@@ -162,13 +165,19 @@ class CX:
         for roi in tether_roi:
             print(roi)
             teth_wedges = pv2.filter(regex=roi)
+            
             teth_wedges.fillna(method='ffill',inplace=True)
             teth_wedges  = teth_wedges.to_numpy()
+            
             phase_teth,amp = self.get_centroidphase(teth_wedges)
             phase_teth_off = fn.wrap(phase_teth-offset)
+            
             fit_wedges,all_params = self.wedges_to_cos(teth_wedges,phase_offset = offset)
+            rot_wedges = self.rotate_wedges(teth_wedges,phase_offset =offset)
             d.update({
             'wedges_' + roi: teth_wedges,
+            'wedges_offset_' + roi: rot_wedges,
+            'phase_' + roi: phase_teth,
             'offset_' + roi +'_phase': phase_teth_off,
             'fit_wedges_' + roi: fit_wedges,
             'all_params_' + roi: all_params,
@@ -188,6 +197,19 @@ class CX:
             fit_wedges[i,:] = fit
             all_params[i,:] = params
         return fit_wedges, all_params
+    def rotate_wedges(self,wedges,phase_offset=None):
+        pi = np.pi
+        if phase_offset is None:
+            rot_wedges = wedges
+        else:
+            rot_wedges = np.zeros_like(wedges)
+            offset_idx = np.round(8*phase_offset/pi).astype(int)
+            for i,o in enumerate(offset_idx):
+                tw = wedges[i,:]
+                rot_wedges[i,:] = np.append(tw[o:],tw[:o])
+            
+        return rot_wedges
+            
     def continuous_offset(self, data,ft2):
         """
         calculate the phase offset between tube and epg bumps
@@ -596,8 +618,8 @@ class CX:
                       'alt_timestep'
                 ]
                 df = pd.read_table(file_path, delimiter='[,]', names = names, engine='python')
-                df.ft_posx = -3*df.ft_posx # flip x and y for mirror inversion
-                df.ft_posy = -3*df.ft_posy
+                df.ft_posx = 3*df.ft_posx # CD edit: no longer flipping x flip x and y for mirror inversion
+                df.ft_posy = -3*df.ft_posy # 
                 df.ft_speed = 3*df.ft_speed
                 df['seconds'] = (df.timestamp-df.timestamp.iloc[0])/1000
                 return df
@@ -620,7 +642,8 @@ class CX:
         df['motor_step_command'] = pd.to_numeric(df.motor_step_command)
 
         # CAUTION: invert x. Used to correct for mirror inversion, y already flipped in voe
-        df['ft_posx'] = -df['ft_posx']
+        # CD edit: this sign flip has been reversed as is no longer an issue
+        df['ft_posx'] = df['ft_posx']
 
         #calculate when fly is in strip
         df['instrip'] = np.where(df['mfc2_stpt']>0.0, True, False)
@@ -680,7 +703,8 @@ class CX:
         df_combine.motor_heading[df_combine.motor_heading>3*np.pi/4]=3*np.pi/4
 
         # remap heading to (-pi, pi), invert because of mirror flip
-        df_combine['ft_heading'] = -fn.wrap(fn.unwrap(df_combine.ft_heading))
+        # CD edit: remove sign flip because this is no longer an issue
+        df_combine['ft_heading'] = fn.wrap(fn.unwrap(df_combine.ft_heading))
 
         # make interpolated voe time the time used for alignment with ft
         if 'seconds_y' in df_combine.columns:

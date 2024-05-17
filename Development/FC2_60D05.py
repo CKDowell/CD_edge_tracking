@@ -56,6 +56,9 @@ cxa.mean_in_plume()
 plt.savefig(os.path.join(datadir,'In_plume_phase' +'.png'))
 cxa.mean_phase_trans()
 plt.savefig(os.path.join(datadir, 'PlumeEntry_phase' +'.png'))
+cxa.mean_phase_arrow()
+plt.savefig(os.path.join(datadir, 'MeanPhase_arrow' +'.png'))
+plt.savefig(os.path.join(datadir, 'MeanPhase_arrow' +'.pdf'))
 #%%
 phase,phase_offset,amp = cx.unyoked_phase('fsb')
 phase_eb,phase_offset_eb,amp_eb = cx.unyoked_phase('eb')
@@ -122,7 +125,7 @@ fc.plot_mean_flur('odour_onset')
 #%%
 amp = cxa.amp
 amp_eb = cxa.amp_eb
-phase = cxa.pdat['offset_fsb_phase']
+phase = cxa.pdat['offset_fsb_upper_phase']
 phase_eb = cxa.pdat['offset_eb_phase'] 
 import matplotlib as mpl
 plt.rcParams['animation.ffmpeg_path'] = 'C:\\ffmpeg\\bin\\ffmpeg'
@@ -142,8 +145,8 @@ y = y-y[xs]
 # Create initial line plot
 
 fig, ax = plt.subplots(figsize=(10,10))
-line2, = ax.plot([],[],color=[1,0.2,0.2])
-line3, = ax.plot([],[],lw=2,color=[0.2,0.2,1])
+line2, = ax.plot([],[],color=[0.2,0.2,1])
+line3, = ax.plot([],[],lw=2,color=[0.2,0.2,0.2])
 line, = ax.plot([], [], lw=2,color=[0.2,0.2,0.2])  # Empty line plot with line width specified
 sc = ax.scatter([],[],color=[0.5,0.5,0.5])
 
@@ -152,7 +155,8 @@ ax.set_yticks([])
 x_plm = [-5, -5, 5,5]
 y_plm = [0, np.max(y), np.max(y), 0]
 plt.fill(x_plm,y_plm,color =[0.8,0.8,0.8])
-
+plt.fill(x_plm-210,y_plm,color =[0.8,0.8,0.8])
+plt.fill(x_plm+210,y_plm,color =[0.8,0.8,0.8])
 ax.set_aspect('equal')
 # Set axis limits
 
@@ -179,7 +183,7 @@ def update(frame):
 # Create animation
 anim = mpl.animation.FuncAnimation(fig, update, frames=len(x), interval=10)
 writer = FFMpegWriter(fps=20)
-savedir = "Y:\\Presentations\\2024\\MarchLabMeeting"
+savedir = "Y:\Data\FCI\FCI_summaries\FC2_maimon2"
 path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
 path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
 anim.save(os.path.join(savedir,'FC2_eg_phase.avi'), writer=writer)

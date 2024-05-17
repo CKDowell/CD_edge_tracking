@@ -6,7 +6,6 @@ Created on Thu Mar  7 17:44:43 2024
 """
 
 from analysis_funs.regression import fci_regmodel
-from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt 
 from src.utilities import imaging as im
@@ -16,10 +15,7 @@ from analysis_funs.CX_imaging import CX
 
 import numpy as np
 #%% 
-
-
-
-datadir =os.path.join("Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240313\\f1\\Trial3")
+datadir =os.path.join("Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3")
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 #%% Registration
@@ -48,7 +44,7 @@ plt.plot(y)
 plt.plot(ft2['instrip'],color='k')
 
 fc = fci_regmodel(y,ft2,pv2)
-fc.example_trajectory(cmin=0,cmax=0.5)
+fc.example_trajectory(cmin=-0.5,cmax=0.5)
 
 
 #%%
@@ -57,7 +53,7 @@ fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
 fc.rebaseline(span=500,plotfig=True)
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                'angular velocity pos','angular velocity neg','x pos','x neg','y pos', 'y neg','ramp down since exit','ramp to entry']
+                                'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
 fc.run(regchoice)
 fc.run_dR2(20,fc.xft)
 
@@ -87,7 +83,7 @@ datadirs = ["Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3",
 
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                  'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                 'angular velocity pos','angular velocity neg','x pos','x neg','y pos', 'y neg','ramp down since exit','ramp to entry']
+                                 'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
 d_R2s = np.zeros((len(datadirs),len(regchoice)))
 coeffs = np.zeros((len(datadirs),len(regchoice)))
 rsq = np.zeros(len(datadirs))
@@ -111,6 +107,7 @@ for i, d in enumerate(datadirs):
     
 fc.plot_mean_flur('odour_onset')
 fc.plot_example_flur()
+
 plt.figure()
 plt.plot(d_R2s.T,color='k')
 plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
@@ -121,6 +118,15 @@ plt.xlabel('Regressor name')
 plt.show()
 plt.savefig(os.path.join(savedir,'dR2.png'))
 
+plt.figure()
+plt.plot(-d_R2s.T*np.sign(coeffs.T),color='k')
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('delta R2* sign(coeffs)')
+plt.xlabel('Regressor name')
+plt.show()
+plt.savefig(os.path.join(savedir,'dR2_mult_coeff.png'))
 
 plt.figure()
 plt.plot(coeffs.T,color='k')
