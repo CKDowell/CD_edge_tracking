@@ -209,7 +209,74 @@ for i,datadir  in enumerate(datadirs):
         plt_meno = np.append(plt_meno,meno_array,axis=2)
         plt_et = np.append(plt_et,et_array,axis=2)
         plt_et_ex = np.append(plt_et_ex,et_array,axis=2)
-            
+    
+#%% Regression analysis of bump amplitude
+regchoice = ['odour onset', 'odour offset', 'in odour', 
+                             'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
+  'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
+
+dr2mat = np.zeros((len(datadirs),len(regchoice)))
+dr2mat_max = np.zeros((len(datadirs),len(regchoice)))
+angles = np.linspace(-np.pi,np.pi,16)
+savedir = "Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2"
+for ir, datadir in enumerate(datadirs):
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    
+    #y = cxa.pdat['amp_fsb_upper']
+    weds = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.sin(angles),axis=1)
+    wedc = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.cos(angles),axis=1)
+    y  = np.sqrt(weds**2+wedc**2)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    fc = fci_regmodel(y,ft2,pv2)
+    fc.run(regchoice)
+    fc.run_dR2(20,fc.xft)
+    dr2mat[ir,:] = (-fc.dR2_mean)*np.sign(fc.coeff_cv[:-1])
+    
+    y = np.mean(cxa.pdat['wedges_offset_fsb_upper'],axis=1)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    fc = fci_regmodel(y,ft2,pv2)
+    fc.run(regchoice)
+    fc.run_dR2(20,fc.xft)
+    dr2mat_max[ir,:] = (-fc.dR2_mean)*np.sign(fc.coeff_cv[:-1])
+    
+    fc.plot_example_flur()
+    plt.title('Fly: ' + str(ir) +  ' R2:' +str(fc.cvR2))
+    plt.savefig(os.path.join(savedir,'EgFit_' + str(ir)+ '.png'))
+    plt.figure()
+    plt.title(str(ir))
+    fc.plot_flur_w_regressors(['in odour','translational vel'],cacol= 'r')
+    plt.savefig(os.path.join(savedir,'Ca_withreg_' + str(ir)+ '.png'))
+
+#%% 
+plt.figure()
+x = np.arange(0,len(regchoice))
+plt.plot([0,len(regchoice)],[0,0],linestyle='--',color='k')
+plt.plot(x,np.transpose(dr2mat),color='k')
+
+plt.xticks(x,labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.title('PVA amplitude regression')
+plt.ylabel('Signed dR2')
+plt.savefig(os.path.join(savedir,'Reg_Bump_PVA_dR2.png'))
+
+plt.figure()
+x = np.arange(0,len(regchoice))
+plt.plot([0,len(regchoice)],[0,0],linestyle='--',color='k')
+plt.plot(x,np.transpose(dr2mat_max),color='k')
+plt.xticks(x,labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.title('Max columns')
+plt.ylabel('Signed dR2')
+plt.savefig(os.path.join(savedir,'Reg_Bump_Max_dR2.png'))
+#%% Stationary replay events
+
+
+
+        
 #%%    
 plt.close('all')
 savedir = "Y:\\Presentations\\ForVanessa"
@@ -240,6 +307,7 @@ for i in range(2):
     #
 fig.tight_layout()  
 plt.show()
+ax2.set_ylim([0,0.25])
 plt.savefig(os.path.join(savedir,'PlumeJumpReturnHisto.pdf'))
 
 fig, ax1 = plt.subplots()
@@ -265,7 +333,7 @@ for i in range(2):
     ax2.fill_between(pltbins,pltmean-pltse,pltmean+pltse,color=colours[i+1,:],alpha=0.5)
     ax2.plot(pltbins,pltmean,color=colours[i+1,:],alpha=1)
     #
-ax2.set_ylim([0,0.15])
+ax2.set_ylim([0,0.25])
 fig.tight_layout()  
 plt.show()
 plt.savefig(os.path.join(savedir,'PlumeJumpExitHisto.pdf'))
@@ -293,10 +361,10 @@ for i in range(2):
     ax2.fill_between(pltbins,pltmean-pltse,pltmean+pltse,color=colours[i+1,:],alpha=0.5)
     ax2.plot(pltbins,pltmean,color=colours[i+1,:],alpha=1)
     #
-ax2.set_ylim([0,0.15])
+ax2.set_ylim([0,0.25])
 fig.tight_layout()  
 plt.show()
-plt.savefig(os.path.join(savedir,'AmenotaxisHisto.pdf'))
+plt.savefig(os.path.join(savedir,'AmenotaxisHisto2.pdf'))
 #%% Point to point heatmaps
 # Plume return
 plt.close('all')

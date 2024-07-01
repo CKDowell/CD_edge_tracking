@@ -58,19 +58,18 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
-            
-            
+            x= self.ft2['ft_posx']
+            y = self.ft2['ft_posy']
+            heading = self.ft2['ft_heading']
+            x,y,heading = self.bumpstraighten(x.to_numpy(),y.to_numpy(),heading)
+            self.ft2_original = self.ft2.copy()
+            self.ft2['ft_posx'] = x
+            self.ft2['ft_posy'] = y
+            self.ft2['ft_heading'] = heading
             
             if denovo:
                 # Correct for bumps
-                x= self.ft2['ft_posx']
-                y = self.ft2['ft_posy']
-                heading = self.ft2['ft_heading']
-                x,y,heading = self.bumpstraighten(x.to_numpy(),y.to_numpy(),heading)
-                self.ft2_original = self.ft2.copy()
-                self.ft2['ft_posx'] = x
-                self.ft2['ft_posy'] = y
-                self.ft2['ft_heading'] = heading
+                
                 
                 self.phase,self.phase_offset,self.amp = self.cx.unyoked_phase(regions[1])
                 
@@ -118,6 +117,8 @@ class CX_a:
         plt.figure(figsize=(5,10))
         phase_eb = self.phase_eb.copy()
         phase = self.phase.copy()
+        
+        
         ebs = []
         for i in range(16):
             ebs.append(str(i) +'_eb')
@@ -547,6 +548,7 @@ class CX_a:
             heat = np.fliplr(heat)
             
         # Run through entry/exits    
+        
         for i,j in enumerate(this_j):
             ex = exts-j
             ie = np.argmin(np.abs(ex))
@@ -581,6 +583,8 @@ class CX_a:
             
             
             # out plume
+            print(sub_dx)
+            print(ents[t_ent])
             ipdx = np.arange(sub_dx,ents[t_ent],step=1,dtype=int)
             old_time = ipdx-ipdx[0]
             ip_x = x[ipdx]
@@ -693,6 +697,12 @@ class CX_a:
     def point2point_heat(self,start,stop,regions=['eb','fsb_upper','fsb_lower'],arrowpoint='entry',toffset=-1):
         # Function will plot trajectory with arrows plus heatmaps of regions
         # The timepoints of arrows will be highlighted
+        
+        
+        
+        
+        
+        
         from matplotlib.colors import LinearSegmentedColormap
 
 
@@ -705,19 +715,34 @@ class CX_a:
         bumps = ft2['bump']
         jumps = jumps-np.mod(jumps,3)#gets rid of half jumps
         
+        # Work out jump side
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
+        jns = np.sign(jd[jn])
+
+        time_threshold = 60
+        # Pick the most common side
+        v,c = np.unique(jns,return_counts=True)
+        side = v[np.argmax(c)]
+        side_mult = side*-1
+        jumps = jumps*side_mult
+        
+        
         ins = ft2['instrip']
-        x = ft2['ft_posx'].to_numpy()
+        x = ft2['ft_posx'].to_numpy()*side_mult
         y = ft2['ft_posy'].to_numpy()
         
         pst = np.where(ins==1)[0][0]
-        heading = ft2['ft_heading'].to_numpy()
+        heading = ft2['ft_heading'].to_numpy()*side_mult
         times = pv2['relative_time']
         tres = np.mean(np.diff(times))
         tint = int(np.round(toffset/tres))
         x,y = self.fictrac_repair(x,y)
-        #x,y = self.bumpstraighten(x,y)
+        #x,y = self.bumpstraighten(x,y,ft2['ft_heading'])
         
-        f,a = plt.subplots(1,4)
+        f,a = plt.subplots(1,1+len(regions))
         t_x = x[start:stop]
         t_y = y[start:stop]
         
@@ -734,6 +759,11 @@ class CX_a:
         pst = np.where(t_id>0)[0]+1 
         ped = np.where(t_id<0)[0]+1
         
+        
+        
+        
+        
+        
         if len(pst)<1:
             print('nooot')
             a[0].plot(t_x,t_y,color='k')
@@ -742,6 +772,9 @@ class CX_a:
             if pst[0]>ped[0]:
                 print('True')
                 pst = np.append(0,pst)
+                
+            if len(pst)>len(ped):
+                ped = np.append(ped,len(t_j))
             print(pst)
             print(ped)
             t_j = np.round(t_j)
@@ -764,7 +797,9 @@ class CX_a:
                 a[0].plot(t_x[p:ped[i]],t_y[p:ped[i]],color=[1,0.3,0.3])
             for i in range(len(ped)-1):
                 a[0].plot(t_x[ped[i]-1:pst[i+1]+1],t_y[ped[i]-1:pst[i+1]+1],color='k')
-            
+                
+                
+            a[0].plot(t_x[:pst[0]],t_y[:pst[0]],color='k')
             
         a[0].set_aspect('equal', adjustable='box')
         a[0].set_ylim(min(t_y),max(t_y))
@@ -779,23 +814,30 @@ class CX_a:
             print(t)
             a[0].text(t_x[t+tint]+1,t_y[t+tint],str(it+1))
             for i,r in enumerate(regions):
-                t_phase = self.pdat['offset_'+r+'_phase'][start:stop].to_numpy()
+                t_phase = self.pdat['offset_'+r+'_phase'][start:stop].to_numpy()*side_mult
+                t_phase = t_phase
                 t_amp = self.pdat['amp_'+r ][start:stop]
                 tp = t_phase[t+tint]
                 ta = t_amp[t+tint]
                 ax = np.sin(tp)*10
                 ay = np.cos(tp)*10
                 a[0].arrow(t_x[t+tint],t_y[t+tint],ax,ay,color=colours[i],length_includes_head=True,head_width=1,zorder=10)
-                
+            a[0].scatter(t_x[t+tint],t_y[t+tint],color=[0.3,1,0.3],marker='*',zorder=10)
                 
         for i,r in enumerate(regions):
             #heat = self.pdat['fit_wedges_' +r][start:stop,:]
+            
             heat = self.pdat['wedges_offset_' +r][start:stop,:]
-            t_phase = self.pdat['offset_'+r+'_phase'][start:stop].to_numpy()
+            if side_mult<0:
+                heat = np.fliplr(heat)
+            t_phase = self.pdat['offset_'+r+'_phase'][start:stop].to_numpy()*side_mult
+            
+            t_plot = 16*(t_phase+np.pi)/(2*np.pi)-0.5
+            #a[i+1].plot(t_plot,np.arange(len(heat)))
             if i==0:
-                a[i+1].imshow(np.flipud(heat), interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
+                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
             else:
-                a[i+1].imshow(np.flipud(heat), interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
+                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
             a[i+1].set_xlim([-1,16])
             a[i+1].set_title(r)
             
@@ -812,7 +854,7 @@ class CX_a:
                 it = t_phase[t+tint]
                 it = 16*(it+np.pi)/(2*np.pi)-0.5
                 a[i+1].scatter([it-0.5],[t+tint],color=[0.3,1,0.3],marker='*')
-        a[1].set_yticks(np.transpose(t_arrows+tint),labels=[1,2,3])
+        a[1].set_yticks(np.transpose(t_arrows+tint),labels=np.arange(1,len(t_arrows)+1))
         
     def all_jump_heat(self,regions=['eb','fsb_upper','fsb_lower'],x_offset=0):
         plt.close('all')
@@ -912,7 +954,7 @@ class CX_a:
                 a[p+1].plot(np.flipud(t_p),p_y,color='g')
                 a[p+1].set_title(regions[p])
                 
-    def plume_meno_comp(self,regions=['eb','fsb_upper','fsb_lower']):
+    def plume_meno_comp(self,regions=['eb','fsb_upper','fsb_lower'],diff_phase = True,diff_val='heading'):
         ft2 = self.ft2
         ft = self.ft
         pv2 = self.pv2
@@ -930,7 +972,7 @@ class CX_a:
         
         
         # Plume jump returns
-        t_return = 5
+        t_return = 3
         
         jumps = ft2['jump']
         ins = ft2['instrip']
@@ -953,11 +995,17 @@ class CX_a:
         
         for i, r in enumerate(regions):
             t_phase = self.pdat['offset_' +r+ '_phase']*side_mult
-            p_diff = t_phase-heading
-            # Brings stats back to -pi pi
-            p_cos = np.cos(p_diff)
-            p_sin = np.sin(p_diff)
-            p_diffa = np.arctan2(p_sin,p_cos)
+            if diff_phase:
+                if diff_val=='heading':
+                    p_diff = t_phase-heading
+                else:
+                    p_diff = t_phase-(self.pdat['offset_'+ diff_val+'_phase']*side_mult)
+                # Brings stats back to -pi pi
+                p_cos = np.cos(p_diff)
+                p_sin = np.sin(p_diff)
+                p_diffa = np.arctan2(p_sin,p_cos)
+            else:
+                p_diffa = t_phase
             
             h = np.histogram(p_diffa,bins = radbins,density=True)
             ph = h[0]
@@ -988,7 +1036,13 @@ class CX_a:
         
         for i,r in enumerate(regions):
             t_phase = self.pdat['offset_' +r+ '_phase']*side_mult
-            p_diff = t_phase-heading
+            if diff_phase:
+                if diff_val=='heading':
+                    p_diff = t_phase-heading
+                else:
+                    p_diff = t_phase-(self.pdat['offset_'+ diff_val+'_phase']*side_mult)
+            else:
+                p_diff = t_phase
             h_pdiff = np.array([])
             for ij,j in enumerate(this_j):
                 ex = exts-j
@@ -1016,14 +1070,26 @@ class CX_a:
         plt.xticks([-180,-90,0,90,180])
         
         plt.figure()
-        
+        t_exit = 0.25
+        tnums = np.round(t_exit/tres)
+        lenmin = np.round(0/tres)
         for i,r in enumerate(regions):
             t_phase = self.pdat['offset_' +r+ '_phase']*side_mult
-            p_diff = t_phase-heading
+            if diff_phase:
+                if diff_val=='heading':
+                    p_diff = t_phase-heading
+                else:
+                    p_diff = t_phase-(self.pdat['offset_'+ diff_val+'_phase']*side_mult)
+            else:
+                p_diff = t_phase
             h_pdiff = np.array([])
-            for ij,j in enumerate(this_j):
+            for ij,j in enumerate(exts):
                 ex = exts-j
                 ie = np.argmin(np.abs(ex))
+                print(exts[ie],ents[ie])
+                if (exts[ie]-ents[ie])<lenmin:
+                    print('Too short!!')
+                    continue
                 
                 ist = np.max([exts[ie]-tnums,ents[ie]])
                 ipdx = np.arange(ist,exts[ie],step=1,dtype=int)
@@ -1315,7 +1381,7 @@ class CX_a:
             y[f:] = y[f:]- (y[f]-y[f-1])
         return x, y
     def bumpstraighten(self,x,y,heading):
-        plt.close('all')
+        
         ft2 = self.ft2
         ft = self.ft
         obumps = ft['bump'].to_numpy()

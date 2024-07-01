@@ -15,7 +15,7 @@ from analysis_funs.CX_imaging import CX
 
 import numpy as np
 #%% 
-datadir =os.path.join("Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3")
+datadir =os.path.join("Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3")
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 #%% Registration

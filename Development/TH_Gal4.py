@@ -9,6 +9,7 @@ from analysis_funs.optogenetics import opto
 import os
 import matplotlib.pyplot as plt 
 from src.utilities import imaging as im
+
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
@@ -16,16 +17,19 @@ import numpy as np
 #%% Imaging test for PFL3 neurons
 
 
-datadir =os.path.join("Y:\Data\FCI\Hedwig\\TH_GC7f\\240306\\f1\\Trial2")
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-#%% Registration
-ex = im.fly(name, datadir)
-ex.register_all_images(overwrite=True)
-ex.z_projection()
-#%% Masks for ROI drawing
-ex.mask_slice = {'All': [1,2,3,4]}
-ex.t_projection_mask_slice()
+for i in [1]:
+    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\TH_GC7f\\240529\\f3\\Trial"+str(i))
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    #% Registration
+    ex = im.fly(name, datadir)
+    ex.register_all_images(overwrite=True)
+    ex.z_projection()
+    #%
+    ex.mask_slice = {'All': [1,2,3,4]}
+    ex.t_projection_mask_slice()
+
+
 #%% 
 cx = CX(name,['fsb_layer'],datadir)
 # save preprocessing, consolidates behavioural data

@@ -780,6 +780,64 @@ class CX:
         setattr(self, 'spikes', spikes)
         setattr(self, 'timing', timing)
         return ft
+    
+    def bumpstraighten(self,ft,ft2):
+        x = ft2['ft_posx'].to_numpy()
+        y = ft2['ft_posy'].to_numpy()
+        heading = ft2['ft_heading']
+        obumps = ft['bump'].to_numpy()
+        obumps_u = obumps[np.abs(obumps)>0]
+        obumpsfr = ft['frame'][np.abs(obumps)>0]
+        bumps = ft2['bump']
+        frames = ft2['frame']
+        bumps_new = np.zeros_like(bumps)
+        for i,f in enumerate(obumpsfr):
+            
+            frd = frames-f
+            w = np.argmin(np.abs(frd))
+            
+            bumps_new[w] = obumps_u[i]
+        
+        
+        bumps = bumps_new
+        binst = np.where(np.abs(bumps)>0)[0]
+        xnew = x.copy()
+        ynew = y.copy()
+        headingnew = heading.copy()
+        tbold = 0
+        for b in range(len(binst)-1):
+            bi = binst[b]
+            tb = bumps[bi]+tbold
+            tbold = tb
+            bdx = np.arange(bi,binst[b+1],step=1,dtype=int)
+            bc =np.cos(-tb)
+            bs = np.sin(-tb)
+            tx = x[bdx]
+            ty = y[bdx]
+            tx = tx-tx[0]
+            ty = ty-ty[0]
+            tx2 = tx*bc-ty*bs
+            ty2 = tx*bs+ty*bc
+            dx = tx2[0]-xnew[bdx[0]-1]
+            dy = tx2[0]-ynew[bdx[0]-1]
+            tx2 = tx2-dx
+            ty2 = ty2-dy
+            xnew[bdx] = tx2
+            ynew[bdx] = ty2
+            
+            th = heading[bdx]+tb
+            tc = np.cos(th)
+            ts = np.sin(th)
+            th = np.arctan2(ts,tc)
+            headingnew[bdx] = th
+            
+            
+        dx = xnew[(bdx[-1]+1)]-xnew[bdx[-1]]
+        xnew[(bdx[-1]+1):] = xnew[(bdx[-1]+1):]-dx
+        dy = ynew[(bdx[-1]+1)]-ynew[bdx[-1]]
+        ynew[(bdx[-1]+1):] = ynew[(bdx[-1]+1):]-dy
+        
+        return xnew,ynew,headingnew
         
         
         

@@ -85,7 +85,8 @@ class fci_regmodel:
             elif r == 'angular velocity neg':
                 x = -pd.Series.to_numpy(self.ft2['ang_velocity'].copy())
                 x[x<0] = 0
-                
+            elif r == 'angular velocity abs':
+                x = np.abs(pd.Series.to_numpy(self.ft2['ang_velocity'].copy()))
             elif r== 'x pos':
                 #x = pd.Series.to_numpy(self.ft2['x_velocity'])
                 x = pd.Series.to_numpy(self.ft2['ft_posx'].copy())
@@ -220,6 +221,25 @@ class fci_regmodel:
         regmatrix[np.isnan(regmatrix)] = 0# deals with divide by zero for when animal does not do the behaviour
         regmatrix[:,-1] = 1
         return regmatrix, regmatrix_preconv
+    def run_pearson(self,regchoice):
+        print('Determining regressors')
+        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice)
+        self.regmatrix = regmatrix
+        self.regmatrix_preconv = regmatrix_preconv.copy()
+        
+        y = self.ca
+        # Iterate through regressors getting pearson corr
+        rhos = np.zeros(len(regchoice))
+        ps = np.zeros(len(regchoice))
+        print(len(regchoice))
+        print(np.shape(rhos))
+        for r in range(len(regchoice)):
+            st = stats.pearsonr(y,regmatrix[:,r])
+            rhos[r] = st.statistic
+            ps[r] = st.pvalue
+        self.pearson_rho = rhos
+        self.pearson_p = ps
+        
     def run(self,regchoice,partition=False):
         
         # Set up regessors
@@ -399,16 +419,16 @@ class fci_regmodel:
         plt.ylabel('dF/F')
         plt.show()
         
-    def plot_flur_w_regressors(self,regchoice):
-        plt.figure(figsize=(18,8))
-        plt.plot(self.ts,self.ca,color='k')
+    def plot_flur_w_regressors(self,regchoice,cacol='k'):
+        #plt.figure(figsize=(18,8))
+        plt.plot(self.ts,self.ca,color=cacol)
         R = self.regmatrix_preconv[:,:-1]
-        for r in regchoice:
+        for ir, r in enumerate(regchoice):
             rdx = np.in1d(self.regchoice,r)
             y = R[:,rdx]
             y = y/np.max(y)
-            y = y*np.max(self.ca)
-            plt.plot(self.ts,y)
+            #y = y*np.max(self.ca)
+            plt.plot(self.ts,y-ir-1,color='k')
             
         plt.xlabel('Time (s)')
         plt.ylabel('dF/F')
@@ -428,6 +448,61 @@ class fci_regmodel:
         plt.yticks(np.linspace(0,i,i+1),labels =regchoice)
         plt.show()
         
+    def simple_trajectory(self,dx):
+        x = self.ft2['ft_posx']
+        y = self.ft2['ft_posy']
+        x,y = self.fictrac_repair(x,y)
+        acv = self.ft2['instrip'].to_numpy()
+        
+        inplume = acv>0
+        st  = np.where(inplume)[0][0]
+        x = x-x[st]
+        y = y-y[st]
+        
+        x = x[dx]
+        y = y[dx]
+        fig = plt.figure(figsize=(15,15))
+        ax = fig.add_subplot(111)
+        #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
+        ax.fill([-5,-5,5,5],[0,max(y),max(y),0],color=[0.7,0.7,0.7])
+        mnx = min(x)
+        mxx = max(x)
+        if mnx<-210:
+            prange = mnx
+            m_mod = np.mod(mnx,-210)
+            m_add = mnx-m_mod
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.7,0.7,0.7])
+        if mxx>210:
+            prange = mxx
+            m_mod = np.mod(mxx,210)
+            m_add = mxx-m_mod
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.7,0.7,0.7])
+            
+        acv = acv[dx]
+        isd =np.diff(acv)
+        st = np.where(isd>0)[0]+1
+        se = np.where(isd<0)[0]+1
+        
+        if se[0]<st[0]:
+            print('True')
+            st = np.append(0,st)
+        if st[-1]>se[-1]:
+            se = np.append(se,len(x))
+        plt.plot(x[:st[0]],y[:st[0]],color='k')
+        plt.plot(x[se[-1]-1:],y[se[-1]-1:],color='k')
+        print(st)
+        print(se)
+        for i,s in enumerate(st):
+            plt.plot(x[(st[i]-1):se[i]],y[(st[i]-1):se[i]],color='r')
+            if i<(len(st)-1):
+                plt.plot(x[(se[i]-1):st[i+1]],y[(se[i]-1):st[i+1]],color='k')
+        
+        
+        
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
+        plt.ylim([min(y), max(y)])
     def example_trajectory(self,cmin=0,cmax=1):
         colour = self.ca
         x = self.ft2['ft_posx']
@@ -450,9 +525,6 @@ class fci_regmodel:
    
         xlims = [x_med-mrange/2, x_med+mrange/2]
 
-        
-        
-        
         c_map = plt.get_cmap('coolwarm')
         if cmin==cmax:
             cmax = np.round(np.percentile(colour[~np.isnan(colour)],97.5),decimals=1)
@@ -467,19 +539,21 @@ class fci_regmodel:
         
         ax = fig.add_subplot(111)
         #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
-        ax.fill([-5,-5,5,5],[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+        ax.fill([-5,-5,5,5],[0,max(y),max(y),0],color=[0.7,0.7,0.7])
         mnx = min(x)
         mxx = max(x)
         if mnx<-210:
             prange = mnx
             m_mod = np.mod(mnx,-210)
             m_add = mnx-m_mod
-            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.7,0.7,0.7])
+            ax.fill([-5,-5,5,5]-np.array(210),[0,max(y),max(y),0],color=[0.7,0.7,0.7])
         if mxx>210:
             prange = mxx
             m_mod = np.mod(mxx,210)
             m_add = mxx-m_mod
-            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.5,0.5,0.5])
+            ax.fill([-5,-5,5,5]+np.array(210),[0,max(y),max(y),0],color=[0.7,0.7,0.7])
+            ax.fill([-5,-5,5,5]+m_add,[0,max(y),max(y),0],color=[0.7,0.7,0.7])
         
         for i in range(len(x)-1):
             ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
