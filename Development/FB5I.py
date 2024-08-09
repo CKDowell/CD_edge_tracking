@@ -32,7 +32,7 @@ for i in [1,2]:
     ex.t_projection_mask_slice()
 
 #%% 
-datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240523\\f1\\Trial4"
+datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2"
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 cx = CX(name,['fsbTN'],datadir)
@@ -46,5 +46,76 @@ cx.save_postprocessing()
 pv2, ft, ft2, ix = cx.load_postprocessing()
 
 #%%
-cxt = CX_tan(datadir)
-cxt.fc.example_trajectory(cmin=-0.5,cmax =0.5)
+savedir = "Y:\Data\FCI\Hedwig\\FB5I_SS100553\\SummaryFigures"
+regchoice = ['odour onset', 'odour offset', 'in odour', 
+                                'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
+                                'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
+datadirs = ["Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240523\\f1\\Trial4",
+    "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2"
+    ]
+d_R2s = np.zeros((len(datadirs),len(regchoice)))
+coeffs = np.zeros((len(datadirs),len(regchoice)))
+rsq = np.zeros(len(datadirs))
+rsq_t_t = np.zeros((len(datadirs),2))
+for i,d in enumerate(datadirs):
+    cxt = CX_tan(d)
+    
+    #cxt.fc.run(regchoice)
+    #cxt.fc.run_dR2(20,cxt.fc.xft)
+    
+    cxt.fc.rebaseline(span=500,plotfig=True)
+    cxt.fc.run(regchoice,partition='pre_air')
+    cxt.fc.run_dR2(20,cxt.fc.xft)
+    d_R2s[i,:] = cxt.fc.dR2_mean
+    coeffs[i,:] = cxt.fc.coeff_cv[:-1]
+    rsq[i] = cxt.fc.r2
+    rsq_t_t[i,0] = cxt.fc.r2_part_train
+    rsq_t_t[i,1] = cxt.fc.r2_part_test
+plt.figure()
+plt.plot(d_R2s.T,color='k')
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('delta R2')
+plt.xlabel('Regressor name')
+plt.show()
+plt.savefig(os.path.join(savedir,'dR2.png'))
+
+plt.figure()
+plt.plot(-d_R2s.T*np.sign(coeffs.T),color='k')
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('delta R2* sign(coeffs)')
+plt.xlabel('Regressor name')
+plt.show()
+plt.savefig(os.path.join(savedir,'dR2_mult_coeff.png'))
+
+plt.figure()
+plt.plot(coeffs.T,color='k')
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('Coefficient weight')
+plt.xlabel('Regressor name')
+plt.show()
+plt.savefig(os.path.join(savedir,'Coeffs.png'))
+
+plt.figure()
+plt.scatter(rsq_t_t[:,0],rsq_t_t[:,1],color='k')
+plt.plot([np.min(rsq_t_t[:]),np.max(rsq_t_t[:])], [np.min(rsq_t_t[:]),np.max(rsq_t_t[:])],color='k',linestyle='--' )
+plt.xlabel('R2 pre air')
+plt.ylabel('R2 live air')
+plt.title('Model trained on pre air period')
+#%% 
+cxt.fc.plot_example_flur()
+times = cxt.pv2['relative_time']
+plt.plot(times,cxt.ft2['instrip'])
+#%% plot multiple animals
+datadirs = ["Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240523\\f1\\Trial4",
+    "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2"
+    ]
+for d in datadirs:
+    cxt = CX_tan(d)
+    cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5)
+    plt.savefig(os.path.join(d,'EgTraj_'+cxt.name+'.pdf'))

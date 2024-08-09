@@ -18,11 +18,18 @@ from matplotlib import cm
 from analysis_funs.regression import fci_regmodel
 #%%
 class CX_tan:
-    def __init__(self,datadir,tnstring='0_fsbtn',span=500):
+    def __init__(self,datadir,tnstring='0_fsbtn',Andy=False,span=500):
+        
+        
         d = datadir.split("\\")
         self.name = d[-3] + '_' + d[-2] + '_' + d[-1]
-        cx = CX(self.name,['fsbTN'],datadir)
-        self.pv2, self.ft, self.ft2, self.ix = cx.load_postprocessing()
+        if Andy==False:
+            cx = CX(self.name,['fsbTN'],datadir)
+            self.pv2, self.ft, self.ft2, self.ix = cx.load_postprocessing()
+        else:
+            post_processing_file = os.path.join(datadir,'postprocessing.h5')
+            self.pv2 = pd.read_hdf(post_processing_file, 'pv2')
+            self.ft2 = pd.read_hdf(post_processing_file, 'ft2')
         self.fc = fci_regmodel(self.pv2[[tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
         self.fc.rebaseline(span=span,plotfig=False)
         

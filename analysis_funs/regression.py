@@ -29,9 +29,10 @@ class fci_regmodel:
     def rebaseline(self,span=500,plotfig=False):
         y = self.ca
         y[np.isnan(y)] = 0
-        frac = float(span)/np.max(self.ts)
-        lowess = sm.nonparametric.lowess
         
+        frac = float(span)/np.max(self.ts)
+        frac = min(frac,1)
+        lowess = sm.nonparametric.lowess 
         yf = lowess(y,np.arange(0,len(y)),frac=frac)
         self.ca_original = y
         self.ca = y-yf[:,1]
@@ -43,7 +44,7 @@ class fci_regmodel:
     def set_up_regressors(self,regchoice,cirftau =[0.3,0.01]):
         #Cirf is very approximate and should be verified
         
-        xs = np.shape(self.ft2['mfc2_stpt'])
+        xs = np.shape(self.ft2['instrip'])
         self.regchoice =regchoice
         regmatrix = np.ones([xs[0],len(regchoice)+1],dtype = float)
         # define regressors
@@ -508,6 +509,8 @@ class fci_regmodel:
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
         
+        
+        
         x,y = self.fictrac_repair(x,y)
         acv = self.ft2['instrip'].to_numpy()
         inplume = acv>0
@@ -565,7 +568,84 @@ class fci_regmodel:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+    
+    def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0):    
+        colour = self.ca
+        x = self.ft2['ft_posx']
+        y = self.ft2['ft_posy']
+        jumps = self.ft2['jump']
+        jumps = jumps-np.mod(jumps,3)
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]+1
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
         
+        x,y = self.fictrac_repair(x,y)
+        acv = self.ft2['instrip'].to_numpy()
+        inplume = acv>0
+        st  = np.where(inplume)[0][0]
+        x = x-x[st]
+        y = y-y[st]
+        
+        xrange = np.max(x)-np.min(x)
+        yrange = np.max(y)-np.min(y)
+        
+        mrange = np.max([xrange,yrange])+100
+        y_med = yrange/2
+        x_med = xrange/2
+        ylims = [y_med-mrange/2, y_med+mrange/2]
+   
+        xlims = [x_med-mrange/2, x_med+mrange/2]
+
+        c_map = plt.get_cmap('coolwarm')
+        if cmin==cmax:
+            cmax = np.round(np.percentile(colour[~np.isnan(colour)],97.5),decimals=1)
+        cnorm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
+        scalarMap = cm.ScalarMappable(cnorm, c_map)
+        c_map_rgb = scalarMap.to_rgba(colour)
+        #x = x-x[0]
+       # y = y -y[0]
+        plt.rcParams['pdf.fonttype'] = 42 
+        plt.rcParams['ps.fonttype'] = 42 
+        fig = plt.figure(figsize=(15,15))
+        
+        ax = fig.add_subplot(111)
+        #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
+        
+        yj = y[jn].to_numpy()
+        yj = np.append(yj,y.to_numpy()[-1])
+        plt.fill()
+        tj = 0
+        x1 = xcent+5+tj
+        x2 = xcent-5+tj
+        y1 = 0
+        y2 = yj[0]
+        xvec = [x1,x2,x2,x1]
+        yvec = [y1,y1,y2,y2]
+        plt.fill(xvec,yvec,color=[0.7,0.7,0.7])
+        for i,j in enumerate(jn):
+            tj = jumps[j]
+            x1 = xcent+5+tj
+            x2 = xcent-5+tj
+            y1 = yj[i]
+            y2 = yj[i+1]
+            xvec = [x1,x2,x2,x1]
+            yvec = [y1,y1,y2,y2]
+            plt.fill(xvec,yvec,color=[0.7,0.7,0.7])
+
+        
+        for i in range(len(x)-1):
+            ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
+        #plt.scatter(x[inplume],y[inplume],color='b')
+        plt.xlim(xlims)
+        plt.ylim(ylims)
+        plt.xlabel('x position (mm)')
+        plt.ylabel('y position (mm)')
+        plt.title('Flur range 0 - ' + str(cmax))
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
+    
     def entries_in_a_row(self):
         # Plots entries all in same strip
         colour = self.ca
@@ -633,6 +713,146 @@ class fci_regmodel:
             plt.show()
         if output:
             return plt_mn,t
+    def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
+        """
+        Function outputs mean trajectory of animal entering and exiting the plume
+        alongside the mean fluorescence
+
+        Returns
+        -------
+        None.
+
+        """
+        plume_centres = [0,210,420]
+        if use_rebase:
+            ca = self.ca
+        else:
+            ca = self.pv2[tnstring]
+            
+        ft2 = self.ft2
+        pv2 = self.pv2
+        ins = ft2['instrip']
+        x = ft2['ft_posx'].to_numpy()
+        y = ft2['ft_posy'].to_numpy()
+        times = pv2['relative_time']
+        x,y = self.fictrac_repair(x,y)
+        expst = np.where(ins==1)[0][0]
+        x = x-x[expst]
+        y = y-y[expst]
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        exts = np.where(insd<0)[0]+1
+        ents_O = ents.copy()
+        exts_O = exts.copy()
+        ents = ents[1:]
+        exts = exts[1:]
+        print(ents,exts)
+        # Need to pick a side
+        if len(ents)>len(exts):
+            ents = ents[:-1]
+        
+        ent_x = np.round(x[ents])
+        ex_x = np.round(x[exts])
+        sides = np.zeros(len(ent_x))
+        plume_centre = np.zeros(len(ent_x))
+        
+        
+        # 1 -1 indicates sides of entry/exit
+        # -0.9 0.9 indicates crossing over from left and right
+        for i,x1 in enumerate(ent_x):
+            x2 = ex_x[i]
+            pcd = plume_centres-np.abs(x1)
+            
+            pi = np.argmin(np.abs(pcd))
+            pc = plume_centres[pi]*np.sign(x1)
+            plume_centre[i] = pc
+            s_en = np.sign(x1-pc)
+            s_ex = np.sign(x2-pc)
+            if s_en==s_ex:
+                sides[i] = s_en
+            elif s_en!=s_ex:
+               
+                sides[i] = s_en+(s_ex/10)
+                
+                    
+        v,c = np.unique(sides,return_counts=True)
+        
+        ts = v[np.argmax(c)]
+        #print(ts)
+        t_ents = ents[sides==ts]
+        t_exts = exts[sides==ts]
+        t_pc = plume_centre[sides==ts]
+        # initialise arrays
+        trajs = np.empty((100,2,len(t_ents)))
+        Ca = np.empty((100,len(t_ents)))
+        trajs[:] = np.nan
+        Ca[:] = np.nan
+        for i,en in enumerate(t_ents):
+            prior_ex = exts_O-en
+            prior_ex = prior_ex[prior_ex<0]
+            pi = np.argmax(prior_ex)
+            ex1 = exts_O[pi]
+            dx1 = np.arange(ex1,en,dtype=int)
+            dx2 = np.arange(en,t_exts[i],dtype=int)
+            x1 = x[dx1]-t_pc[i]
+           # print(t_pc[i])
+            y1 = y[dx1]
+            ca1 = ca[dx1]
+            # print(x[dx2[0]]-t_pc[i])
+            # print(x[dx2[-1]]-t_pc[i])
+            # print(x[dx1[-1]]-t_pc[i])
+            
+            if np.sign(x[dx1[0]]-t_pc[i])!=np.sign(x[dx1[-1]]-t_pc[i]):
+                continue
+            
+            # print('aaa')
+            x2 = x[dx2]-t_pc[i]
+            y2 = y[dx2]
+            ca2 = ca[dx2]
+            y2 = y2-y1[0]
+            y1 = y1-y1[0]
+            
+            x1 = x1*ts
+            x2 = x2*ts
+            
+            x1d = 5-x1[0]
+            x1 = x1
+            x2 = x2
+            #Interpolate onto timebase: return
+            old_time = dx1-dx1[0]
+            
+            if max(old_time)<20 or dx2[-1]-dx2[0]<20 :
+                print(max(old_time))
+                continue
+            new_time = np.linspace(0,max(old_time),50)
+            x_int = np.interp(new_time,old_time,x1)
+            y_int = np.interp(new_time,old_time,y1)
+            ca_int = np.interp(new_time,old_time,ca1)
+            plt.figure()
+            plt.plot(new_time,ca_int,color='r')
+            plt.plot(old_time,ca1,color='k')
+            mn = max(old_time)
+            trajs[:50,0,i] = x_int
+            trajs[:50,1,i] = y_int
+            Ca[:50,i] = ca_int
+            
+            #Interpolate onto timebase: in plume
+            old_time = dx2-dx2[0]
+            new_time = np.linspace(0,max(old_time),50)
+            x_int = np.interp(new_time,old_time,x2)
+            y_int = np.interp(new_time,old_time,y2)
+            ca_int = np.interp(new_time,old_time,ca2)
+            # plt.figure()
+            plt.plot(new_time+mn,ca_int,color='r',linestyle='--')
+            plt.plot(old_time+mn,ca2,color='k',linestyle='--')
+            plt.title(str(dx1[0]) +' -' + str(dx2[-1]))
+            trajs[50:,0,i] = x_int
+            trajs[50:,1,i] = y_int
+            Ca[50:,i] = ca_int
+            
+        traj_mean = np.nanmean(trajs,axis=2)
+        Ca_mean = np.nanmean(Ca,axis=1)
+        return traj_mean,Ca_mean
         
     def plot_dR2_coeffs(self,regchoice):
         plt.figure()

@@ -66,16 +66,37 @@ cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'])
 #%% 
 cxa.point2point_heat(3500,4500,toffset=0,arrowpoint=np.array([50,243,500,600,700,800,900]))
 cxa.point2point_heat(0,1000,toffset=0,arrowpoint=np.array([50,243,500,600,700,800,900]))
+
+#%% Jump arrows
+datadirs = [
+    "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3"]
+plt.close('all')
+x_offset = 0
+plt.figure()
+for datadir in datadirs:
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    cxa.save_phases()
+    cxa.mean_jump_arrows(x_offset)
+    x_offset = x_offset+30
+
+
+plt.ylim([-40,40])
+savedir= 'Y:\\Data\\FCI\\FCI_summaries\\hDeltaJ'
+plt.savefig(os.path.join(savedir,'MeanJumps.png'))
+plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
+
 #%% regression for hDj
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                              'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
   'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
 
-dr2mat = np.zeros((len(experiment_dirs),len(regchoice)))
-dr2mat_max = np.zeros((len(experiment_dirs),len(regchoice)))
+dr2mat = np.zeros((len(datadirs),len(regchoice)))
+dr2mat_max = np.zeros((len(datadirs),len(regchoice)))
 savedir = "Y:\\Data\\FCI\\FCI_summaries\\hDeltaJ"
 angles = np.linspace(-np.pi,np.pi,16)
-for ir, datadir in enumerate(experiment_dirs):
+for ir, datadir in enumerate(datadirs):
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
@@ -95,6 +116,7 @@ for ir, datadir in enumerate(experiment_dirs):
     ft2 = cxa.ft2
     pv2 = cxa.pv2
     fc = fci_regmodel(y,ft2,pv2)
+    #fc.rebaseline()
     fc.run(regchoice)
     fc.run_dR2(20,fc.xft)
     dr2mat_max[ir,:] = (-fc.dR2_mean)*np.sign(fc.coeff_cv[:-1])
@@ -118,13 +140,47 @@ plt.subplots_adjust(bottom=0.4)
 plt.title('PVA amplitude regression')
 plt.ylabel('Signed dR2')
 plt.savefig(os.path.join(savedir,'Reg_Bump_PVA_dR2.png'))
-
+plt.savefig(os.path.join(savedir,'Reg_Bump_PVA_dR2.pdf'))
 plt.figure()
 x = np.arange(0,len(regchoice))
 plt.plot([0,len(regchoice)],[0,0],linestyle='--',color='k')
 plt.plot(x,np.transpose(dr2mat_max),color='k')
 plt.xticks(x,labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)
-plt.title('Max columns')
+plt.title('Mean columns')
 plt.ylabel('Signed dR2')
-plt.savefig(os.path.join(savedir,'Reg_Bump_Max_dR2.png'))
+plt.savefig(os.path.join(savedir,'Reg_Bump_Mean_dR2.png'))
+plt.savefig(os.path.join(savedir,'Reg_Bump_Mean_dR2.pdf'))
+#%%
+plotmat = np.zeros((100,len(datadirs)))
+for ir, datadir in enumerate(datadirs):
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    y = np.mean(cxa.pdat['wedges_offset_fsb_upper'],axis=1)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    fc = fci_regmodel(y,ft2,pv2)
+    t,yt = fc.mean_traj_nF(use_rebase=True)
+    plotmat[:,ir] = yt
+    
+#%%
+plt.close('all')
+mi = -0.4
+mxi = 0.1
+plotmat2 = plotmat-np.mean(plotmat[1:49,:],axis=0)
+pltm = np.mean(plotmat2,axis=1)
+plt.plot(plotmat2,color=[0.2,0.2,1],alpha=0.3)
+plt.plot(pltm,color=[0.2,0.2,1],linewidth=2)
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+
+plt.fill([49,99,99,49],[mi,mi,mxi,mxi],color=[0.7,0.7,0.7])
+plt.plot([0,99],[0,0],color='k',linestyle='--')
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+plt.plot([0,0],[mi,mxi],color='k',linestyle='--')
+plt.plot([99,99],[mi,mxi],color='k',linestyle='--')
+
+plt.xticks([49,99],labels=['Plume entry','Plume exit'])
+plt.xlim([0,101])
+plt.ylabel('Mean norm fluor')
+plt.savefig(os.path.join(savedir,'MeanFluorMod.png'))

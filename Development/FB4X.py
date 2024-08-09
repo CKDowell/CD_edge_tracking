@@ -12,6 +12,7 @@ from src.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
+from analysis_funs.CX_analysis_tan import CX_tan
 
 import numpy as np
 #%% 
@@ -79,7 +80,8 @@ plt.show()
 #%% Summarise all
 savedir = "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\SummaryFigures"
 datadirs = ["Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3",
-            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240313\\f1\\Trial3"]
+            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240313\\f1\\Trial3",
+            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3"]
 
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                  'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
@@ -144,3 +146,17 @@ plt.plot([np.min(rsq_t_t[:]),np.max(rsq_t_t[:])], [np.min(rsq_t_t[:]),np.max(rsq
 plt.xlabel('R2 pre air')
 plt.ylabel('R2 live air')
 plt.title('Model trained on pre air period')
+plt.savefig(os.path.join(savedir,'Pre_AirTrain.png'))
+
+#%%
+datadirs = ["Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3",
+            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240313\\f1\\Trial3",
+            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3"]
+for i, d in enumerate(datadirs):
+    cxt = CX_tan(d)
+    if i>1:
+        cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5,xcent=-215)
+    else:
+            
+        cxt.fc.example_trajectory(cmin=-0.5,cmax =0.5)
+        

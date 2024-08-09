@@ -26,9 +26,42 @@ class CX_a:
             savepath = os.path.join(datadir,"all_info_eb_fb.csv")
             data = pd.read_csv(savepath)
             self.alldat = data
+            
+            w_eb_o = data['wedges_eb']
+            w_fb_u_o = data['wedges_fb_upper']
+            w_fb_l_o = data['wedges_fb_lower']
+
+            # Repair string data
+            for i,e in enumerate(w_eb_o):
+                enum_str = e.replace('[','').replace(']','').replace('\n','').split()
+                enum = [float(num) for num in enum_str]
+                if i==0:
+                    w_eb = np.empty([len(w_eb_o), len(enum)])
+                w_eb[i,:] =enum
+
+            for i,e in enumerate(w_fb_u_o):
+                enum_str = e.replace('[','').replace(']','').replace('\n','').split()
+                enum = [float(num) for num in enum_str]
+                if i==0:
+                    w_fb_u = np.empty([len(w_fb_u_o), len(enum)])
+                w_fb_u[i,:] =enum    
+
+            for i,e in enumerate(w_fb_l_o):
+                enum_str = e.replace('[','').replace(']','').replace('\n','').split()
+                enum = [float(num) for num in enum_str]
+                if i==0:
+                    w_fb_l = np.empty([len(w_fb_l_o), len(enum)])
+                w_fb_l[i,:] =enum 
+            
+            
+            
+            
             self.pdat = {'offset_eb_phase': data['offset_phase_eb'].to_numpy(),
                          'offset_fsb_phase': data['offset_phase_fb_upper'].to_numpy(),
-                         'offset_fsb_lower_phase': data['offset_phase_fb_lower'].to_numpy()}
+                         'offset_fsb_lower_phase': data['offset_phase_fb_lower'].to_numpy(),
+                         'wedges_fsb_lower':w_eb,
+                         'wedges_fsb_upper': w_fb_u,
+                         'wedges_fsb_lower': w_fb_l}
             self.amp = data['fitted_amplitude_fb_upper']
             self.amp_lower = data['fitted_amplitude_fb_lower']
             self.amp_eb = data['fitted_amplitude_eb']
@@ -58,6 +91,7 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
+            #self.pv2 = self.pv2.drop(columns=['0_fsbtn']) # drop any reference to tangential neurons
             x= self.ft2['ft_posx']
             y = self.ft2['ft_posy']
             heading = self.ft2['ft_heading']
@@ -126,7 +160,10 @@ class CX_a:
             for i in range(16):
                 ebs.append(str(i) +'_' + r)
         
-        eb = self.pv2[ebs]
+        eb = self.pv2[ebs].to_numpy()
+        
+       # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
+        print(np.shape(eb))
         t = np.arange(0,len(eb))
         plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],97),vmin=np.nanpercentile(eb[:],5))
         new_phase = np.interp(phase_eb, (-np.pi, np.pi), (-0.5, 15.5))
@@ -149,7 +186,8 @@ class CX_a:
         new_heading = self.ft2['ft_heading'].to_numpy()
         new_heading = np.interp(new_heading, (new_heading.min(), new_heading.max()), (off+15, off+31))
         for i in range(reps):
-            p = fn.wrap(phase[:,i]-phase_eb)
+            p = self.pdat['offset_'+ regions[i]+'_phase']
+            #p = phase[:,i]
             new_phase = np.interp(p, (-np.pi, np.pi), (off+15, off+31))
             if plotphase:
                 plt.plot(new_phase,t,color='b',linewidth=0.5)
@@ -715,6 +753,8 @@ class CX_a:
         bumps = ft2['bump']
         jumps = jumps-np.mod(jumps,3)#gets rid of half jumps
         
+        
+        
         # Work out jump side
         jd = np.diff(jumps)
         jn = np.where(np.abs(jd)>0)[0]
@@ -754,6 +794,7 @@ class CX_a:
         
         
         t_j = jumps[start:stop]
+        
         t_ins = ins[start:stop]
         t_id = np.diff(t_ins)
         pst = np.where(t_id>0)[0]+1 
@@ -779,6 +820,7 @@ class CX_a:
             print(ped)
             t_j = np.round(t_j)
             uj = np.unique(t_j)
+            uj = uj[~np.isnan(uj)]
             iu = np.argsort(-uj)
             uj = uj[iu]
             for ij, j in enumerate(uj):
@@ -788,6 +830,7 @@ class CX_a:
                     fy1 = min(t_y[t_j==j])
                 else:
                     fy1 = fy2.copy()
+                print('j', j)
                 fy2 = max(t_y[t_j==j])
                 a[0].fill_between(fx,[fy1,fy1],[fy2,fy2],color=[0.7,0.7,0.7])
                 a[0].plot([fx[1],fx[1]],[fy1,fy2],color='k',linestyle='--')
@@ -835,9 +878,9 @@ class CX_a:
             t_plot = 16*(t_phase+np.pi)/(2*np.pi)-0.5
             #a[i+1].plot(t_plot,np.arange(len(heat)))
             if i==0:
-                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
+                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],95),vmin=np.nanpercentile(heat[:],25))
             else:
-                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],90),vmin=np.nanpercentile(heat[:],25))
+                a[i+1].imshow(heat, interpolation='None',aspect='auto',cmap=heat_cols[i],vmax=np.nanpercentile(heat[:],95),vmin=np.nanpercentile(heat[:],25))
             a[i+1].set_xlim([-1,16])
             a[i+1].set_title(r)
             
@@ -1083,14 +1126,14 @@ class CX_a:
             else:
                 p_diff = t_phase
             h_pdiff = np.array([])
-            for ij,j in enumerate(exts):
+            for ij,j in enumerate(this_j):
                 ex = exts-j
                 ie = np.argmin(np.abs(ex))
                 print(exts[ie],ents[ie])
                 if (exts[ie]-ents[ie])<lenmin:
                     print('Too short!!')
                     continue
-                
+                # Get part just before exit
                 ist = np.max([exts[ie]-tnums,ents[ie]])
                 ipdx = np.arange(ist,exts[ie],step=1,dtype=int)
                 

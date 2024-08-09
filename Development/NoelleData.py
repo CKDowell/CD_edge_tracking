@@ -22,14 +22,14 @@ from analysis_funs.CX_analysis_col import CX_a
 #%% Imaging test for PFL3 neurons
 
 
-datadir =os.path.join("F:\\noelle_imaging\\MBON30\\240423\\F1\\Trial1")
+datadir =os.path.join("F:\\noelle_imaging\\MBON09\\240726\\F1\\T1")
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 #%% Registration
 ex = im.fly(name, datadir)
 ex.register_all_images(overwrite=True)
 ex.z_projection()
-#%
+#%%
 ex = im.fly(name, datadir)
 ex.mask_slice = {'All': [1,2,3,4]}
 ex.t_projection_mask_slice()
@@ -37,7 +37,7 @@ ex.t_projection_mask_slice()
 
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
-cx = CX(name,['MBON30mask'],datadir)
+cx = CX(name,['mbon09'],datadir)
 # save preprocessing, consolidates behavioural data
 cx.save_preprocessing()
 # Process ROIs and saves csv
@@ -46,3 +46,5 @@ cx.process_rois()
 cx.crop = False
 cx.save_postprocessing()
 pv2, ft, ft2, ix = cx.load_postprocessing()
+#%%
+plt.plot()

@@ -96,74 +96,6 @@ plt.plot(t,cxa.phase[:,0])
 plt.plot(t,cxa.phase_eb)
 plt.plot(t,cxa.ft2['ft_heading'],color='k')
 plt.plot(t,phase_diff,color='b')
-#%% Make Movie
-amp = cxa.amp[:,0]
-amp_eb = cxa.amp_eb
-phase = cxa.pdat['offset_fsb_upper_phase']
-phase_eb = cxa.pdat['offset_eb_phase'] 
-import matplotlib as mpl
-plt.rcParams['animation.ffmpeg_path'] = 'C:\\ffmpeg\\bin\\ffmpeg'
-import networkx as nx
-
-#mpl.use("TkAgg") 
-from matplotlib.animation import FuncAnimation, PillowWriter
-from matplotlib.animation import ImageMagickFileWriter, ImageMagickWriter,FFMpegWriter
-# Your specific x and y values
-x = cxa.ft2['ft_posx'].to_numpy()
-y = cxa.ft2['ft_posy'].to_numpy()
-
-instrip = cxa.ft2['instrip'].to_numpy()
-xs = np.where(instrip==1)[0][0]
-x = x-x[xs]
-y = y-y[xs]
-x,y = cxa.fictrac_repair(x,y)
-# Create initial line plot
-
-fig, ax = plt.subplots(figsize=(10,10))
-line2, = ax.plot([],[],color=[0.2,0.2,1])
-line3, = ax.plot([],[],lw=2,color=[0.2,0.2,0.2])
-line, = ax.plot([], [], lw=2,color=[0,0,0])  # Empty line plot with line width specified
-sc = ax.scatter([],[],color=[0.5,0.5,0.5])
-
-ax.set_xticks([])
-ax.set_yticks([])
-x_plm = [-5, -5, 5,5]
-y_plm = [0, np.max(y), np.max(y), 0]
-plt.fill(x_plm,y_plm,color =[0.8,0.8,0.8])
-plt.fill(np.subtract(x_plm,210),y_plm,color =[0.8,0.8,0.8])
-plt.fill(np.add(x_plm,210),y_plm,color =[0.8,0.8,0.8])
-ax.set_aspect('equal')
-# Set axis limits
-
-xa = 50*amp*np.sin(phase)+x
-ya = 50*amp*np.cos(phase)+y
-xa2 = 50*amp_eb*np.sin(phase_eb)+x
-ya2 = 50*amp_eb*np.cos(phase_eb)+y
-# Animation update function
-def update(frame):
-    # Update the line plot with the current x and y values
-    line2.set_data([x[frame],xa[frame] ], [y[frame],ya[frame]])
-    line3.set_data([x[frame],xa2[frame] ], [y[frame],ya2[frame]])
-    if frame>100:
-        line.set_data(x[frame-100:frame], y[frame-100:frame])
-    else:
-        line.set_data(x[:frame], y[:frame])
-    
-    if instrip[frame]>0:
-        sc.set_offsets(np.column_stack((x[frame],y[frame])))
-        
-    ax.set_xlim(x[frame]-10,x[frame]+10)
-    ax.set_ylim(y[frame]-10, y[frame]+10)
-    
-# Create animation
-anim = mpl.animation.FuncAnimation(fig, update, frames=len(x), interval=10)
-writer = FFMpegWriter(fps=20)
-savedir = "Y:\Data\\FCI\\FCI_summaries\\FC2_maimon2"
-path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
-path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
-anim.save(os.path.join(savedir,'FC2_eg_phase_' +cxa.name +'.avi'), writer=writer)
-
-plt.show()
 # %% Analysis of plume returns
 datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3")
 d = datadir.split("\\")
@@ -181,7 +113,7 @@ plt.figure()
 for datadir in datadirs:
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
-    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=True)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
     cxa.save_phases()
     cxa.mean_jump_arrows(x_offset)
     x_offset = x_offset+30
@@ -190,6 +122,8 @@ for datadir in datadirs:
 plt.ylim([-50,30])
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2'
 plt.savefig(os.path.join(savedir,'MeanJumps.png'))
+plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
+
 #%% Meno Et comp
 
 for i,datadir  in enumerate(datadirs):
@@ -228,17 +162,28 @@ for ir, datadir in enumerate(datadirs):
     weds = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.sin(angles),axis=1)
     wedc = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.cos(angles),axis=1)
     y  = np.sqrt(weds**2+wedc**2)
+    
     ft2 = cxa.ft2
     pv2 = cxa.pv2
     fc = fci_regmodel(y,ft2,pv2)
+    fc.rebaseline(500)
     fc.run(regchoice)
     fc.run_dR2(20,fc.xft)
     dr2mat[ir,:] = (-fc.dR2_mean)*np.sign(fc.coeff_cv[:-1])
+    
+    fc.plot_example_flur()
+    plt.title('Fly: ' + str(ir) +  ' R2:' +str(fc.cvR2))
+    plt.savefig(os.path.join(savedir,'EgFit_' + str(ir)+ '.png'))
+    plt.figure()
+    plt.title(str(ir))
+    
+    plt.savefig(os.path.join(savedir,'PVA_withreg_' + str(ir)+ '.png'))
     
     y = np.mean(cxa.pdat['wedges_offset_fsb_upper'],axis=1)
     ft2 = cxa.ft2
     pv2 = cxa.pv2
     fc = fci_regmodel(y,ft2,pv2)
+    fc.rebaseline(500)
     fc.run(regchoice)
     fc.run_dR2(20,fc.xft)
     dr2mat_max[ir,:] = (-fc.dR2_mean)*np.sign(fc.coeff_cv[:-1])
@@ -248,31 +193,66 @@ for ir, datadir in enumerate(datadirs):
     plt.savefig(os.path.join(savedir,'EgFit_' + str(ir)+ '.png'))
     plt.figure()
     plt.title(str(ir))
-    fc.plot_flur_w_regressors(['in odour','translational vel'],cacol= 'r')
     plt.savefig(os.path.join(savedir,'Ca_withreg_' + str(ir)+ '.png'))
 
 #%% 
 plt.figure()
 x = np.arange(0,len(regchoice))
 plt.plot([0,len(regchoice)],[0,0],linestyle='--',color='k')
-plt.plot(x,np.transpose(dr2mat),color='k')
+plt.plot(x,np.transpose(dr2mat),color='k',alpha=0.3)
+plt.plot(x,np.mean(dr2mat,axis=0),color=[0.2,0.2,1],linewidth=2)
 
 plt.xticks(x,labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)
 plt.title('PVA amplitude regression')
 plt.ylabel('Signed dR2')
 plt.savefig(os.path.join(savedir,'Reg_Bump_PVA_dR2.png'))
-
+plt.savefig(os.path.join(savedir,'Reg_Bump_PVA_dR2.pdf'))
 plt.figure()
 x = np.arange(0,len(regchoice))
 plt.plot([0,len(regchoice)],[0,0],linestyle='--',color='k')
-plt.plot(x,np.transpose(dr2mat_max),color='k')
+plt.plot(x,np.transpose(dr2mat_max),color='k',alpha=0.3)
+plt.plot(x,np.mean(dr2mat_max,axis=0),color=[0.2,0.2,1],linewidth=2)
 plt.xticks(x,labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)
-plt.title('Max columns')
+plt.title('Mean columns')
 plt.ylabel('Signed dR2')
-plt.savefig(os.path.join(savedir,'Reg_Bump_Max_dR2.png'))
-#%% Stationary replay events
+plt.savefig(os.path.join(savedir,'Reg_Bump_Mean_dR2.png'))
+plt.savefig(os.path.join(savedir,'Reg_Bump_Max_dR2.pdf'))
+#%% Mean bump amplitudes
+plotmat = np.zeros((100,len(datadirs)))
+for ir, datadir in enumerate(datadirs):
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+
+    y = np.mean(cxa.pdat['wedges_offset_fsb_upper'],axis=1)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    fc = fci_regmodel(y,ft2,pv2)
+    t,yt = fc.mean_traj_nF(use_rebase=True)
+    plotmat[:,ir] = yt
+   
+#%%
+mi = -0.04
+mxi = 0.04
+plotmat2 = plotmat-np.mean(plotmat[1:49,:],axis=0)
+pltm = np.mean(plotmat2,axis=1)
+plt.plot(plotmat2,color=[0.2,0.2,1],alpha=0.3)
+plt.plot(pltm,color=[0.2,0.2,1],linewidth=2)
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+
+plt.fill([49,99,99,49],[mi,mi,mxi,mxi],color=[0.7,0.7,0.7])
+plt.plot([0,99],[0,0],color='k',linestyle='--')
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+plt.plot([0,0],[mi,mxi],color='k',linestyle='--')
+plt.plot([99,99],[mi,mxi],color='k',linestyle='--')
+
+plt.xticks([49,99],labels=['Plume entry','Plume exit'])
+plt.xlim([0,101])
+plt.ylabel('Mean norm fluor')
+plt.savefig(os.path.join(savedir,'MeanFluorMod.png'))
+#%% Stationary replay event
 
 
 

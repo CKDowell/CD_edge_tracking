@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 24 11:56:30 2024
+
+@author: dowel
+"""
+
+from analysis_funs.regression import fci_regmodel
+import os
+import matplotlib.pyplot as plt 
+from src.utilities import imaging as im
+from skimage import io, data, registration, filters, measure
+from scipy import signal as sg
+from analysis_funs.CX_imaging import CX
+from analysis_funs.CX_analysis_tan import CX_tan
+import numpy as np
+#%% 
+datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS67631\\240720\\f1\\Trial3")
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+#%% Registration
+ex = im.fly(name, datadir)
+ex.register_all_images(overwrite=True)
+ex.z_projection()
+#%% Masks for ROI drawing
+ex.mask_slice = {'All': [1,2,3,4]}
+ex.t_projection_mask_slice()
+#%% 
+cx = CX(name,['fsbTN'],datadir)
+# save preprocessing, consolidates behavioural data
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()
+pv2, ft, ft2, ix = cx.load_postprocessing()
+#%%
+cxt = CX_tan(datadir)
+cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5) 
+savename = os.path.join(datadir , 'Eg_traj'+ name +'.pdf')
+plt.savefig(savename)
+#%%
+
+fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
+fc.rebaseline(span=500,plotfig=True)
+#%% 
+y = fc.ca
+
+
+fc = fci_regmodel(y,ft2,pv2)
+fc.example_trajectory(cmin=-0.5,cmax=0.5)
+plt.figure()
+plt.plot(y)
+plt.plot(ft2['instrip'],color='k')
+
+#%%
+fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
+fc.rebaseline(span=500,plotfig=True)
+regchoice = ['odour onset', 'odour offset', 'in odour', 
+                                'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
+                                'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
+fc.run(regchoice,partition='pre_air')
+fc.run_dR2(20,fc.xft)
+
+fc.plot_mean_flur('odour_onset')
+fc.plot_example_flur()
+plt.figure()
+plt.plot(fc.dR2_mean)
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('delta R2')
+plt.xlabel('Regressor name')
+plt.show()
+
+plt.figure()
+plt.plot(fc.coeff_cv[:-1])
+plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
+plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+plt.subplots_adjust(bottom=0.4)
+plt.ylabel('Coefficient weight')
+plt.xlabel('Regressor name')
+plt.show()

@@ -457,6 +457,7 @@ class CX:
                 upsampled_dict[column] = np.interp(upsampled_seconds, seconds, dropt_df[column])
             pv2 = pd.DataFrame(upsampled_dict)
         print(pv2)
+       
         # bin fictrac data based on closest timepoint to imaging data
         ft = self.load_preprocessing()
         ft['seconds'] = ft['seconds']-delta_t

@@ -9,6 +9,7 @@ import numpy as np
 
 import os
 import pandas as pd
+from analysis_funs.regression import fci_regmodel
 
 import pickle as pkl
 import matplotlib.pyplot as plt
@@ -67,6 +68,49 @@ sname = os.path.join(savedir,'hDeltaC_mean.png')
 plt.savefig(sname)
 sname = os.path.join(savedir,'hDeltaC_mean.pdf')
 plt.savefig(sname)
+#%% Bump modulation
+rootdir = 'Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv'
+datadirs = ['20220517_hdc_split_60d05_sytgcamp7f',
+ '20220627_hdc_split_Fly1',
+ '20220627_hdc_split_Fly2',
+ '20220628_HDC_sytjGCaMP7f_Fly1',
+ #'20220628_HDC_sytjGCaMP7f_Fly1_45-004', 45 degree plume
+ '20220629_HDC_split_sytjGCaMP7f_Fly1',
+ '20220629_HDC_split_sytjGCaMP7f_Fly3']
+plotmat = np.zeros((100,len(datadirs)))
+for ir, ddir in enumerate(datadirs):
+    datadir = os.path.join(rootdir,ddir,"et")
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,Andy='hDeltaC')
+
+    y = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    fc = fci_regmodel(y,ft2,pv2)
+    t,yt = fc.mean_traj_nF(use_rebase=True)
+    plotmat[:,ir] = yt
+   
+#%%
+savedir = "Y:\\Data\\FCI\\FCI_summaries\\hDeltaC"
+mi = -0.65
+mxi = 0.65
+plotmat2 = plotmat-np.mean(plotmat[1:49,:],axis=0)
+pltm = np.mean(plotmat2,axis=1)
+plt.plot(plotmat2,color=[0.2,0.2,1],alpha=0.3)
+plt.plot(pltm,color=[0.2,0.2,1],linewidth=2)
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+
+plt.fill([49,99,99,49],[mi,mi,mxi,mxi],color=[0.7,0.7,0.7])
+plt.plot([0,99],[0,0],color='k',linestyle='--')
+plt.plot([49,49],[mi,mxi],color='k',linestyle='--')
+plt.plot([0,0],[mi,mxi],color='k',linestyle='--')
+plt.plot([99,99],[mi,mxi],color='k',linestyle='--')
+
+plt.xticks([49,99],labels=['Plume entry','Plume exit'])
+plt.xlim([0,101])
+plt.ylabel('Mean norm fluor')
+plt.savefig(os.path.join(savedir,'MeanFluorMod.png'))
 #%% old
 
 
