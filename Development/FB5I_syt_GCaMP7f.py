@@ -68,3 +68,9 @@ except:
     cxa = CX_a(datadir,regions=['eb','fsb'])
 
 cxa.save_phases()
+#%%
+pv2 = cxa.pv2
+y = np.mean(pv2.filter(regex='fsb'),axis=1)
+fc = fci_regmodel(y.to_numpy().flatten(),ft2,pv2)
+fc.rebaseline()
+fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
