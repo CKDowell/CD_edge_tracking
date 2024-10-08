@@ -26,7 +26,7 @@ import pandas as pd
 import os
 import xml.etree.ElementTree as ET
 import datetime
-from src.utilities import funcs as fn
+from analysis_funs.utilities import funcs as fn
 import matplotlib.pyplot as plt
 import fnmatch
 import pickle

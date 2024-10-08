@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import circmean, circstd
-from src.utilities import funcs as fn
+from analysis_funs.utilities import funcs as fn
 import pickle
 from scipy.optimize import curve_fit,minimize
 #%%

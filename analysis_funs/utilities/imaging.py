@@ -412,58 +412,6 @@ class fly:
         setattr(self, 'num_slices', len(slice_stacks))
         return slice_stacks
 
-    def register_image_block_old(self, files, ini_reg_frames=600):
-        f = files
-        images = io.imread_collection(f)
-        original = io.concatenate_images(images)
-        registered = np.zeros(original.shape)
-        registered_blurred = np.zeros(original.shape)
-        # split stack into a blocks create template image of each block
-        num_blocks = np.ceil(len(images)/ini_reg_frames)
-        frame_blocks = np.array_split(np.arange(len(images)), num_blocks)
-        block_means = []
-        for block in frame_blocks:
-            block_means.append(np.mean(original[block,:,:], axis=0))
-        block_means = np.stack(block_means)
-        block_shifts, block_errors, block_diffphase = [],[],[]
-        # register all block templates
-        for block_mean_i in block_means:
-            sh, error, diffphase = registration.phase_cross_correlation(block_means[0], block_mean_i, upsample_factor=20, overlap_ratio=0.9, normalization=None)
-
-            if np.max(sh)>4: # no shifts larger than 4 pixels
-                sh =  block_shifts[-1]
-                error = block_errors[-1]
-                diffphase = block_diffphase[-1]
-            print(sh)
-            block_shifts.append(sh)
-            block_errors.append(error)
-            block_diffphase.append(diffphase)
-        # register each frame to its block template, add block shift to frame shift
-        all_shifts, all_errors, all_diffphase = [], [], []
-        for j, block in enumerate(frame_blocks):
-            template = block_means[j]
-            block_shift = block_shifts[j]
-            for m in block:
-                sh, error, diffphase = registration.phase_cross_correlation(template, original[m], upsample_factor=20, overlap_ratio=0.9, normalization=None)
-                if np.max(sh)>4: # no shifts larger than 4 pixels
-                    sh =  all_shifts[-1]-block_shift
-                    error = all_errors[-1]
-                    diffphase = all_diffphase[-1]
-                sum_shift = sh+block_shift
-                all_shifts.append(sum_shift)
-                all_errors.append(error)
-                all_diffphase.append(diffphase)
-                registered[m] = shift(original[m], sum_shift)
-                registered_blurred[m] = filters.gaussian(registered[m], 1) #apply gaussian blur
-        reg_results = {
-            'block_shifts': block_shifts,
-            'block_errors': block_errors,
-            'block_diffphase': block_diffphase,
-            'all_shifts': all_shifts,
-            'all_error': all_errors,
-            'all_diffphase': all_diffphase
-        }
-        return reg_results, registered_blurred
 
     def register_image_block(self, files, ini_reg_frames=600):
         from pystackreg import StackReg
@@ -480,8 +428,8 @@ class fly:
             im = cv2.imread(file, cv2.IMREAD_UNCHANGED)
             if i ==0:
                 original = np.zeros((len(f),np.shape(im)[0],np.shape(im)[1]),dtype = 'uint16')
-            idx = int(file.split('Cycle')[1][0:5])
-            print(idx-1,i,idx-1-i)
+            idx = int(file.split('Cycle')[1][0:5]) #More robust than file order
+            #print(idx-1,i,idx-1-i)
             original[idx-1,:,:] = im
          
         
