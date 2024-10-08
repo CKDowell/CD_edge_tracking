@@ -9,21 +9,23 @@ from analysis_funs.regression import fci_regmodel
 
 import numpy as np
 import pandas as pd
-import src.utilities.funcs as fc
+import analysis_funs.utilities.funcs as fc
 from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt 
 from src.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
+from scipy import stats
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
-from src.utilities import funcs as fn
+from analysis_funs.utilities import funcs as fn
+
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2,3]:
-    datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial"+str(i))
+for i in [2]:
+    datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -45,14 +47,20 @@ experiment_dirs = [
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",# Jump
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2", # jump
                    #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial1",# Motion artefact
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2"
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
+                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial1",#No ET but Pb imaged
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial3" # No ET but Pb imaged.
                    ]
+
+regions = ['fsb_lower','fsb_upper','pb']
 for e in experiment_dirs:
     datadir =os.path.join(e)
     print(e)
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
-    cx = CX(name,['fsb_lower','fsb_upper','eb'],datadir)
+    
+    cx = CX(name,regions,datadir)
+    
     # save preprocessing, consolidates behavioural data
     cx.save_preprocessing()
     # Process ROIs and saves csv
@@ -61,16 +69,15 @@ for e in experiment_dirs:
     cx.crop = False
     cx.save_postprocessing()
     pv2, ft, ft2, ix = cx.load_postprocessing()
-
-    try :
-        cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'])
-    except:
-        cxa = CX_a(datadir,regions=['eb','fsb'])
+    cxa = CX_a(datadir,regions=np.flipud(regions))
+    
+    
+        
     
     cxa.save_phases()
 #%% Data exploration
 plt.close('all')
-cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'])
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='pb')
 #cxa.simple_raw_plot(plotphase=True)
 #%%
 plt.figure()
@@ -84,24 +91,95 @@ plt.scatter(cxa.phase_eb,cxa.ft2['ft_heading'],s=2)
 plt.scatter(cxa.phase[:,0],cxa.ft2['ft_heading'],s=2)
 
 plt.scatter(cxa.phase[:,0],cxa.phase[:,1],s=1)
-#%% 
-t = cxa.pv2['relative_time']
-#plt.plot(t,cxa.phase,color='r')
-#plt.plot(t,cxa.phase_eb,color='b')
-p = fn.unwrap(cxa.phase[:,0])
-pe = fn.unwrap(cxa.phase_eb)
-phase_diff = fn.wrap(cxa.phase_eb-cxa.phase[:,0])
-plt.plot(t,cxa.ft2['instrip'],color='r')
-plt.plot(t,cxa.phase[:,0])
-plt.plot(t,cxa.phase_eb)
-plt.plot(t,cxa.ft2['ft_heading'],color='k')
-plt.plot(t,phase_diff,color='b')
 # %% Analysis of plume returns
-datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3")
+datadirs = [
+    "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2"]
+datadir =datadirs[3]
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+cxa.von_mises_fit()
+# %% Plume transition to return
+savedir= 'Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2'
+plt.close('all')
+for datadir in datadirs:
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    cxa.von_mises_fit()
+    cxa.get_jumps()
+    s = cxa.side+1
+    s = int(s/2)
+    s2 = (cxa.side*-1)+1
+    s2 = int(s2/2)
+    y = cxa.von_mises['predside_fsb_upper'][:,s]-cxa.von_mises['predside_fsb_upper'][:,s2]
+    #plt.figure()
+    #plt.plot(y)
+    fc = fci_regmodel(y,cxa.ft2,cxa.pv2)
+    plt.figure(figsize=(20,20))
+    fc.mean_traj_nF_jump(fc.ca,plotjumps=True,cmx=0.4)
+    
+    plt.savefig(os.path.join(savedir,'von_Mises_Jumps_'+ cxa.name+ '.png'))
+    plt.savefig(os.path.join(savedir,'von_Mises_Jumps_' +cxa.name +'.pdf'))
+#%% Transition probability analysis
+cvarray = np.ones(10)
+plt.close('all')
+off1 = 0
+off2 = 0
+bin_edges = np.linspace(-np.pi,np.pi,17)
+bump = cxa.pdat['fit_wedges_fsb_upper']
+from scipy import ndimage
+bumpf = ndimage.gaussian_filter1d(bump,7,axis=0)
+dx = cxa.get_jumps()
+p = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+t = cxa.pv2['relative_time'].to_numpy()
+h = cxa.ft2['ft_heading'].to_numpy()
+y = cxa.von_mises['predside_fsb_upper'][:,s]-cxa.von_mises['predside_fsb_upper'][:,s2]
+
+for i,e in enumerate(dx):
+    fig,(ax1,ax2) = plt.subplots(2,1)
+    tp = p[e[1]:e[2]]
+    tt = t[e[1]:e[2]]
+    th = h[e[1]:e[2]]
+    tb = bumpf[e[1]:e[2],:]
+    tpred = y[e[1]:e[2]]
+    params = np.zeros((len(tp),3))
+    psum = np.zeros(len(tp))
+    for m,b in enumerate(tb):
+        bm = b-min(b)
+        bm = bm/np.sum(bm)
+        pdf = stats.rv_histogram((bm, bin_edges))
+        samples = pdf.rvs(size=5000)
+        params[m,:] = stats.vonmises.fit(samples)
+        pcd = stats.vonmises.cdf([-3*np.pi/4,-np.pi/4],params[m,0],params[m,1])
+        pcdf = pcd[1]-pcd[0]
+        psum[m] = pcdf
+ 
+    tt = tt-np.max(tt)
+    ax1.plot(tt,tp-off1,color='b')
+    ax1.plot(tt,params[:,1]-off1,color='m')
+    ax1.plot(tt,tt*0-np.pi/2-off1,color='k',linestyle='--')
+    #ax1.set_ylim([-np.pi,np.pi])
+    ax2.plot(tt,psum-off2,color='k')
+    ax2.plot(tt,tpred-off2,color='g')
+    #off1 = off1+np.pi*2.5 
+    #off2 = off2+1.25
+    ax2.plot(tt[[0,-1]],[0,0],color='r',linestyle='--')
+    ax2.set_xlim([-60,0])
+#%%
+b = bump[700,:]
+b = b-min(b)
+bm = np.round(1000*b)
+bin_edges = np.linspace(-np.pi,np.pi,17)
+pdf = stats.rv_histogram((bm, bin_edges))
+samples = pdf.rvs(size=100)
+params = stats.vonmises.fit(samples)
+mn = 8*params[1]/np.pi
+plt.plot(bm)
+plt.scatter(mn+8,0.1)
 # %% Analysis of jumps
+savedir = "Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2"
 datadirs = [
     "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
@@ -109,20 +187,23 @@ datadirs = [
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2"]
 plt.close('all')
 x_offset = 0
-plt.figure()
+
 for datadir in datadirs:
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
     cxa.save_phases()
     cxa.mean_jump_arrows(x_offset)
+    cxa.mean_jump_lines()
     x_offset = x_offset+30
+    plt.savefig(os.path.join(savedir,'EgJumps' + name +'.png'))
+    plt.savefig(os.path.join(savedir,'EgJumps'+ name+ '.pdf'))
 
 
-plt.ylim([-50,30])
+#plt.ylim([-50,30])
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2'
-plt.savefig(os.path.join(savedir,'MeanJumps.png'))
-plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
+#plt.savefig(os.path.join(savedir,'MeanJumps.png'))
+#plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
 
 #%% Meno Et comp
 
@@ -252,6 +333,39 @@ plt.xticks([49,99],labels=['Plume entry','Plume exit'])
 plt.xlim([0,101])
 plt.ylabel('Mean norm fluor')
 plt.savefig(os.path.join(savedir,'MeanFluorMod.png'))
+#%% Predict turn direction from offset between FSB and EB heading signals
+from scipy.ndimage import gaussian_filter
+phase = cxa.phase[:,0]
+phase_eb = cxa.phase_eb
+sindiff = np.sin(phase)-np.sin(phase_eb)
+cosdiff = np.cos(phase)-np.cos(phase_eb)
+d_phase = np.arctan2(sindiff,cosdiff)
+d_phase = phase-phase_eb
+d_phasen = np.arctan2(np.sin(d_phase),np.cos(d_phase))
+#plt.plot(phase,color=[0.2,0.2,1])
+#plt.plot(phase_eb,color='k')
+times = cxa.pv2['relative_time']
+heading = cxa.ft2['ft_heading']
+dheading = np.diff(heading)/np.diff(times)
+dheading = np.append([0],dheading)
+h99 = np.percentile(np.abs(dheading),99)
+dheading[np.abs(dheading)>h99] = h99
+#plt.plot(dheading/np.max(dheading))
+hf = gaussian_filter(dheading,5)
+
+plt.plot(hf/np.max(hf))
+dpf = gaussian_filter(d_phasen,5)
+plt.plot(dpf/np.pi,color=[1,0.2,0.2])
+plt.plot(cxa.ft2['instrip']*2-1,color='k')
+plt.plot([0,len(dpf)],[0,0],color='k',linestyle='--')
+#%% 
+phase = cxa.pdat['offset_fsb_upper_phase']
+plt.plot(phase/np.pi,color=[0.2,0.2,1])
+plt.plot(cxa.ft2['ft_heading']/np.pi,color='k')
+plt.plot(cxa.ft2['instrip']*2-1,color=[0.7,0,0])
+plt.plot([0,len(dpf)],[0,0],color='k',linestyle='--')
+#%% Jump phase line plots, to get te
+
 #%% Stationary replay event
 
 

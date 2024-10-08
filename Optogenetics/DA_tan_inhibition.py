@@ -29,13 +29,17 @@ meta_data = {'stim_type': 'plume',
               'PlumeAngle': 0,
             
               }
-rootdir = 'Y:\Data\Optogenetics\DA_tan_SS56699\DA_Tan_inhib'
+rootdir = 'Y:\Data\Optogenetics\DA_tan_SS56699\DA_Tan_inhib\Test_Flies'
 flies = [
     "240723\\f3\\Trial1",
-    #240723\\f6\\Trial1",
-    #"240723\\f9\\Trial1",
-    #"240724\\f4\\Trial1",
-    "240730\\f3\\Trial1"]
+    #"240723\\f6\\Trial1",#No ET
+    #"240723\\f9\\Trial1",#No ET
+    #"240724\\f4\\Trial1",#No ET
+    "240730\\f3\\Trial1",
+    #"240731\\f1\\Trial1",#No ET
+    #"240808\\f1\\Trial1",# no ET
+    #"240808\\f3\\Trial1", # no ET
+    ]
 
 plt.rcParams['pdf.fonttype'] = 42 
 for i,f in enumerate(flies):

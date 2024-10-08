@@ -15,7 +15,7 @@ from src.utilities import funcs as fn
 import pickle
 #%%
 class CX_a:
-    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True):
+    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True):
         # Will need to edit more if yoking to PB and multiple FSB layers
         self.stab = regions[0]
         self.datadir = datadir
@@ -95,34 +95,63 @@ class CX_a:
             x= self.ft2['ft_posx']
             y = self.ft2['ft_posy']
             heading = self.ft2['ft_heading']
-            x,y,heading = self.bumpstraighten(x.to_numpy(),y.to_numpy(),heading)
-            self.ft2_original = self.ft2.copy()
-            self.ft2['ft_posx'] = x
-            self.ft2['ft_posy'] = y
-            self.ft2['ft_heading'] = heading
+            if set(['bump']).issubset(self.ft2):
+                self.ft2['bump'][np.isnan(self.ft2['bump'])] = 0
+                if np.sum(np.abs(self.ft2['bump']))>0:
+                    x,y,heading = self.bumpstraighten(x.to_numpy(),y.to_numpy(),heading)    
+                    self.ft2_original = self.ft2.copy()
+                    self.ft2['ft_posx'] = x
+                    self.ft2['ft_posy'] = y
+                    self.ft2['ft_heading'] = heading
             
             if denovo:
-                # Correct for bumps
-                
-                
-                self.phase,self.phase_offset,self.amp = self.cx.unyoked_phase(regions[1])
-                
-                self.phase_offset = self.phase_offset.to_numpy()
-                self.phase = self.phase.reshape(-1, 1)
-                self.phase_offset = self.phase_offset.reshape(-1,1)
-                self.amp = self.amp.reshape(-1,1)
-                if len(regions)>2: 
-                    for i,r in enumerate(regions[2:]):
+                if yoking:
+                    # Correct for bumps
+                    self.phase,self.phase_offset,self.amp = self.cx.unyoked_phase(regions[1])
+                    self.phase_offset = self.phase_offset.to_numpy()
+                    self.phase = self.phase.reshape(-1, 1)
+                    self.phase_offset = self.phase_offset.reshape(-1,1)
+                    self.amp = self.amp.reshape(-1,1)
+                    if len(regions)>2: 
+                        for i,r in enumerate(regions[2:]):
+                            p,o,a = self.cx.unyoked_phase(r)
+                            o = o.to_numpy()
+                            p = p.reshape(-1,1)
+                            o = o.reshape(-1,1)
+                            a = a.reshape(-1,1)
+                            self.phase = np.append(self.phase,p,axis =1)
+                            self.phase_offset = np.append(self.phase_offset,o,axis =1)
+                            self.amp = np.append(self.amp,a,axis = 1)
+                    self.phase_eb,self.phase_offset_eb,self.amp_eb = self.cx.unyoked_phase(self.stab)
+                    self.pdat = self.cx.phase_yoke(self.stab,regions[1:],self.ft2,self.pv2)
+                else:
+                    for i, r in enumerate(regions):
                         p,o,a = self.cx.unyoked_phase(r)
-                        o = o.to_numpy()
-                        p = p.reshape(-1,1)
-                        o = o.reshape(-1,1)
-                        a = a.reshape(-1,1)
-                        self.phase = np.append(self.phase,p,axis =1)
-                        self.phase_offset = np.append(self.phase_offset,o,axis =1)
-                        self.amp = np.append(self.amp,a,axis = 1)
-                self.phase_eb,self.phase_offset_eb,self.amp_eb = self.cx.unyoked_phase(self.stab)
-                self.pdat = self.cx.phase_yoke(self.stab,regions[1:],self.ft2,self.pv2)
+                        wedges = self.pv2.filter(regex=r)
+                        wedges.fillna(method='ffill', inplace=True)
+                        wedges = wedges.to_numpy()
+                        
+                        if i==0:
+                            self.phase =p
+                            self.amp = p
+                            self.phase_offset = o
+                            self.phase_offset = self.phase_offset.to_numpy()
+                            self.phase = self.phase.reshape(-1, 1)
+                            self.phase_offset = self.phase_offset.reshape(-1,1)
+                            self.amp = self.amp.reshape(-1,1)
+                            self.pdat = {'wedges_' + r:wedges,'phase_'+r:p,'amp_'+r:a}
+                            
+                        else:
+                            p = p.reshape(-1,1)
+                            o = o.reshape(-1,1)
+                            a = a.reshape(-1,1)
+                            self.phase = np.append(self.phase,p,axis =1)
+                            self.phase_offset = np.append(self.phase_offset,o,axis =1)
+                            self.amp = np.append(self.amp,a,axis = 1)
+                            self.pdat.update({'wedges_' + r:wedges,'phase_'+r:p,'amp_'+r:a})
+                        
+                        
+                        
             else:
                 loaddir = os.path.join(self.datadir,'processed','phase_dict.pkl')
                 with open(loaddir, 'rb') as f:
@@ -147,32 +176,75 @@ class CX_a:
         save_dict = self.pdat
         with open(savedir, 'wb') as f:
             pickle.dump(save_dict, f)
-    def simple_raw_plot(self,plotphase=False,regions = ['fsb']):
+            
+    def von_mises_fit(self,gsigma=7,samsize=1000,regions=['fsb_upper']):
+        """Function fits a von mises distribution to bump data
+        This can then be used to fit a probability of pointing to plume edge"""
+        from scipy import ndimage
+        from scipy import stats
+        bin_edges = np.linspace(-np.pi,np.pi,17)
+        for i,r in enumerate(regions):
+            bump = self.pdat['fit_wedges_' +r]
+            if gsigma>0:
+                bumpf = ndimage.gaussian_filter1d(bump,gsigma,axis=0)
+            else:
+                bumpf = bump
+                
+            #bumpf = bumpf-np.min(bumpf,axis=1)
+            #bumpf = bumpf-np.sum(bumpf,axis=1)
+            params = np.zeros((len(bumpf),3))
+            predside = np.zeros((len(bumpf),2))
+            for m,b in enumerate(bumpf):
+                bm = bumpf[m,:]-min(bumpf[m,:])
+                bm = bm/np.sum(bm)
+                if np.mod(m,1000)==0:
+                    print(m,' of ',len(bumpf))
+                pdf = stats.rv_histogram((bm, bin_edges))
+                samples = pdf.rvs(size=samsize)
+                params[m,:] = stats.vonmises.fit(samples)
+                
+                # Right side tracker 
+                pcd = stats.vonmises.cdf([-3*np.pi/4,-np.pi/4],params[m,0],params[m,1])
+                pcdf = pcd[1]-pcd[0]
+                predside[m,0] = pcdf
+                
+                # Left side tracker
+                pcd = stats.vonmises.cdf([np.pi/4,3*np.pi/4],params[m,0],params[m,1])
+                pcdf = pcd[1]-pcd[0]
+                predside[m,1] = pcdf
+            self.von_mises = {'params_'+r: params,
+                              'predside_'+r:predside}
+        
+        
+    def simple_raw_plot(self,plotphase=False,regions = ['fsb'],yeseb = True,yk='eb'):
         plt.figure(figsize=(5,10))
-        phase_eb = self.phase_eb.copy()
-        phase = self.phase.copy()
-        
-        
+        phase = self.phase.copy() 
         ebs = []
-        for i in range(16):
-            ebs.append(str(i) +'_eb')
+        if yeseb:
+            phase_eb = self.phase_eb.copy() 
+            for i in range(16):
+                ebs.append(str(i) +'_'+yk)
+                
         for r in regions:
             for i in range(16):
                 ebs.append(str(i) +'_' + r)
         
         eb = self.pv2[ebs].to_numpy()
-        
+        eb = eb/np.max(eb,axis=0)
        # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
         print(np.shape(eb))
         t = np.arange(0,len(eb))
         plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],97),vmin=np.nanpercentile(eb[:],5))
-        new_phase = np.interp(phase_eb, (-np.pi, np.pi), (-0.5, 15.5))
-        if plotphase:
-            plt.plot(new_phase,t,color='r',linewidth=0.5)
-        plt.plot([15.5,15.5],[min(t), max(t)],color='w')
-        plt.xticks([0, 7, 15, 16,23, 31,32,40,48],
-                   labels=['eb:1', 'eb:8', 'eb:16','fsb:1','fsb:8','fsb16','-$\pi$','0','$\pi$'],rotation=45)
-        off = 0.5
+        if yeseb:
+            new_phase = np.interp(phase_eb, (-np.pi, np.pi), (-0.5, 15.5))
+            if plotphase:
+                plt.plot(new_phase,t,color='r',linewidth=0.5)
+            plt.plot([15.5,15.5],[min(t), max(t)],color='w')
+            plt.xticks([0, 7, 15, 16,23, 31,32,40,48],
+                       labels=['eb:1', 'eb:8', 'eb:16','fsb:1','fsb:8','fsb16','-$\pi$','0','$\pi$'],rotation=45)
+            off = 0.5
+        else:
+            off = -15.5
         reps = np.shape(phase)[1]
         for i in range(reps):
             print(i)
@@ -186,7 +258,10 @@ class CX_a:
         new_heading = self.ft2['ft_heading'].to_numpy()
         new_heading = np.interp(new_heading, (new_heading.min(), new_heading.max()), (off+15, off+31))
         for i in range(reps):
-            p = self.pdat['offset_'+ regions[i]+'_phase']
+            try:
+                p = self.pdat['offset_'+ regions[i]+'_phase']
+            except:
+                p = self.pdat['phase_'+ regions[i]]
             #p = phase[:,i]
             new_phase = np.interp(p, (-np.pi, np.pi), (off+15, off+31))
             if plotphase:
@@ -368,8 +443,86 @@ class CX_a:
             plt.plot([-2+offset, 2+offset],[0,0],linestyle='--',color='k')
             plt.plot([-2+offset,2+offset],[t[-idx_af],t[-idx_af]],linestyle='--',color='k')
             offset = offset+mult*2
-    
-    def mean_jump_arrows(self,x_offset=0):
+    def mean_jump_lines(self,fsb_names=['fsb_upper','fsb_lower']):
+        plt.figure(figsize=(20,20))
+        from scipy.stats import circmean, circstd
+        ft2 = self.ft2
+        pv2 = self.pv2
+        jumps = ft2['jump']
+        ins = ft2['instrip']
+        x = ft2['ft_posx'].to_numpy()
+        y = ft2['ft_posy'].to_numpy()
+        times = pv2['relative_time']
+        x,y = self.fictrac_repair(x,y)
+       
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        exts = np.where(insd<0)[0]+1 
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
+        jns = np.sign(jd[jn])
+
+        time_threshold = 60
+        # Pick the most common side
+        v,c = np.unique(jns,return_counts=True)
+        side = v[np.argmax(c)]
+        # Get time of return: choose quick returns
+        dt = []
+        for i,j in enumerate(jn):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            tdx = np.arange(ents[ie],ents[t_ent],step=1,dtype='int')
+            dt.append(times[tdx[-1]]-times[sub_dx])
+        this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
+
+
+        side_mult = side*-1
+        #Iterate
+        x = x*side_mult
+        offset = 0
+        offsety = 0
+        for i,j in enumerate(this_j):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            phase = self.pdat['offset_eb_phase'].to_numpy()
+            phase = phase.reshape(-1,1)
+            for f in fsb_names:
+                phase = np.append(phase,self.pdat['offset_' +f+ '_phase'].to_numpy().reshape(-1,1),axis=1)
+            heading = self.ft2['ft_heading'].to_numpy()*side_mult
+            phase = phase*side_mult
+            amp = self.pdat['amp_eb']
+            amp = amp.reshape(-1,1)
+            for f in fsb_names:
+                amp = np.append(amp,self.pdat['amp_'+f].reshape(-1,1),axis=1)
+            # in plume
+            ipdx = np.arange(ents[ie],ents[t_ent],step=1,dtype=int)
+            
+            t_p = phase[ipdx,1]
+            t_t = self.pv2['relative_time'].to_numpy()
+            t_t = t_t[ipdx]
+            t_h = heading[ipdx]
+            t_t = t_t-t_t[-1]            
+            t_ext = sub_dx-ents[ie]
+            #plt.plot(t_t+offset,t_p+offsety,color=[0.2,0.2,1])
+            plt.scatter(t_t+offset,t_p+offsety,color=[0.2,0.2,1],s=5,zorder=10)
+            plt.plot([t_t[0]+offset,t_t[-1]+offset],[0+offsety,0+offsety],color='k',linestyle='--')
+            plt.plot([t_t[0]+offset,t_t[t_ext]+offset],[np.pi/2+offsety,np.pi/2+offsety],color=[0.8,0.2,0.2],linestyle='--')
+            plt.plot([t_t[t_ext]+offset,t_t[-1]+offset],[-np.pi/2+offsety,-np.pi/2+offsety],color=[0.8,0.2,0.2],linestyle='--')
+            plt.plot(t_t+offset,t_h+offsety,color='k')
+            plt.fill(np.array([t_t[0],t_t[-1],t_t[-1],t_t[0],t_t[0]])+offset,np.array([-np.pi,-np.pi,np.pi,np.pi,-np.pi])+offsety,color=[0.9,0.9,0.9])
+            plt.fill(np.array([t_t[0],t_t[t_ext],t_t[t_ext],t_t[0],t_t[0]])+offset,np.array([-np.pi,-np.pi,np.pi,np.pi,-np.pi])+offsety,color=[0.7,0.7,0.7])
+            #offset = offset+1+np.max(t_t)
+            offsety = offsety-2*np.pi-np.pi/4
+            
+            plt.show()
+        plt.xlabel('Time (s)')
+    def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower']):
         from scipy.stats import circmean, circstd
         ft2 = self.ft2
         pv2 = self.pv2
@@ -426,13 +579,13 @@ class CX_a:
             sub_dx = exts[ie]
             phase = self.pdat['offset_eb_phase'].to_numpy()
             phase = phase.reshape(-1,1)
-            phase = np.append(phase,self.pdat['offset_fsb_upper_phase'].to_numpy().reshape(-1,1),axis=1)
-            phase = np.append(phase,self.pdat['offset_fsb_lower_phase'].to_numpy().reshape(-1,1),axis=1)
+            for f in fsb_names:
+                phase = np.append(phase,self.pdat['offset_' +f+'_phase'].to_numpy().reshape(-1,1),axis=1)
             phase = phase*side_mult
             amp = self.pdat['amp_eb']
             amp = amp.reshape(-1,1)
-            amp = np.append(amp,self.pdat['amp_fsb_upper'].reshape(-1,1),axis=1)
-            amp = np.append(amp,self.pdat['amp_fsb_lower'].reshape(-1,1),axis=1)
+            for f in fsb_names:
+                amp = np.append(amp,self.pdat['amp_'+f].reshape(-1,1),axis=1)
             # in plume
             ipdx = np.arange(ents[ie],sub_dx,step=1,dtype=int)
             old_time = ipdx-ipdx[0]
@@ -445,8 +598,11 @@ class CX_a:
             y_int = np.interp(new_time,old_time,ip_y)
             inplume_traj[:,i,0] = x_int
             inplume_traj[:,i,1] = y_int
-            for p in range(3):
+            for p in range(len(fsb_names)+1):
+                
                 t_p = phase[ipdx,p]
+                
+                
                 p_int = np.interp(new_time,old_time,t_p)
                 inplume_phase[:,i,p] = p_int
                 
@@ -469,7 +625,7 @@ class CX_a:
             y_int = np.interp(new_time,old_time,ip_y)
             outplume_traj[:,i,0] = x_int
             outplume_traj[:,i,1] = y_int
-            for p in range(3):
+            for p in range(len(fsb_names)+1):
                 t_p = phase[ipdx,p]
                 p_int = np.interp(new_time,old_time,t_p)
                 outplume_phase[:,i,p] = p_int
@@ -731,15 +887,53 @@ class CX_a:
         #         a[ir+1].plot([7, 7],[yp[0], yp[-1]],color='w',linestyle='--')
         #        # a[ir+1].plot(pltphase,yp,color='k')
         #         a[ir+1].set_aspect('equal', adjustable='box')
+    def get_jumps(self,time_threshold=60):
+        # Function will find jump instances in the data and output the indices
+        ft2 = self.ft2
+        pv2 = self.pv2
+        jumps = ft2['jump']
+        ins = ft2['instrip']
+        times = pv2['relative_time']
+       
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        exts = np.where(insd<0)[0]+1 
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
+        jns = np.sign(jd[jn])
+
+        time_threshold = 60
+        # Pick the most common side
+        v,c = np.unique(jns,return_counts=True)
+        side = v[np.argmax(c)]
+        self.side = side
+        # Get time of return: choose quick returns
+        dt = []
+        for i,j in enumerate(jn):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            tdx = np.arange(ents[ie],ents[t_ent],step=1,dtype='int')
+            dt.append(times[tdx[-1]]-times[sub_dx])
+        this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
+        
+        out_dx = np.zeros((len(this_j),3),dtype='int')
+        for i,j in enumerate(this_j):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            ent = ents[ie]
+            ent2 = ents[t_ent]
+            out_dx[i,:] = np.array([ent,sub_dx,ent2],dtype='int')
+        return out_dx
         
     def point2point_heat(self,start,stop,regions=['eb','fsb_upper','fsb_lower'],arrowpoint='entry',toffset=-1):
         # Function will plot trajectory with arrows plus heatmaps of regions
         # The timepoints of arrows will be highlighted
-        
-        
-        
-        
-        
         
         from matplotlib.colors import LinearSegmentedColormap
 
@@ -1228,7 +1422,10 @@ class CX_a:
         plt.ylabel('Time (s)')
         plt.show()
     def plot_traj_arrow(self,phase,amp,a_sep= 20):
-        phase_eb = self.pdat['offset_eb_phase']
+        try:
+            phase_eb = self.pdat['offset_eb_phase']
+        except:
+            phase_eb = self.pdat['offset_pb_phase']
         #phase_eb = self.phase_eb
         amp_eb = self.amp_eb
         x = self.ft2['ft_posx'].to_numpy()
@@ -1239,7 +1436,13 @@ class CX_a:
         dist = np.sqrt(x**2+y**2)
         dist = dist-dist[0]
         plt.figure()
+        it = self.ft2['intrain'].to_numpy()>0
+        plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
+        ito = np.logical_and(it,self.ft2['mfc2_stpt'].to_numpy()>0)
+            
         plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
+        plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
+        
         plt.plot(x,y,color='k')
         t_sep = a_sep
         for i,d in enumerate(dist):

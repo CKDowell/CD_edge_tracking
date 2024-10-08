@@ -8,38 +8,53 @@ Created on Wed Jul 24 11:56:30 2024
 from analysis_funs.regression import fci_regmodel
 import os
 import matplotlib.pyplot as plt 
-from src.utilities import imaging as im
+from analysis_funs.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
+#%%
+for i in [3]:
+    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial"+str(i))
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    #% Registration
+    ex = im.fly(name, datadir)
+    ex.register_all_images(overwrite=True)
+    ex.z_projection()
+    #%
+    ex.mask_slice = {'All': [1,2,3,4]}
+    ex.t_projection_mask_slice()
+
+#%% ROI processing
+for i in [1,3]:
+    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial"+str(i))
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cx = CX(name,['fsbTN'],datadir)
+    # save preprocessing, consolidates behavioural data
+    cx.save_preprocessing()
+    # Process ROIs and saves csv
+    cx.process_rois()
+    # Post processing, saves data as h5
+    cx.crop = False
+    cx.save_postprocessing()
+
+
+#pv2, ft, ft2, ix = cx.load_postprocessing()
+
 #%% 
-datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS67631\\240720\\f1\\Trial3")
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-#%% Registration
-ex = im.fly(name, datadir)
-ex.register_all_images(overwrite=True)
-ex.z_projection()
-#%% Masks for ROI drawing
-ex.mask_slice = {'All': [1,2,3,4]}
-ex.t_projection_mask_slice()
-#%% 
-cx = CX(name,['fsbTN'],datadir)
-# save preprocessing, consolidates behavioural data
-cx.save_preprocessing()
-# Process ROIs and saves csv
-cx.process_rois()
-# Post processing, saves data as h5
-cx.crop = False
-cx.save_postprocessing()
-pv2, ft, ft2, ix = cx.load_postprocessing()
+datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS67631\\240912\\f2\\Trial3")
+
 #%%
 cxt = CX_tan(datadir)
 cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5) 
 savename = os.path.join(datadir , 'Eg_traj'+ name +'.pdf')
 plt.savefig(savename)
+#%%
+
+cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 #%%
 
 fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)

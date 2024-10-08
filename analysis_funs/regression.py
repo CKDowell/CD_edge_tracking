@@ -641,18 +641,24 @@ class fci_regmodel:
         x2 = xcent-5+tj
         y1 = 0
         y2 = yj[0]
-        xvec = [x1,x2,x2,x1]
+        xvec = np.array([x1,x2,x2,x1])
         yvec = [y1,y1,y2,y2]
+        
+        cents = [-630,-420,-210, 0,210,420,630]
+        
         plt.fill(xvec,yvec,color=[0.7,0.7,0.7])
+        for c in cents:
+            plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
         for i,j in enumerate(jn):
             tj = jumps[j]
             x1 = xcent+5+tj
             x2 = xcent-5+tj
             y1 = yj[i]
             y2 = yj[i+1]
-            xvec = [x1,x2,x2,x1]
+            xvec = np.array([x1,x2,x2,x1])
             yvec = [y1,y1,y2,y2]
-            plt.fill(xvec,yvec,color=[0.7,0.7,0.7])
+            for c in cents:
+                plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
 
         
         for i in range(len(x)-1):
@@ -663,6 +669,9 @@ class fci_regmodel:
         plt.xlabel('x position (mm)')
         plt.ylabel('y position (mm)')
         plt.title('Flur range 0 - ' + str(cmax))
+        x1 = np.min(x)-10
+        x2 = np.max(x)+10
+        plt.xlim([x1,x2])
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
@@ -735,7 +744,7 @@ class fci_regmodel:
         if output:
             return plt_mn,t
         
-    def mean_traj_nF_jump(self,ca,plotjumps=False):
+    def mean_traj_nF_jump(self,ca,plotjumps=False,cmx=False,offsets=20):
         ft2 = self.ft2
         pv2 = self.pv2
         
@@ -744,7 +753,7 @@ class fci_regmodel:
         x = ft2['ft_posx'].to_numpy()
         y = ft2['ft_posy'].to_numpy()
         times = pv2['relative_time']
-        x,y = self.fictrac_repair(x,y)
+        #x,y = self.fictrac_repair(x,y)
         insd = np.diff(ins)
         ents = np.where(insd>0)[0]+1
         exts = np.where(insd<0)[0]+1 
@@ -771,15 +780,16 @@ class fci_regmodel:
         this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
         
         # Initialise arrays
-        inplume_traj = np.zeros((50,len(this_j),2))
-        outplume_traj = np.zeros((50,len(this_j),2))
-        inplume_amp = np.zeros((50,len(this_j)))
-        outplume_amp = np.zeros((50,len(this_j)))
+        inplume_traj = np.zeros((100,len(this_j),2))
+        outplume_traj = np.zeros((100,len(this_j),2))
+        inplume_amp = np.zeros((100,len(this_j)))
+        outplume_amp = np.zeros((100,len(this_j)))
         side_mult = side*-1
         x = x*side_mult
         amp = ca
         off = 0
         for i,j in enumerate(this_j):
+            print(i)
             ex = exts-j
             ie = np.argmin(np.abs(ex))
             t_ent = ie+1
@@ -791,7 +801,7 @@ class fci_regmodel:
             ip_y = y[ipdx]
             ip_x = ip_x-ip_x[-1]
             ip_y = ip_y-ip_y[-1]
-            new_time = np.linspace(0,max(old_time),50)
+            new_time = np.linspace(0,max(old_time),100)
             x_int = np.interp(new_time,old_time,ip_x)
             y_int = np.interp(new_time,old_time,ip_y)
             a_int = np.interp(new_time,old_time,amp[ipdx])
@@ -806,7 +816,7 @@ class fci_regmodel:
             ip_y = y[ipdx]
             ip_x = ip_x-ip_x[0]
             ip_y = ip_y-ip_y[0]
-            new_time = np.linspace(0,max(old_time),50)
+            new_time = np.linspace(0,max(old_time),100)
             x_int = np.interp(new_time,old_time,ip_x)
             y_int = np.interp(new_time,old_time,ip_y)
             a_int = np.interp(new_time,old_time,amp[ipdx])
@@ -817,8 +827,8 @@ class fci_regmodel:
             if plotjumps:
                 tj = np.append(inplume_traj[:,i,:],outplume_traj[:,i,:],axis=0)
                 tjca = np.append(inplume_amp[:,i],outplume_amp[:,i],axis=0)
-                self.jump_heat(tj,tjca,xoffset=off)
-            off = off+30
+                self.jump_heat(tj,tjca,xoffset=off,set_cmx=cmx)
+            off = off+offsets
             
             
         inmean_traj = np.mean(inplume_traj,axis=1)
@@ -827,7 +837,8 @@ class fci_regmodel:
         outmean_amp = np.mean(outplume_amp,axis=1)
         traj = np.append(inmean_traj,outmean_traj,axis=0)
         tca = np.append(inmean_amp,outmean_amp,axis=0)
-        
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
         return traj, tca
     def jump_heat(self,traj,ca,xoffset,set_cmx=False):
         
@@ -843,6 +854,8 @@ class fci_regmodel:
         colour = ca
         if set_cmx==False:
             cmx = np.max(np.abs(ca))
+        else:
+            cmx = set_cmx
         c_map = plt.get_cmap('coolwarm')
         cnorm = mpl.colors.Normalize(vmin=-cmx, vmax=cmx)
         scalarMap = cm.ScalarMappable(cnorm, c_map)
@@ -856,7 +869,8 @@ class fci_regmodel:
     def mean_traj_heat_jump(self,CA,xoffset=0,set_cmx =False,cmx=1):
         traj,ca = self.mean_traj_nF_jump(CA)
         self.jump_heat(traj,ca,xoffset)
-        
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
         
     def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
         """
@@ -900,8 +914,11 @@ class fci_regmodel:
         ex_x = np.round(x[exts])
         sides = np.zeros(len(ent_x))
         plume_centre = np.zeros(len(ent_x))
+        try:
+            jumps = self.ft2['jump'].to_numpy()
+        except :
+            jumps = np.zeros_like(x)
         
-        jumps = self.ft2['jump'].to_numpy()
         jumps = jumps-np.mod(jumps,3)
         jd = np.diff(jumps)
         jn = np.where(np.abs(jd)>0)[0]+1

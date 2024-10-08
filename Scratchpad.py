@@ -5,6 +5,28 @@ Created on Thu Jun 20 14:27:58 2024
 @author: dowel
 """
 
+#%%
+import numpy as np
+files = f[1]
+import time
+import cv2
+t0 = time.time()
+
+for i,file in enumerate(files):
+    print(i)
+    im = cv2.imread(file, cv2.IMREAD_UNCHANGED)
+    if i ==0:
+        images = np.zeros((len(files),np.shape(im)[0],np.shape(im)[1]),dtype = 'uint16')
+    images[i,:,:] = im
+print(f'{time.time()-t0:.2f} s')
+
+
+
+#%%
+
+
+
+
 from analysis_funs.CX_imaging import CX
 import os
 import matplotlib.pyplot as plt 
@@ -265,3 +287,14 @@ ax.set_theta_zero_location("N")
 ax.set_theta_direction(-1)
 ax.set_xticklabels([0,45,90,135,180,-135,-90,-45])
 ax.set_title('hDeltaC Returns')
+#%% Script to resave tiffs with appropriate file name
+datadir = "Y:\Data\FCI\Hedwig\FC2_maimon2\240911\\f2\\Trial1\\data\\TSeries-09112024-1249-009"
+
+
+
+
+
+
+
+
+

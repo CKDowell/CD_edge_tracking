@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pickle 
 meta_data = {'stim_type': 'alternation',
               'act_inhib':'inhib',
-              'ledOny': 600,
+              'ledOny': 700,
               'ledOffy':'all',
               'ledOnx': -1000,
               'ledOffx': 1000,
@@ -29,18 +29,11 @@ meta_data = {'stim_type': 'alternation',
             
               }
 #%% Visualise data - test animals
-rootdir = 'Y:\\Data\\Optogenetics\\FC2\\FC2_maimon2_alternation_inhibition\\Test_Flies'
+rootdir = 'Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Chrimson_Corridor_outside\Test_Flies'
 plt.close('all')
 flies = [
-    '240625\\f4\\Trial1',
-         '240627\\f2\\Trial3',
-         '240627\\f4\\Trial2',
-         '240722\\f1\\Trial1',
-         '240722\\f2\\Trial1',
-         '240723\\f4\\Trial1',
-         '240724\\f1\\Trial2',
-         '240730\\f1\\Trial1']
-
+    '240827\\f3\\Trial1',
+         ]
 for i,f in enumerate(flies):
     searchdir = os.path.join(rootdir,f)
     indir = os.listdir(searchdir)

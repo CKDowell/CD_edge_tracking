@@ -163,7 +163,7 @@ class opto:
             if meta_data['LEDinplume']:
                 plt.fill(xo,yo,color = led_colour,alpha= 0.5)
             
-               # plt.scatter(x[led_on],y[led_on], color = [0.8, 0.8 ,0.2])
+                plt.scatter(x[led_on],y[led_on], color = [0.8, 0.8 ,0.2])
             #yxlm = np.max(np.abs(np.append(yrange,xrange)))
             #ymn = np.mean(yrange)
             plt.ylim([np.min(y),np.max(y)])

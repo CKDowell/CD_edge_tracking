@@ -23,8 +23,8 @@ from src.utilities import funcs as fn
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [3]:
-    datadir =os.path.join("Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240809\\f2\\Trial"+str(i))
+for i in [1,2,3,4,5]:
+    datadir =os.path.join("Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -36,20 +36,28 @@ for i in [3]:
     ex.t_projection_mask_slice()
 #%%
 experiment_dirs = [
-    "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240809\\f2\\Trial2",
-    "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240805\\f1\\Trial3",#decent
-    # "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240806\\f1\\Trial1",
-    # "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240806\\f1\\Trial4",
-    # "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240806\\f1\\Trial6",
-     "Y:\Data\FCI\\Hedwig\\FB4P_b_sytGC7f\\240806\\f1\\Trial5"#decent
+   # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240809\\f2\\Trial2",
+   # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240805\\f1\\Trial3",#decent
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240806\\f1\\Trial1",
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240806\\f1\\Trial4",
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240806\\f1\\Trial6",
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240806\\f1\\Trial5"#decent
     
+   # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial2",
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial3",
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial4",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial1",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial2",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial3",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial4",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial5"
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
     print(e)
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
-    cx = CX(name,['fsb','eb'],datadir)
+    cx = CX(name,['fsb'],datadir)
     # save preprocessing, consolidates behavioural data
     cx.save_preprocessing()
     # Process ROIs and saves csv
@@ -59,24 +67,24 @@ for e in experiment_dirs:
     cx.save_postprocessing()
     pv2, ft, ft2, ix = cx.load_postprocessing()
 
-    try :
-        cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'])
-    except:
-        cxa = CX_a(datadir,regions=['eb','fsb'])
-    
+    # try :
+    #     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'])
+    # except:
+    #     cxa = CX_a(datadir,regions=['fsb'])
+    cxa = CX_a(datadir,regions=['fsb'],yoking=False)
     cxa.save_phases()
 #%%
-cxa = CX_a(experiment_dirs[0],regions=['eb','fsb'],denovo=False)
+cxa = CX_a(experiment_dirs[2],regions=['fsb'],yoking=False,denovo=True)
 #%%
 plt.close('all')
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb'])
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb'],yeseb=False)
 #cxa.simple_raw_plot(plotphase=True)
 #%%
 plt.close('all')
 phase = cxa.pdat['offset_fsb_phase']
 amp = np.mean(cxa.pdat['fit_wedges_fsb'],axis=1)/10
-
-#cxa.plot_traj_arrow(phase,amp,a_sep=5)
+amp = fc.ca
+cxa.plot_traj_arrow(phase,100*amp**4,a_sep=0.5)
 for i in range(10):
     cxa.point2point_heat(i*1000,(i+1)*1000,regions=['eb','fsb'],toffset=0)
     
@@ -209,10 +217,10 @@ for d in datadirs:
     fc.rebaseline()
     fc.mean_traj_heat_jump(fc.ca,xoffset=off)
     off = off+30
+fc.mean_traj_nF_jump(fc.ca,plotjumps=True,cmx=0.1)
 
 
-
-
+fc.mean_traj_heat_jump(fc.ca)
 
 
 

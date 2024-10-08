@@ -19,8 +19,8 @@ import numpy as np
 #%% Imaging 
 
 
-for i in [1,2]:
-    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial"+str(i))
+for i in [1,2,3,4]:
+    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -32,18 +32,44 @@ for i in [1,2]:
     ex.t_projection_mask_slice()
 
 #%% 
-datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2"
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-cx = CX(name,['fsbTN'],datadir)
-# save preprocessing, consolidates behavioural data
-cx.save_preprocessing()
-# Process ROIs and saves csv
-cx.process_rois()
-# Post processing, saves data as h5
-cx.crop = False
-cx.save_postprocessing()
-pv2, ft, ft2, ix = cx.load_postprocessing()
+
+datadirs = ["Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2",
+            "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f1\\Trial1",
+            "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f1\\Trial2",
+           "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial1",
+           "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial2",
+           "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial3",
+           "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial4",]
+
+for datadir in datadirs:
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cx = CX(name,['fsbTN'],datadir)
+    # save preprocessing, consolidates behavioural data
+    cx.save_preprocessing()
+    # Process ROIs and saves csv
+    cx.process_rois()
+    # Post processing, saves data as h5
+    cx.crop = False
+    cx.save_postprocessing()
+    pv2, ft, ft2, ix = cx.load_postprocessing()
+
+#%%
+datadirs = [
+   "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2",#Nice
+            "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f1\\Trial1",#Nice - but worst for this fly
+            "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f1\\Trial2",#Best for this fly
+          # "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial1",
+          # "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial2",
+           "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial3",
+           ]
+plt.close('all')
+for d in datadirs:
+    cxt = CX_tan(d) 
+    
+    cxt.fc.example_trajectory_jump(cmin=-0.4,cmax =0.4) 
+    #plt.figure()
+    #cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 
 #%%
 savedir = "Y:\Data\FCI\Hedwig\\FB5I_SS100553\\SummaryFigures"
@@ -112,10 +138,15 @@ cxt.fc.plot_example_flur()
 times = cxt.pv2['relative_time']
 plt.plot(times,cxt.ft2['instrip'])
 #%% plot multiple animals
-datadirs = ["Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240523\\f1\\Trial4",
+datadirs = [
+    "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240523\\f1\\Trial4",
     "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2"
     ]
 for d in datadirs:
     cxt = CX_tan(d)
-    cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5)
-    plt.savefig(os.path.join(d,'EgTraj_'+cxt.name+'.pdf'))
+    plt.figure()
+    #cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5)
+   # cxt.fc.example_trajectory_jump(cmin=-0.4,cmax =0.4) 
+    plt.figure()
+    cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
+    #plt.savefig(os.path.join(d,'EgTraj_'+cxt.name+'.pdf'))

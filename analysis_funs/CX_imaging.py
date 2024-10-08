@@ -237,8 +237,15 @@ class CX:
             pv_spike_time = timing.total_time[0] + spikes['Time(ms)'] / 1000
             # find index values when ft computer sent pulses (pulses
             ft_idx, _ = sg.find_peaks(ft.sig_status, height=0.8)
+            
+            
+            # CD edit - sometimes first spike is not registered as peak
+            sp = spikes[' Input 0'].to_numpy()
+            #sp = np.append(np.median(sp),sp)
+            
             # find index values when pv computer received pulses (pulses are 3V)
-            pv_idx, _ = sg.find_peaks(spikes[' Input 0'], height=2.5)
+            pv_idx, _ = sg.find_peaks(sp, height=2.5)
+            #pv_idx = pv_idx-1
             # if the first peak occurs at the beginning of the pv voltage trace, discard
             # if abs(pv_spike_time[pv_idx[0]]-timing.total_time[0])<0.5:
             #     pv_idx = pv_idx[1:]
