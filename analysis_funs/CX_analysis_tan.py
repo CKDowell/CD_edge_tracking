@@ -16,6 +16,7 @@ import matplotlib as mpl
 import pickle
 from matplotlib import cm
 from analysis_funs.regression import fci_regmodel
+from Utils.utils_plotting import uplt
 #%%
 class CX_tan:
     def __init__(self,datadir,tnstring='0_fsbtn',Andy=False,span=500):
@@ -31,8 +32,10 @@ class CX_tan:
             self.pv2 = pd.read_hdf(post_processing_file, 'pv2')
             self.ft2 = pd.read_hdf(post_processing_file, 'ft2')
         self.fc = fci_regmodel(self.pv2[[tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
-        self.fc.rebaseline(span=span,plotfig=False)
         
+        self.ca = self.fc.ca
+        self.fc.rebaseline(span=span,plotfig=False)
+        self.ca_rebase = self.ca
     def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
         """
         Function outputs mean trajectory of animal entering and exiting the plume
@@ -181,4 +184,116 @@ class CX_tan:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+    def mean_traj_jump(self,timethreshold=60,bins=100):
+        jumps = self.get_jumps()
+        newtime = np.linspace(0,1,bins)
+        jseries = self.ft2['jump'].to_numpy()
+        retxy = np.zeros((bins,2,len(jumps)))
+        levxy = np.zeros((bins,2,len(jumps)))
+        retact = np.zeros((bins,len(jumps)))
+        levact = np.zeros((bins,len(jumps)))
+        ins = self.ft2['instrip']
+        inst = np.where(ins)[0][0]
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fc.fictrac_repair(x,y)
+        x = x-x[inst]
+        y = y-y[inst]
+        x = -x*self.side
+        ca = self.ca_rebase
+        for i,j in enumerate(jumps):
+            bdx = np.arange(j[0],j[1])
+            adx = np.arange(j[1],j[2])
+            tj = jseries[j[2]]
+            
+            tx = x-x[j[1]-1]
+            ty = y-y[j[1]-1]
+            
+            rx = tx[adx]
+            ry = ty[adx]
+            rca = ca[adx]
+            
+            lx = tx[bdx]
+            ly = ty[bdx]
+            lca = ca[bdx]
+            
+            
+            
+            oldtime = np.linspace(0,1,len(rx))
+            retxy[:,0,i] = np.interp(newtime,oldtime,rx)
+            retxy[:,1,i] = np.interp(newtime,oldtime,ry)
+            retact[:,i] = np.interp(newtime,oldtime,rca)
+            
+            
+            oldtime = np.linspace(0,1,len(lx))
+            levxy[:,0,i] = np.interp(newtime,oldtime,lx)
+            levxy[:,1,i] = np.interp(newtime,oldtime,ly)
+            levact[:,i] = np.interp(newtime,oldtime,lca)      
+        act = np.append(levact,retact,axis=0)
+        trajs = np.append(levxy,retxy,axis=0)
+        return act,trajs
+    def plot_mean_traj_jump(self,timethreshold=60,bins=100,cmin=-1,cmax=1):
+        act,trajs = self.mean_traj_jump(timethreshold=60,bins=100)
+        am = np.mean(act,axis=1)
+        xy = np.mean(trajs,axis=2)
+        am[am<cmin] = cmin
+        am[am>cmax] = cmax
+        plt.figure()
+        ymin = np.min(xy[:,1])
+        ymax = np.max(xy[:,1])
+        xarray = np.array([-10,0,0,-10])
+        yarray = np.array([ymin,ymin,0,0])
+        plt.fill(xarray,yarray,color=[0.7,0.7,0.7])
+        yarray = np.array([0,0,ymax,ymax])
+        plt.fill(xarray-3,yarray,color=[0.7,0.7,0.7])
+        ax = plt.gca()
+        uplt.coloured_line_simple(xy[:,0],xy[:,1],am,'coolwarm',cmin,cmax)
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
+        
+       #uplt.coloured_line(xy[:,0], xy[:,1], am, ax,cmap='coolwarm')
+        
+    def get_jumps(self,time_threshold=60):
+        # Function will find jump instances in the data and output the indices
+        ft2 = self.ft2
+        pv2 = self.pv2
+        jumps = ft2['jump']
+        ins = ft2['instrip']
+        times = pv2['relative_time']
+       
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        exts = np.where(insd<0)[0]+1 
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
+        jns = np.sign(jd[jn])
+
+        time_threshold = 60
+        # Pick the most common side
+        v,c = np.unique(jns,return_counts=True)
+        side = v[np.argmax(c)]
+        self.side = side
+        # Get time of return: choose quick returns
+        dt = []
+        for i,j in enumerate(jn):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            tdx = np.arange(ents[ie],ents[t_ent],step=1,dtype='int')
+            dt.append(times[tdx[-1]]-times[sub_dx])
+        this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
+        
+        out_dx = np.zeros((len(this_j),3),dtype='int')
+        for i,j in enumerate(this_j):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            ent = ents[ie]
+            ent2 = ents[t_ent]
+            out_dx[i,:] = np.array([ent,sub_dx,ent2],dtype='int')
+        return out_dx
         

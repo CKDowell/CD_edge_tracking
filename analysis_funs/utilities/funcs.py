@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy.fft as fft
 from rdp import rdp
 from scipy.optimize import curve_fit
-
+import statsmodels.api as sm
 
 
 def save_obj(obj, name):
@@ -398,7 +398,41 @@ def lnorm(signal):
         fm[fm == 0] = np.nan
     newsignal = (signal - f0) / (fm - f0)
     return newsignal
-
+def lnorm_percentile(signal):
+    """
+    Essentially the same as above, e
+    """
+    #signal_sorted = np.sort(signal, axis=0)
+    f0 = np.percentile(signal,5,axis=0)
+    fm = np.percentile(signal,97,axis=0)
+    if f0.ndim > 1:
+        f0[f0 == 0] = np.nan
+        fm[fm == 0] = np.nan
+    newsignal = (signal - f0) / (fm - f0)
+    return newsignal
+    
+    
+def lnorm_dynamic(signal):
+    """
+    dynamic normalisation of signal baseline, using lowess method,
+    this effectively does a running mean subtraction therefore can bring the
+    baseline down to quite a low level
+    """
+    
+    signal[np.isnan(signal)] = 0
+    frac = 1/4
+    lowess = sm.nonparametric.lowess
+    yf = lowess(signal,np.arange(0,len(signal)),frac=frac)
+    df = signal-yf[:,1]
+    plt.figure()
+    plt.plot(signal)
+    plt.plot(yf[:,1])
+    plt.plot(df)
+    plt.show()
+    f0 = np.percentile(signal,5,axis=0)
+    fm = np.percentile(signal,97,axis=0)
+    newsignal = df/(fm-f0)
+    return newsignal
 def closest_argmin(A, B):
     """
     incomplete

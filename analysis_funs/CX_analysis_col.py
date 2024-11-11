@@ -5,14 +5,16 @@ Created on Mon Mar 11 11:35:43 2024
 @author: dowel
 """
 #%%
+import src.utilities.funcs as fc
 from analysis_funs.CX_imaging import CX
 import os
 import matplotlib.pyplot as plt 
 import numpy as np
 import pandas as pd
 from scipy.stats import circmean, circstd
-from src.utilities import funcs as fn
+from analysis_funs.utilities import funcs as fn
 import pickle
+from scipy.stats import circmean, circstd
 #%%
 class CX_a:
     def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True):
@@ -230,6 +232,7 @@ class CX_a:
                 ebs.append(str(i) +'_' + r)
         
         eb = self.pv2[ebs].to_numpy()
+        eb[np.isnan(eb)] = 0
         eb = eb/np.max(eb,axis=0)
        # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
         print(np.shape(eb))
@@ -522,8 +525,51 @@ class CX_a:
             
             plt.show()
         plt.xlabel('Time (s)')
+    def jump_vs_heading(self,tphase='fsb_upper',plotall=True,ax=False,cmaps='plasma',samplepoints=20):
+        from utils_plotting import uplt
+        
+        jdx = self.get_jumps()
+        heading = self.ft2['ft_heading'].to_numpy()*-self.side
+        phase = self.pdat['offset_'+tphase+'_phase']*-self.side
+        print(self.side)
+        pi = np.pi
+        
+        in_plume = np.zeros((jdx.shape[0],samplepoints,2))
+        out_plume  =np.zeros((jdx.shape[0],samplepoints,2))
+        new_time = np.linspace(0,samplepoints-1,samplepoints)
+        for i,j in enumerate(jdx):
+            x = heading[j[1]:j[2]]
+            y = phase[j[1]:j[2]]
+            if plotall:
+                fig1, ax = plt.subplots()
+                #plt.plot(x,y,cmap='rainbow')
+                c = np.linspace(0,1,len(y))
+                uplt.coloured_line(x,y,c,ax,cmap='plasma')
+                plt.xlim([-pi,pi])
+                plt.ylim([-pi,pi])
+                plt.plot([-pi,pi],[-pi,pi],color='k',linestyle='--')
+                plt.plot([0,0],[-pi,pi],color='k')
+                plt.plot([-pi,pi],[0,0],color='k')
+            old_time = np.linspace(0,samplepoints-1,len(y))
+            x_int = np.interp(new_time,old_time,x)
+            y_int = np.interp(new_time,old_time,y)
+            out_plume[i,:,0] = x_int
+            out_plume[i,:,1] = y_int
+        
+        omn = circmean(out_plume,axis=0,high=np.pi,low=-np.pi)
+        if ax==False:
+            fig1, ax = plt.subplots()
+        c = np.linspace(0,1,len(omn))
+        #uplt.coloured_line(omn[:,0],omn[:,1],c,ax,cmap=cmaps,linewidth=2)
+        plt.plot(omn[:,0],omn[:,1],color='k',alpha=0.5)
+        plt.xlim([-pi,pi])
+        plt.ylim([-pi,pi])
+        plt.plot([-pi,pi],[-pi,pi],color='k',linestyle='--')
+        plt.plot([0,0],[-pi,pi],color='k')
+        plt.plot([-pi,pi],[0,0],color='k')
+        return omn
     def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower']):
-        from scipy.stats import circmean, circstd
+        
         ft2 = self.ft2
         pv2 = self.pv2
         jumps = ft2['jump']
@@ -1423,22 +1469,35 @@ class CX_a:
         plt.show()
     def plot_traj_arrow(self,phase,amp,a_sep= 20):
         try:
-            phase_eb = self.pdat['offset_eb_phase']
+            phase_eb = self.pdat['offset_eb_phase'].to_numpy()
         except:
-            phase_eb = self.pdat['offset_pb_phase']
+            phase_eb = self.pdat['offset_pb_phase'].to_numpy()
         #phase_eb = self.phase_eb
-        amp_eb = self.amp_eb
+        amp_eb = self.amp_eb.copy()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
+        it = self.ft2['intrain'].to_numpy()>0
         x,y = self.fictrac_repair(x,y)
         instrip = self.ft2['instrip'].to_numpy()
-        
+        mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+        is1 =np.where(instrip)[0][0]
         dist = np.sqrt(x**2+y**2)
         dist = dist-dist[0]
         plt.figure()
-        it = self.ft2['intrain'].to_numpy()>0
+        
+        x = x[is1:]
+        y = y[is1:]
+        dist = dist[is1:]
+        it = it[is1:]
+        instrip = instrip[is1:]
+        mfc = mfc[is1:]
+        phase = phase[is1:]
+        phase_eb = phase_eb[is1:]
+        amp = amp[is1:]
+        amp_eb = amp_eb[is1:]
+        
         plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
-        ito = np.logical_and(it,self.ft2['mfc2_stpt'].to_numpy()>0)
+        ito = np.logical_and(it,mfc)
             
         plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
         plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
@@ -1612,6 +1671,386 @@ class CX_a:
         # Create animation
         anim = mpl.animation.FuncAnimation(fig, update, frames=len(x), interval=0.01)
         plt.show()
+    
+    def mean_phase_train(self,trng =0.5):
+        phase = self.pdat['offset_fsb_upper_phase']
+        phase2 = self.pdat['offset_eb_phase']
+        #phase2 = self.ft2['ft_heading'].to_numpy()
+        tt = self.pv2['relative_time'].to_numpy()
+        instrip = self.ft2['instrip'].to_numpy()
+        mfcon = self.ft2['mfc2_stpt'].to_numpy()
+        mfcon = mfcon>0
+        mfcint = np.zeros_like(mfcon,dtype='int')
+        mfcint[mfcon] = 1
+        mfcdiff = np.diff(mfcint)
+        mon = np.where(mfcdiff>0)[0]
+        moff = np.where(mfcdiff<0)[0]
+        intr = self.ft2['intrain'].to_numpy()
+        
+        intr[intr==False] = 0        
+        for i,ir in enumerate(intr):
+            if np.isnan(ir):
+                intr[i] = 0
+        intrdiff = np.diff(intr)
+        tron = np.where(intrdiff>0)[0]
+        troff = np.where(intrdiff<0)[0]
+        
+        idiff = np.diff(instrip)
+        inon = np.where(idiff>0)[0]
+        inoff = np.where(idiff<0)[0]
+        offs = 0
+        tall =np.array([])
+        for i,r in enumerate(tron):
+            # First plume
+            tson = inon[inon<=r]
+            tsoff = inoff[inoff<=r]
+            for it,t in enumerate(tsoff[:-1]):
+                dx = np.arange(t,tson[it+1])
+                tphase = phase[dx]
+                tphase2 = phase2[dx]
+                trange = tt[dx]
+                trange = trange-trange[-1]
+                tdx = trange>-trng 
+                p = circmean(tphase[tdx],high=np.pi,low=-np.pi)
+                plt.scatter(offs,p,color ='k')
+                p2 = circmean(tphase2[tdx],high=np.pi,low=-np.pi)
+                plt.plot([offs,offs],[p,p2],color ='k')
+                offs = offs+1
+                tall = np.append(tall,p)
+            trainon = mon[np.logical_and( mon>r, mon<=troff[i])]
+            trainoff = moff[np.logical_and( mon>r, mon<=troff[i])]  
+            for it,t in enumerate(trainon):
+                if it==0:
+                    dx = np.arange(t-2,t)
+                else:
+                    dx = np.arange(trainoff[it-1],t)
+                
+                tphase = phase[dx]
+                tphase2 = phase2[dx]
+                trange = tt[dx]
+                trange = trange-trange[-1]
+                tdx = trange>-trng 
+                p = circmean(tphase[tdx],high=np.pi,low=-np.pi)
+                plt.scatter(offs,p,color='r')
+                p2 = circmean(tphase2[tdx],high=np.pi,low=-np.pi)
+                plt.plot([offs,offs],[p,p2],color ='r')
+                tall = np.append(tall,p)
+                offs = offs+1
+                
+            if (i)==(len(tron)-1):
+                tson = inon[inon>=troff[i]]
+                tsoff = inoff[inoff>=troff[i]]
+            else:
+                tson = inon[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+                tsoff = inoff[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+                
+            for it,t in enumerate(tsoff[:-1]):
+                try:
+                    dx = np.arange(t,tson[it+1])
+                    tphase = phase[dx]
+                    tphase2 = phase2[dx]
+                    trange = tt[dx]
+                    trange = trange-trange[-1]
+                    tdx = trange>-trng 
+                    p = circmean(tphase[tdx],high=np.pi,low=-np.pi)
+                    plt.scatter(offs,p,color ='k')
+                    p2 = circmean(tphase2[tdx],high=np.pi,low=-np.pi)
+                    plt.plot([offs,offs],[p,p2],color ='k')
+                    tall = np.append(tall,p)
+                    offs = offs+1
+                except:
+                    x =1
+        plt.plot(tall,color='k',zorder=-1)     
+        plt.plot([0,offs],[0,0],color='k')
+        plt.plot([0,offs],np.array([0,0])+np.pi/2,color='k',linestyle='--')
+        plt.plot([0,offs],np.array([0,0])-np.pi/2,color='k',linestyle='--')
+        plt.ylim([-np.pi,np.pi])
+        plt.ylabel('mean FC2/EPG phase (deg)')
+        plt.yticks([-np.pi,0,np.pi],labels=[-180,0,180])
+        plt.xlabel('return/train instance')
+        plt.xlim([-0.5,offs])
+        
+    def plot_train_arrow_mean(self,plumeang=22.5,plumewidth=30,bins=100):
+        plt.figure()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x, y)
+        phase = self.pdat['offset_fsb_upper_phase'].to_numpy()
+        
+        tron,troff,mon,moff,inon,inoff = self.get_train()
+        offset = 0
+        for i,r in enumerate(tron):
+            tson = inon[inon<=r]
+            tsoff = inoff[inoff<=r]
+            trajmean = np.zeros((bins,2,len(tsoff)-1))
+            phasemean = np.zeros((bins,len(tsoff)-1))
+            for ti,t in enumerate(tsoff[:-1]):
+                dx = np.arange(t,tson[ti+1])
+                tx = x[dx]
+                ty = y[dx]
+                tp = phase[dx]
+                oldtime = np.arange(0,len(tx))
+                newtime = np.linspace(0,len(tx),bins)
+                txi = np.interp(newtime,oldtime,tx)
+                tyi = np.interp(newtime,oldtime,ty)
+                txi = txi-txi[0]
+                tyi = tyi-tyi[0]
+                
+                tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
+                tpi = fc.wrap(tpi)
+                
+                
+                trajmean[:,0,ti] = txi
+                trajmean[:,1,ti] = tyi
+                phasemean[:,ti] = tpi
+            tmean = np.mean(trajmean,axis=2)
+            plt.plot(tmean[:,0]+offset,tmean[:,1],color='k')
+            pmean = circmean(phasemean,axis=1,high=np.pi,low=-np.pi)
+            ta = np.linspace(0,bins-1,10,dtype='int')
+            for t in ta:
+                
+                print(t)
+                xa = 2*np.sin(pmean[t])
+                ya = 2*np.cos(pmean[t])
+                
+                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
+            
+            trainon = mon[np.logical_and( mon>r, mon<=troff[i])] # 30s  before
+            trainoff = moff[np.logical_and( mon>r, mon<=troff[i])]
+            trainoff = np.append(trainon[0]-5,trainon)
+            offset = offset+5
+            for ti,t in enumerate(trainoff[:-1]):
+                dx = np.arange(t,trainon[ti])
+                if len(dx)>50:
+                    dx = dx[-50:]
+                tx = x[dx]
+                ty = y[dx]
+                tx = tx-tx[0]
+                ty = ty-ty[0]
+                tp = phase[dx]
+                plt.plot(tx+offset,ty,color='k')
+                
+                ta = np.linspace(0,len(tp)-1,10,dtype='int')
+                for t in ta:
+                    xa = 2*np.sin(tp[t])
+                    ya = 2*np.cos(tp[t])
+                    
+                    plt.arrow(tx[t]+offset,ty[t],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
+                
+                offset = offset+5+np.max(tx)
+            
+            if (i)==(len(tron)-1):
+                tson = inon[inon>=troff[i]]
+                tsoff = inoff[inoff>=troff[i]]
+            else:
+                tson = inon[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+                tsoff = inoff[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+                
+            if len(tsoff)>len(tson):
+                tsoff = tsoff[:-1]
+            trajmean = np.zeros((bins,2,len(tsoff)-1))
+            phasemean = np.zeros((bins,len(tsoff)-1))
+            
+            
+            for ti,t in enumerate(tsoff[:-1]):
+                
+                dx = np.arange(t,tson[ti+1])
+                tx = x[dx]
+                ty = y[dx]
+                tp = phase[dx]
+                oldtime = np.arange(0,len(tx))
+                newtime = np.linspace(0,len(tx),bins)
+                txi = np.interp(newtime,oldtime,tx)
+                tyi = np.interp(newtime,oldtime,ty)
+                txi = txi-txi[0]
+                tyi = tyi-tyi[0]
+                
+                tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
+                tpi = fc.wrap(tpi)
+                
+                
+                trajmean[:,0,ti] = txi
+                trajmean[:,1,ti] = tyi
+                phasemean[:,ti] = tpi
+            tmean = np.mean(trajmean,axis=2)
+            plt.plot(tmean[:,0]+offset,tmean[:,1],color='k')
+            pmean = circmean(phasemean,axis=1,high=np.pi,low=-np.pi)
+            ta = np.linspace(0,bins-1,10,dtype='int')
+            for t in ta:
+                
+                print(t)
+                xa = 2*np.sin(pmean[t])
+                ya = 2*np.cos(pmean[t])
+                
+                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show() 
+            
+            
+        
+    def get_train(self):
+        instrip = self.ft2['instrip'].to_numpy()
+        mfcon = self.ft2['mfc2_stpt'].to_numpy()
+        mfcon = mfcon>0
+        mfcint = np.zeros_like(mfcon,dtype='int')
+        mfcint[mfcon] = 1
+        mfcdiff = np.diff(mfcint)
+        mon = np.where(mfcdiff>0)[0]
+        moff = np.where(mfcdiff<0)[0]
+        
+        idiff = np.diff(instrip)
+        inon = np.where(idiff>0)[0]
+        inoff = np.where(idiff<0)[0]
+        
+        intr = self.ft2['intrain'].to_numpy()
+        
+        intr[intr==False] = 0        
+        for i,ir in enumerate(intr):
+            if np.isnan(ir):
+                intr[i] = 0
+                
+        intrdiff = np.diff(intr)
+        tron = np.where(intrdiff>0)[0]
+        troff = np.where(intrdiff<0)[0]
+        return tron,troff,mon,moff,inon,inoff
+        
+    def plot_train_arrows(self,plumeang=22.5,plumewidth=30,tperiod = 0.5):
+        plt.figure()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x, y)
+        tt = self.pv2['relative_time'].to_numpy()
+        tt = np.round(tt,decimals=1)
+        phase = self.pdat['offset_fsb_upper_phase'].to_numpy()
+        amp = self.pdat['amp_fsb_upper']
+        instrip = self.ft2['instrip'].to_numpy()
+        mfcon = self.ft2['mfc2_stpt'].to_numpy()
+        mfcon = mfcon>0
+        mfcint = np.zeros_like(mfcon,dtype='int')
+        mfcint[mfcon] = 1
+        mfcdiff = np.diff(mfcint)
+        mon = np.where(mfcdiff>0)[0]
+        moff = np.where(mfcdiff<0)[0]
+        
+        idiff = np.diff(instrip)
+        inon = np.where(idiff>0)[0]
+        inoff = np.where(idiff<0)[0]
+        
+        intr = self.ft2['intrain'].to_numpy()
+        
+        intr[intr==False] = 0        
+        for i,ir in enumerate(intr):
+            if np.isnan(ir):
+                intr[i] = 0
+                
+        intrdiff = np.diff(intr)
+        tron = np.where(intrdiff>0)[0]
+        troff = np.where(intrdiff<0)[0]
+        wd = 0.5*plumewidth*np.cos(np.pi*plumeang/180)
+        wd = plumewidth/2+2 # added one for fuzziness of boundary
+        pax = np.array([-wd,wd,wd,-wd])
+        offset = 0
+        for i,r in enumerate(tron):
+            # First plume
+            tson = inon[inon<=r]
+            tsoff = inoff[inoff<=r]
+            tx = x[tson[0]:tsoff[-1]]
+            ty = y[tson[0]:tsoff[-1]]
+            t_tt =tt[tson[0]:tsoff[-1]]
+            t_tt = t_tt-t_tt[0]
+            t_p = phase[tson[0]:tsoff[-1]]
+            tis = instrip[tson[0]:tsoff[-1]]
+            tside = np.sign(tx[-1]-tx[0])
+            tx = tx-tx[0]
+            ty = ty-ty[0]
+            ym = np.max(ty)
+            xdiff = ym*np.tan(tside*np.pi*plumeang/180)
+            pax[2:] = pax[2:]+xdiff
+            yax = np.array([0,0,ym,ym])
+            plt.fill(pax+offset,yax,color=[0.8,0.8,0.8])
+            #plt.scatter(tx[tis>0],ty[tis>0],color='r')
+            plt.plot(tx+offset,ty,color='k')
+            
+            for it,t in enumerate(t_tt):
+                if np.mod(t,tperiod)==0:
+                    p = t_p[it]
+                    xa = 50*amp[it]*np.sin(p)
+                    ya = 50*amp[it]*np.cos(p)
+                    plt.arrow(tx[it]+offset,ty[it],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1])
+            
+            #Training
+            offset = offset+100
+            trainon = mon[np.logical_and( mon>r, mon<=troff[i])]-300 # 30s  before
+            trainoff = moff[np.logical_and( mon>r, mon<=troff[i])]
+            tx = x[trainon[0]:trainoff[-1]]
+            ty = y[trainon[0]:trainoff[-1]]
+            
+            t_tt =tt[trainon[0]:trainoff[-1]]
+            t_tt = t_tt-t_tt[0]
+            t_p = phase[trainon[0]:trainoff[-1]]
+            
+            
+            tx = tx-tx[0]
+            ty = ty-ty[0]
+            tis = mfcint[trainon[0]:trainoff[-1]]
+            
+            plt.plot(tx+offset,ty,color='k')
+            plt.scatter(tx[tis>0]+offset,ty[tis>0],color = 'r')
+            
+            
+            for it,t in enumerate(t_tt):
+                if np.mod(t,tperiod)==0:
+                    p = t_p[it]
+                    xa = 50*amp[it]*np.sin(p)
+                    ya = 50*amp[it]*np.cos(p)
+                    plt.arrow(tx[it]+offset,ty[it],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1])
+            
+            # Second plume
+            pax = np.array([-wd,wd,wd,-wd])
+            offset = offset+100
+          
+            if (i)==(len(tron)-1):
+                tson = inon[inon>=troff[i]]
+                tsoff = inoff[inoff>=troff[i]]
+            else:
+                tson = inon[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+                tsoff = inoff[np.logical_and(inon>=troff[i],inon<tron[i+1])]
+            
+            
+            tx = x[tson[0]:tsoff[-1]]
+            ty = y[tson[0]:tsoff[-1]]
+            tis = instrip[tson[0]:tsoff[-1]]
+            tside = np.sign(tx[-1]-tx[0])
+            t_tt =tt[tson[0]:tsoff[-1]]
+            t_tt = t_tt-t_tt[0]
+            t_p = phase[tson[0]:tsoff[-1]]
+            print(tside)
+            tx = tx-tx[0]
+            ty = ty-ty[0]
+            ym = np.max(ty)
+            xdiff = ym*np.tan(tside*np.pi*plumeang/180)
+            print(xdiff)
+            pax = pax+wd*tside
+            pax[2:] = pax[2:]+xdiff
+            yax = np.array([0,0,ym,ym])
+            plt.fill(pax+offset,yax,color=[0.8,0.8,0.8])
+            #plt.scatter(tx[tis>0],ty[tis>0],color='r')
+            plt.plot(tx+offset,ty,color='k')
+               
+            for it,t in enumerate(t_tt):
+                if np.mod(t,tperiod)==0:
+                    p = t_p[it]
+                    xa = 50*amp[it]*np.sin(p)
+                    ya = 50*amp[it]*np.cos(p)
+                    plt.arrow(tx[it]+offset,ty[it],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1])
+            
+            
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()    
+        
+        
     def fictrac_repair(self,x,y):
         dx = np.abs(np.diff(x))
         dy = np.abs(np.diff(y))

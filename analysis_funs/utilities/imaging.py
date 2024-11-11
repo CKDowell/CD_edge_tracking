@@ -300,7 +300,7 @@ class fly:
             2) imaging is volumetric or simple t series
             3) if it's volumetric, see if it's bidirectional (sometimes used for faster imaging)
         """
-
+        bidirectional = False
         # read in xml file and imaging file names
         xml_file = self.read_image_xml()
         for i in np.arange(len(self.xmls)):
@@ -308,7 +308,6 @@ class fly:
             if not any(string in self.xmls[i].name for string in strings):
                 tree=ET.parse(os.path.join(self.imagefol, self.xmls[i].name))
                 root=tree.getroot()
-
         # read in .tif files
         if ignore_Ch1:
             fls = glob.glob(os.path.join(self.imagefol, '*Ch2*.tif'))
@@ -600,129 +599,6 @@ class fly:
         setattr(self, 'rois', rois)
         return rois
 
-    def load_rois_old(self):
-        tag = "*.csv"
-        csv_files = glob.glob1(self.regfol,tag)
-
-        if 'epg' in self.cell_type:
-            csv_files = glob.glob1(self.regfol,"*.csv")
-            csv_list = []
-            for file in csv_files:
-                if 'pb.csv' in file:
-                    pb = pd.read_csv(os.path.join(self.regfol, file))
-                    pb = pb.loc[:, pb.columns.str.contains('Mean')]
-                    pb.columns = pb.columns.str.strip('Mean(')
-                    pb.columns = pb.columns.str.strip(')')
-                    # sort to map each PB glomerulus to it's corresponting EB position
-                    pb = pb[['2','4','6','8','10','12','14','16','1','3','5','7','9','11','13','15']]
-                    pb.columns = pb.columns + '_pb'
-                    for column in pb.columns:
-                        if 'index' in column:
-                            pb.drop(labels=column, axis=1, inplace=True)
-                rois = pb
-
-        elif 'hdelta' in self.cell_type:
-            csv_files = glob.glob1(self.regfol,"*.csv")
-            csv_list = []
-            for file in csv_files:
-                # first load PB which has ROIs manually drawn in Fiji. column labels need to be correct: L-2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15-R
-                if 'pb.csv' in file:
-                    pb = pd.read_csv(os.path.join(self.regfol, file))
-                    pb = pb.loc[:, pb.columns.str.contains('Mean')]
-                    pb.columns = pb.columns.str.strip('Mean(')
-                    pb.columns = pb.columns.str.strip(')')
-                    # sort to map each PB glomerulus to it's corresponting EB position
-                    pb = pb[['2','4','6','8','10','12','14','16','1','3','5','7','9','11','13','15']]
-                    pb.columns = pb.columns + '_pb'
-                    for column in pb.columns:
-                        if 'index' in column:
-                            pb.drop(labels=column, axis=1, inplace=True)
-                # now load FB wedges, which have been automatically created and enumerated left to right in class FB
-                if 'fb.csv' in file:
-                    fb = pd.read_csv(os.path.join(self.regfol, file))
-                    fb.columns = fb.columns + '_fb'
-                    for column in fb.columns:
-                        if 'index' in column:
-                            fb.drop(labels=column, axis=1, inplace=True)
-                        elif 'Unnamed' in column:
-                            fb.drop(labels=column, axis=1, inplace=True)
-            rois = pd.concat([pb.reset_index(), fb.reset_index()], axis=1)
-            rois.drop(labels='index', axis=1, inplace=True)
-
-        elif 'hdb' in self.cell_type:
-            csv_files = glob.glob1(self.regfol,"*.csv")
-            csv_list = []
-            for file in csv_files:
-                # first load PB which has ROIs manually drawn in Fiji. column labels need to be correct: L-2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15-R
-                if 'eb.csv' in file:
-                    eb = pd.read_csv(os.path.join(self.regfol, file))
-                    eb.columns = eb.columns + '_eb'
-                    for column in eb.columns:
-                        if 'index' in column:
-                            eb.drop(labels=column, axis=1, inplace=True)
-                        elif 'Unnamed' in column:
-                            eb.drop(labels=column, axis=1, inplace=True)
-                # now load FB wedges, which have been automatically created and enumerated left to right in class FB
-                if 'fb.csv' in file:
-                    fb = pd.read_csv(os.path.join(self.regfol, file))
-                    fb.columns = fb.columns + '_fb'
-                    for column in fb.columns:
-                        if 'index' in column:
-                            fb.drop(labels=column, axis=1, inplace=True)
-                        elif 'Unnamed' in column:
-                            fb.drop(labels=column, axis=1, inplace=True)
-            if 'eb' in locals():
-                rois = pd.concat([eb.reset_index(), fb.reset_index()], axis=1)
-            else:
-                rois = pd.concat([fb.reset_index()], axis=1)
-            rois.drop(labels='index', axis=1, inplace=True)
-
-        # experimenting with looking at upper and lower part of hdc
-        elif 'hd' in self.cell_type:
-            csv_files = glob.glob1(self.regfol,"*fb*.csv")
-            csv_list = []
-            for file in csv_files:
-                fb = pd.read_csv(os.path.join(self.regfol, file))
-
-                # for looking at upper and lower FB layers
-                if 'upper' in file:
-                    tag = 'upper'
-                elif 'lower' in file:
-                    tag = 'lower'
-                else:
-                    tag = 'fb'
-                fb.columns = fb.columns + '_'+tag
-
-                for column in fb.columns:
-                    if 'index' in column:
-                        fb.drop(labels=column, axis=1, inplace=True)
-                    elif 'Unnamed' in column:
-                        fb.drop(labels=column, axis=1, inplace=True)
-                csv_list.append(fb)
-            rois = pd.concat(csv_list, axis=1)
-            #rois.drop(labels='index', axis=1, inplace=True)
-
-        elif len(csv_files) == 1: # one z slice no splits
-            csv = pd.read_csv(os.path.join(self.regfol, csv_files[0]))
-            csv = csv.loc[:, csv.columns.str.contains('Mean')]
-            csv.columns = csv.columns.str.strip('Mean(')
-            csv.columns = csv.columns.str.strip(')')
-            csv_dff = csv.apply(fn.dff).add_suffix('_dff')
-            rois = csv.join(csv_dff, how = 'right')
-
-        elif self.split is not None: # one slice, multiple splits
-            csv_list = []
-            for file in csv_files:
-                csv = pd.read_csv(os.path.join(self.regfol, file))
-                csv = csv.loc[:, csv.columns.str.contains('Mean')]
-                csv.columns = csv.columns.str.strip('Mean(')
-                csv.columns = csv.columns.str.strip(')')
-                csv_dff = csv.apply(fn.dff).add_suffix('_dff')
-                csv = csv.join(csv_dff, how = 'right')
-                csv_list.append(csv)
-            rois = pd.concat(csv_list, ignore_index = True)
-        setattr(self, 'rois', rois)
-        return rois
 
     def calculate_del_t_old(self):
         ft = self.load_preprocessing()

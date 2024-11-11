@@ -17,6 +17,7 @@ from matplotlib import cm
 import matplotlib as mpl
 import statsmodels.api as sm
 from src.utilities import funcs as fn
+from scipy import signal
 #%%
 class fci_regmodel:
     def __init__(self,y,ft2,pv2):
@@ -88,6 +89,30 @@ class fci_regmodel:
                 x[x<0] = 0
             elif r == 'angular velocity abs':
                 x = np.abs(pd.Series.to_numpy(self.ft2['ang_velocity'].copy()))
+                
+                
+            elif r =='angular velocity smooth pos':
+                x = pd.Series.to_numpy(self.ft2['ang_velocity'].copy())  
+                xarray = np.ones(10)/10
+                x = signal.convolve(x,xarray)
+                x = x[4:-5]
+                x[x<0] = 0 
+            elif r =='angular velocity smooth neg':
+                x = pd.Series.to_numpy(self.ft2['ang_velocity'].copy())  
+                xarray = np.ones(10)/10
+                x = signal.convolve(x,xarray)
+                x = -x[4:-5]
+                x[x<0] = 0 
+            elif r=='angular acceleration pos':
+                x = self.ft2['ang_velocity'].to_numpy()
+                x = np.diff(x)
+                x = np.append(0,x)
+                x[x<0] = 0
+            elif r=='angular acceleration neg':
+                x = -self.ft2['ang_velocity'].to_numpy()
+                x = np.diff(x)
+                x = np.append(0,x)
+                x[x<0] = 0
             elif r== 'x pos':
                 #x = pd.Series.to_numpy(self.ft2['x_velocity'])
                 x = pd.Series.to_numpy(self.ft2['ft_posx'].copy())
@@ -136,6 +161,7 @@ class fci_regmodel:
                 xp = np.percentile(np.abs(x),99)
                 x[x>xp] = xp
                 x[x<-xp] = -xp
+            
             elif r == 'stationary':
                 # x1 = pd.Series.to_numpy(self.ft2['x_velocity'].copy())
                 # x2 = pd.Series.to_numpy(self.ft2['y_velocity'].copy()) 
@@ -590,7 +616,7 @@ class fci_regmodel:
     
     
     
-    def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0):    
+    def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0,pw=5):    
         colour = self.ca
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
@@ -618,12 +644,12 @@ class fci_regmodel:
    
         xlims = [x_med-mrange/2, x_med+mrange/2]
 
-        c_map = plt.get_cmap('coolwarm')
-        if cmin==cmax:
-            cmax = np.round(np.percentile(colour[~np.isnan(colour)],97.5),decimals=1)
-        cnorm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
-        scalarMap = cm.ScalarMappable(cnorm, c_map)
-        c_map_rgb = scalarMap.to_rgba(colour)
+        # c_map = plt.get_cmap('coolwarm')
+        # if cmin==cmax:
+        #     cmax = np.round(np.percentile(colour[~np.isnan(colour)],97.5),decimals=1)
+        # cnorm = mpl.colors.Normalize(vmin=cmin, vmax=cmax)
+        # scalarMap = cm.ScalarMappable(cnorm, c_map)
+        # c_map_rgb = scalarMap.to_rgba(colour)
         #x = x-x[0]
        # y = y -y[0]
         plt.rcParams['pdf.fonttype'] = 42 
@@ -637,8 +663,8 @@ class fci_regmodel:
         yj = np.append(yj,y.to_numpy()[-1])
         plt.fill()
         tj = 0
-        x1 = xcent+5+tj
-        x2 = xcent-5+tj
+        x1 = xcent+pw+tj
+        x2 = xcent-pw+tj
         y1 = 0
         y2 = yj[0]
         xvec = np.array([x1,x2,x2,x1])
@@ -651,8 +677,8 @@ class fci_regmodel:
             plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
         for i,j in enumerate(jn):
             tj = jumps[j]
-            x1 = xcent+5+tj
-            x2 = xcent-5+tj
+            x1 = xcent+pw+tj
+            x2 = xcent-pw+tj
             y1 = yj[i]
             y2 = yj[i+1]
             xvec = np.array([x1,x2,x2,x1])
@@ -660,9 +686,14 @@ class fci_regmodel:
             for c in cents:
                 plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
 
+        from Utils.utils_plotting import uplt
+        ax = plt.gca()
         
-        for i in range(len(x)-1):
-            ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
+        colour[colour<cmin] = cmin
+        colour[colour>cmax] = cmax 
+        uplt.coloured_line(x,y,colour,ax,cmap='coolwarm')
+        # for i in range(len(x)-1):
+        #     ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
         #plt.scatter(x[inplume],y[inplume],color='b')
         plt.xlim(xlims)
         plt.ylim(ylims)
@@ -672,7 +703,7 @@ class fci_regmodel:
         x1 = np.min(x)-10
         x2 = np.max(x)+10
         plt.xlim([x1,x2])
-        ax = plt.gca()
+        #ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
@@ -868,7 +899,10 @@ class fci_regmodel:
             plt.plot(x+xoffset,y,color=c_map_rgb[i,:])
     def mean_traj_heat_jump(self,CA,xoffset=0,set_cmx =False,cmx=1):
         traj,ca = self.mean_traj_nF_jump(CA)
-        self.jump_heat(traj,ca,xoffset)
+        if set_cmx==False:
+            self.jump_heat(traj,ca,xoffset)
+        else:
+            self.jump_heat(traj,ca,xoffset,set_cmx=cmx)
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         

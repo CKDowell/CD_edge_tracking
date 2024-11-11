@@ -13,7 +13,7 @@ import analysis_funs.utilities.funcs as fc
 from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt 
-from src.utilities import imaging as im
+from analysis_funs.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from scipy import stats
@@ -24,8 +24,8 @@ from analysis_funs.utilities import funcs as fn
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [2]:
-    datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial"+str(i))
+for i in [5]:
+    datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -35,6 +35,10 @@ for i in [2]:
     #%
     ex.mask_slice = {'All': [1,2,3,4]}
     ex.t_projection_mask_slice()
+    
+#%% To check
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241024\\f2\\Trial2"
+    
 #%% Basic data processing
 experiment_dirs = [
     #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240404\\f1\\Trial3",
@@ -43,16 +47,31 @@ experiment_dirs = [
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240410\\f1\\Trial5", # Issue with jumps
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240411\\f2\\Trial4", # Jumps not saved
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240411\\f2\\Trial5", # Jumps not saved
-                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",#Jump
-                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",# Jump
-                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2", # jump
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",#Jumps ****
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",# Jumps ****
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2", # Jumps ****
                    #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial1",# Motion artefact
-                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial1",#No ET but Pb imaged
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",# Jumps ****
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial1",#No ET but Pb imaged
                    #"Y:\Data\FCI\Hedwig\FC2_maimon2\\240911\\f2\\Trial3" # No ET but Pb imaged.
+                   
+                    #  "Y:\Data\FCI\Hedwig\FC2_maimon2\\241024\\f2\\Trial2",# No jumps
+                    #  "Y:\Data\FCI\Hedwig\FC2_maimon2\\241025\\f2\\Trial3",# No jumps
+                    #  "Y:\Data\FCI\Hedwig\FC2_maimon2\\241025\\f2\\Trial4", # 3 jumps
+                    #  "Y:\Data\FCI\Hedwig\FC2_maimon2\\241029\\f2\\Trial2", # 2 jumps
+                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241030\\f1\\Trial1", # No jumps
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241030\\f1\\Trial3", # No jumps
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial2",
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial3",
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4",
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5" # 8jumps
+                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial1",#Not quite jumps
+                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",#Lots of jumps
+                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial5"#Training
+                   
                    ]
 
-regions = ['fsb_lower','fsb_upper','pb']
+regions = ['fsb_lower','fsb_upper','eb']
 for e in experiment_dirs:
     datadir =os.path.join(e)
     print(e)
@@ -76,7 +95,30 @@ for e in experiment_dirs:
     
     cxa.save_phases()
 #%% Data exploration
+experiment_dirs = [
+
+                     #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241024\\f2\\Trial2",
+                     #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241025\\f2\\Trial3",
+                     #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241025\\f2\\Trial4",#decent 3 jumps
+                     #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241029\\f2\\Trial2",# 2 jumps, not enough
+                    #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241030\\f1\\Trial1",
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241030\\f1\\Trial3",
+                   
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial2",
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial3",
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4",
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5" # 8 jumps
+                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2"
+                   ]
 plt.close('all')
+for e in experiment_dirs:
+    cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'],yk='eb')
+    cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
+    plt.figure()
+    cxa.mean_jump_arrows()
+    cxa.mean_jump_lines()
+#%%
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='pb')
 #cxa.simple_raw_plot(plotphase=True)
 #%%
@@ -96,12 +138,46 @@ datadirs = [
     "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2"]
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5"]
 datadir =datadirs[3]
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 cxa.von_mises_fit()
+# %% relationship between phase and heading for jump returns
+plt.close('all')
+fig1, ax = plt.subplots()
+samplepoints = 20
+pltmat = np.zeros((len(datadirs),samplepoints,2))
+from utils_plotting import uplt
+from scipy.stats import circmean
+for i,d in enumerate(datadirs):
+    cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    pltmat[i,:,:] = cxa.jump_vs_heading(plotall=False,ax=ax,cmaps='coolwarm',samplepoints=samplepoints)
+pltmn = circmean(pltmat,low=-np.pi,high=np.pi,axis=0)
+c = np.linspace(0,1,samplepoints)
+
+
+
+plt.plot([-np.pi,np.pi],[-0.5*np.pi,-0.5*np.pi],color='r',linestyle='--')
+plt.plot([-0.5*np.pi,-0.5*np.pi],[-np.pi,np.pi],color='r',linestyle='--')
+plt.ylabel('FC2 phase')
+plt.xlabel('Heading')
+xt = np.array([-1,-0.5,0,0.5,1])*np.pi
+lines =uplt.coloured_line(pltmn[:,0],pltmn[:,1],c,ax,cmap='YlGnBu',linewidth=4)
+cbar = fig1.colorbar(lines,label='Normalised time',ticks=[0,1])
+cbar.ax.set_yticklabels(['Exit','Entry']) 
+
+#plt.plot(pltmn[[0,-1],0],pltmn[[0,-1],1],color=[0.2,0.2,1],linestyle='--')
+plt.arrow(pltmn[0,0],pltmn[0,1],pltmn[-1,0]-pltmn[0,0],pltmn[-1,1]-pltmn[0,1],
+          length_includes_head=True,head_width=0.2,color=[0.2,0.2,1],linestyle='--',zorder=100)
+plt.xticks(xt,labels=['-$\pi$','-$\pi$/2','0','$\pi$/2','$\pi$'])
+plt.yticks(xt,labels=['-$\pi$','-$\pi$/2','0','$\pi$/2','$\pi$'])
+#%%
+plt.close('all')
+cxa = CX_a(datadirs[2],regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+cxa.jump_vs_heading(plotall=True,ax=ax,cmaps='coolwarm',samplepoints=samplepoints)
 # %% Plume transition to return
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\FC2_maimon2'
 plt.close('all')

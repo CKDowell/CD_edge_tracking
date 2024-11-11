@@ -8,34 +8,67 @@ Created on Thu Mar  7 17:44:43 2024
 from analysis_funs.regression import fci_regmodel
 import os
 import matplotlib.pyplot as plt 
-from src.utilities import imaging as im
+from analysis_funs.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_tan import CX_tan
 
 import numpy as np
+#%% Image registration
+
+for i in [1,3]:
+    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial"+str(i))
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    #% Registration
+    ex = im.fly(name, datadir)
+    ex.register_all_images(overwrite=True)
+    ex.z_projection()
+    #%
+    ex.mask_slice = {'All': [1,2,3,4]}
+    ex.t_projection_mask_slice()
+
+
+
 #%% 
-datadir =os.path.join("Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3")
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-#%% Registration
-ex = im.fly(name, datadir)
-ex.register_all_images(overwrite=True)
-ex.z_projection()
-#%% Masks for ROI drawing
-ex.mask_slice = {'All': [1,2,3,4]}
-ex.t_projection_mask_slice()
-#%% 
-cx = CX(name,['fsbTN'],datadir)
-# save preprocessing, consolidates behavioural data
-cx.save_preprocessing()
-# Process ROIs and saves csv
-cx.process_rois()
-# Post processing, saves data as h5
-cx.crop = False
-cx.save_postprocessing()
-pv2, ft, ft2, ix = cx.load_postprocessing()
+datadirs = [
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial1",
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial2",
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial3",
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial4",
+    "Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial1",
+    #"Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial3"
+    ]
+for datadir in datadirs:
+
+    cx = CX(name,['fsbTN'],datadir)
+    # Process ROIs and saves csv
+    cx.process_rois()
+    
+    # save preprocessing, consolidates behavioural data
+    cx.save_preprocessing()
+    
+    # Post processing, saves data as h5
+    cx.crop = False
+    cx.save_postprocessing()
+    pv2, ft, ft2, ix = cx.load_postprocessing()
+    
+#%% Jump assessment
+datadirs = [
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial1",
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial2",
+    "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial3",# Good jumps
+    # "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial4",
+    # "Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial1",
+    "Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial3" # Good jumps
+    ]
+pw = [5,5,5,5,10,10]
+for i,datadir in enumerate(datadirs):
+    cxt = CX_tan(datadir)
+    cxt.fc.example_trajectory_jump(cmin=-0.4,cmax=0.5,pw=pw[i])
+    plt.figure()
+    cxt.plot_mean_traj_jump(cmin=-0.5,cmax=0.5)
 #%% 
 fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
 fc.rebaseline(span=500,plotfig=True)
@@ -50,18 +83,30 @@ fc.example_trajectory(cmin=-0.5,cmax=0.5)
 
 #%%
 
-fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
-fc.rebaseline(span=500,plotfig=True)
+datadir = "Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial3" 
+cxt = CX_tan(datadir)
+#%%
+from scipy import signal
+x = ft2['ang_velocity'].to_numpy()
+xarray = np.ones(10)/10
+x2 = signal.convolve(x,xarray,method="direct")
+#fc.rebaseline(span=500,plotfig=True)
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                'angular velocity pos','angular velocity neg','translational vel','ramp down since exit','ramp to entry']
-fc.run(regchoice)
-fc.run_dR2(20,fc.xft)
+                                'angular velocity pos','angular velocity neg',
+                                #'angular acceleration neg','angular acceleration pos',
+                                #'angular velocity smooth pos','angular velocity smooth neg',
+                                'translational vel','ramp down since exit','ramp to entry']
+cxt.fc.run(regchoice)
+cxt.fc.run_dR2(20,cxt.fc.xft)
 
-fc.plot_mean_flur('odour_onset')
-fc.plot_example_flur()
+cxt.fc.plot_mean_flur('odour_onset')
+cxt.fc.plot_example_flur()
+#cxt.fc.plot_flur_w_regressors(['angular velocity neg','angular velocity pos'],cacol='r')
+
+
 plt.figure()
-plt.plot(fc.dR2_mean)
+plt.plot(cxt.fc.dR2_mean)
 plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
 plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)
@@ -70,7 +115,7 @@ plt.xlabel('Regressor name')
 plt.show()
 
 plt.figure()
-plt.plot(fc.coeff_cv[:-1])
+plt.plot(cxt.fc.coeff_cv[:-1])
 plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
 plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)

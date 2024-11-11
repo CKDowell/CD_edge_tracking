@@ -66,28 +66,40 @@ class CX:
         # It can be applied for any region provided the tiffs are made correctly,
         # which they can with the matlab gui
         rois = self.roi_names
+        
+        t_slice = self.open_slice(1)
+        num_frames = t_slice.shape[-1]
         for r in rois:
             print(r)
             # Open mask
             t_path = os.path.join(self.folderloc,'registered',r + 'mask.tiff')
             mask = self.open_mask(t_path)
             
+            
             r_num = np.max(mask[:])
             mrange = np.arange(1,r_num+1,dtype='int')
             # Mask number specifies slice number. No reason to change this
             slice_num = np.shape(mask)[2]# may need to change for single plane imaging
             
+            
+            tseries = np.zeros((num_frames,r_num))
+            tot_pixels = np.zeros((1,r_num))
             for s in range(slice_num):
                 # Load imaging data
-                t_slice = self.open_slice(s+1)
-                num_frames = t_slice.shape[-1]
-                if s==0:
-                    tseries = np.zeros((t_slice.shape[2],r_num,mask.shape[2]))
+                
+                    
                     
                 t_mask = mask[:,:,s]
                 
                 mrange = np.unique(t_mask[:])
                 mrange = mrange[mrange>0]
+                
+                # This should speed things up
+                if mrange.shape[0]==0:
+                    continue
+                
+                t_slice = self.open_slice(s+1)
+                
                 
                 for i, i_n in enumerate(mrange):
                     
@@ -95,18 +107,28 @@ class CX:
                     mskdx = t_mask ==i_n
                     projected = t_slice * mskdx[:,:,None]
                     active_pixels = projected[:,:,0].size-np.count_nonzero(projected[:,:,0]==0)
+                    tot_pixels[0,i_n-1] = active_pixels+tot_pixels[0,i_n-1]
                     temp = []
                     for frame in range(num_frames):
-                        temp.append(np.nansum(projected[:,:,frame])/active_pixels)
+                        temp.append(np.nansum(projected[:,:,frame]))
                     temp = np.array(temp)
                     
-                    tseries[:,i_n-1,s] = temp
-                    
-                tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
-                tseries_df = pd.DataFrame(tseries_condensed)
-                tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
-                # May want to add another function that interpolates a dynamic baseline as was done for my PhD
-                pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
+                    #CD edit: prior was taking average for each plane then taking sum. This means planes
+                    # with v few pixels have undue weight on the signal
+                    tseries[:,i_n-1] = tseries[:,i_n-1]+temp
+                
+            tseries_condensed = np.divide(tseries,tot_pixels)
+            #tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
+            tseries_df = pd.DataFrame(tseries_condensed)
+            
+            # Dynamic baselining - use with caution
+            #tseries_df = tseries_df.apply(fn.lnorm_dynamic).to_numpy()
+            
+            tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
+            # May want to add another function that interpolates a dynamic baseline as was done for my PhD
+            pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
+                
+           
                 
     def save_postprocessing(self, overwrite=True):
         post_processing_file = os.path.join(self.processedfol, 'postprocessing.h5')
