@@ -417,19 +417,33 @@ class fly:
         
         f = files
         f1 = f[0]
+        fe = f[-1]
         f1s = f1.split('.')
         chn = int(f1s[0][-1])-1
+        
+        idx = int(f1.split('Cycle')[1][0:5])
+        idxe = int(fe.split('Cycle')[1][0:5])
+        if idxe==idx:
+            runorder=True
+        else:
+            runorder = False
+        
         #images = io.imread_collection(f)
         
         # CD edit 08/10/2024 
         # Simplifying and speeding up image loading
+        print('Loading data...')
         for i,file in enumerate(f):
             im = cv2.imread(file, cv2.IMREAD_UNCHANGED)
             if i ==0:
                 original = np.zeros((len(f),np.shape(im)[0],np.shape(im)[1]),dtype = 'uint16')
-            idx = int(file.split('Cycle')[1][0:5]) #More robust than file order
+             #More robust than file order
             #print(idx-1,i,idx-1-i)
-            original[idx-1,:,:] = im
+            if runorder:
+                original[i,:,:] = im
+            else:
+                idx = int(file.split('Cycle')[1][0:5])
+                original[idx-1,:,:] = im
          
         
         # CD edit: io.concatenate does not work because tiffs are loaded in 
@@ -449,6 +463,7 @@ class fly:
         # except: # CD edit -reordeded this since below actually takes some time
         #     print(chn)
         #     original = io.concatenate_images(images)
+        print('Loaded')
         print('Original shape',np.shape(original))
         registered = np.zeros(original.shape)
         registered_blurred = np.zeros(original.shape)

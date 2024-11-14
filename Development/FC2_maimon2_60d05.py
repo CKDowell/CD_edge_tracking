@@ -86,7 +86,7 @@ for e in experiment_dirs:
     cx.process_rois()
     # Post processing, saves data as h5
     cx.crop = False
-    cx.save_postprocessing()
+    cx.save_postprocessing()#upsample to 50Hz
     pv2, ft, ft2, ix = cx.load_postprocessing()
     cxa = CX_a(datadir,regions=np.flipud(regions))
     

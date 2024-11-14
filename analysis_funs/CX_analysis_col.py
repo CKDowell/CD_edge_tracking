@@ -278,8 +278,13 @@ class CX_a:
             plt.plot([off+15, off+31],[soff[i], soff[i]],color=[1,0.5,0.5])
             plt.plot([off+15,off+15],[s,soff[i]],color=[1,0.5,0.5])
             plt.plot([off+31,off+31],[s,soff[i]],color=[1,0.5,0.5])
-        yt = np.arange(0,max(t),600)
-        plt.yticks(yt,labels=yt/10)
+            
+            
+        frate = np.mean(np.diff(self.pv2['relative_time']))
+        yt = np.arange(0,max(t),60/frate)
+        
+        
+        plt.yticks(yt,labels=yt*frate)
         plt.ylabel('Time (s)')
         plt.show()
     def entry_exit_phase(self):

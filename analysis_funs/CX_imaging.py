@@ -79,8 +79,11 @@ class CX:
             r_num = np.max(mask[:])
             mrange = np.arange(1,r_num+1,dtype='int')
             # Mask number specifies slice number. No reason to change this
-            slice_num = np.shape(mask)[2]# may need to change for single plane imaging
-            
+            if len(mask.shape)>2:
+                slice_num = np.shape(mask)[2]# may need to change for single plane imaging
+            else:
+                slice_num =1
+                mask = mask[:,:,np.newaxis]
             
             tseries = np.zeros((num_frames,r_num))
             tot_pixels = np.zeros((1,r_num))
@@ -130,10 +133,10 @@ class CX:
                 
            
                 
-    def save_postprocessing(self, overwrite=True):
+    def save_postprocessing(self, overwrite=True,upsample=True,uperiod=0.1):
         post_processing_file = os.path.join(self.processedfol, 'postprocessing.h5')
         if not os.path.exists(post_processing_file) or overwrite:
-            pv2, ft2, ft, ix = self.behavior_imaging_align()
+            pv2, ft2, ft, ix = self.behavior_imaging_align(upsample=upsample,uperiod=uperiod)
             pv2.to_hdf(post_processing_file, key='pv2', mode='w')
             ft.to_hdf(post_processing_file, key='ft')
             ft2.to_hdf(post_processing_file, key='ft2')
@@ -446,7 +449,7 @@ class CX:
         # rois.drop(labels='index', axis=1, inplace=True)
         setattr(self, 'rois', rois)
         return rois
-    def behavior_imaging_align(self, upsample=True):
+    def behavior_imaging_align(self, upsample=True,uperiod=0.1):
         self.load_rois()
         self.split_files() #get number of slices
         delta_t = self.calculate_del_t()
@@ -478,7 +481,7 @@ class CX:
         # upsample imaging to 10Hz for consistency across animals/trials
         if upsample:
             seconds = pv2.seconds
-            upsampled_seconds = np.arange(seconds[0], seconds.iloc[-1], 0.1)
+            upsampled_seconds = np.arange(seconds[0], seconds.iloc[-1],uperiod)
             dropt_df = pv2.drop(columns='seconds')
             upsampled_dict = {}
             upsampled_dict['seconds'] = upsampled_seconds
