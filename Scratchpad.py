@@ -5,6 +5,96 @@ Created on Thu Jun 20 14:27:58 2024
 @author: dowel
 """
 
+#%% Get odour pulse statistics
+
+import numpy as np
+from Utils.utils_general import utils_general as ug
+import src.utilities.funcs as fc
+import os
+from analysis_funs.optogenetics import opto 
+import matplotlib.pyplot as plt 
+datadirs = [
+    "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",
+"Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial3",
+"Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial3",
+"Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240628\\f1\\Trial2",#Nice
+         "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f1\\Trial2",#Best for this fly
+        "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553\\240917\\f3\\Trial3",
+        "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
+        "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
+        "Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial3",
+        "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240809\\f2\\Trial2",
+        "Y:\\Data\FCI\\Hedwig\\FB5AB_SS53640\\241205\\f2\\Trial3",
+        "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
+        "Y:\\Data\\FCI\\Hedwig\\hDeltaA_SS64464\\241121\\f2\\Trial1",
+        "Y:\\Data\\FCI\\Hedwig\\hDeltaI_SS60919\\241204\\f1\\Trial2"
+        ]
+btall = np.array([])
+isi_all = np.array([])
+savedir = "Y:\\Data\FCI\\ConsolidatedData\\OdourPulseData"
+for d in datadirs:
+    print(d)
+    searchdir = os.path.join(d,'data')
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    
+    
+    df = fc.read_log(datadir)
+    
+    op = opto()
+    tt= op.get_time(df)
+    dt = np.mean(np.diff(tt))
+    
+    
+    ins = df['instrip']
+    blk = ug.find_blocks(ins)
+    blke = blk[0]+blk[1]
+    dblk = blk[0][1:]-blke[:-1]
+    
+    dblk = dblk*dt
+    dblk = dblk[dblk>0.5]
+    bt = blk[1]*dt
+    bt = bt[bt>0.5]
+    btall = np.append(btall,bt)
+    isi_all = np.append(isi_all,dblk)
+savedict = {'odour_on':btall,'isi':isi_all}
+from Utils.utils_general import utils_general as ug
+ug.save_pick(savedict,os.path.join(savedir,'odour_pulses.pkl'))
+
+#%%
+from scipy.optimize import curve_fit
+def modfun(x,a,b,c):
+    return a*np.exp(-x*b)+c
+
+bins = np.arange(0.5,20,0.5)
+plt.hist(btall,bins=bins)
+
+counts,binedges = np.histogram(btall, bins=bins)
+x = bins[1:]-0.25
+plt.plot(x,counts)
+ft = np.polyfit(np.log(x),counts, 2)
+popt,pcov = curve_fit(modfun,x,counts)
+yp = modfun(x,popt[0],popt[1],popt[2])
+plt.plot(x,yp)
+
+#%%
+bins = np.arange(0.5,100,0.5)
+plt.hist(isi_all,bins=bins)
+counts,binedges = np.histogram(isi_all, bins=bins)
+x = bins[1:]-0.25
+plt.plot(x,counts)
+ft = np.polyfit(np.log(x),counts, 2)
+popt,pcov = curve_fit(modfun,x,counts)
+yp = modfun(x,popt[0],popt[1],popt[2])
+plt.plot(x,yp)
+
+
+
 #%%
 import numpy as np
 files = f[1]

@@ -56,7 +56,7 @@ datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
 for d in datadirs:
     cxt = CX_tan(d) 
     
-    #cxt.fc.example_trajectory_jump(cmin=-0.4,cmax =0.4) 
+    cxt.fc.example_trajectory_jump(cmin=-0.4,cmax =0.4) 
     plt.figure()
     cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 

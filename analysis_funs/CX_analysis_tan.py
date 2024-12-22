@@ -184,6 +184,34 @@ class CX_tan:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+    def mean_ca_realtime_jump(self,t_length,norm=False):
+        jumps = self.get_jumps()
+        tbins = t_length*10
+        ca = np.ones((tbins,len(jumps)))*1000
+        for i,j in enumerate(jumps):
+           # print(j)
+            jend = j[2]
+            jstart = j[1]
+            jrange = np.arange(jstart,jend,dtype=int)
+            if len(jrange)>tbins:
+                
+                #print('Too long', len(jrange), tbins)
+                jrange = jrange[-tbins:]
+                #print(jrange)
+           
+            tca = self.ca
+            if norm:
+                jn = np.mean(tca[jstart-5:jstart])
+                jn2 = np.mean(tca[jend-5:jend])
+                print(jn)
+                ca[-len(jrange):,i] = tca[jrange]-jn2
+            else:
+                ca[-len(jrange):,i] = tca[jrange]
+            
+        #phases = np.flipud(phases)
+        ca[ca==1000] = np.nan
+        return ca
+    
     def mean_traj_jump(self,timethreshold=60,bins=100):
         jumps = self.get_jumps()
         newtime = np.linspace(0,1,bins)

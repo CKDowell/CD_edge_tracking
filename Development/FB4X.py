@@ -124,9 +124,13 @@ plt.xlabel('Regressor name')
 plt.show()
 #%% Summarise all
 savedir = "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\SummaryFigures"
-datadirs = ["Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3",
+datadirs = [
+    #"Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240307\\f1\\Trial3",
             "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240313\\f1\\Trial3",
-            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3"]
+            "Y:\Data\FCI\Hedwig\\SS70711_FB4X\\240531\\f1\\Trial3",
+            "Y:\Data\\FCI\\Hedwig\\SS70711_FB4X\\241030\\f3\\Trial3",
+            "Y:\\Data\\FCI\\Hedwig\\SS70711_FB4X\\241031\\f1\\Trial3"
+            ]
 
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                  'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
@@ -170,7 +174,7 @@ plt.plot(-d_R2s.T*np.sign(coeffs.T),color='k')
 plt.plot([0,len(regchoice)],[0,0],color='k',linestyle='--')
 plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
 plt.subplots_adjust(bottom=0.4)
-plt.ylabel('delta R2* sign(coeffs)')
+plt.ylabel('signed delta R2')
 plt.xlabel('Regressor name')
 plt.show()
 plt.savefig(os.path.join(savedir,'dR2_mult_coeff.png'))

@@ -606,15 +606,48 @@ class fci_regmodel:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
+    def example_trajectory_scatter(self,cmin=0,cmax=1,xcent= 0):
+        colour = self.ca
+        x = self.ft2['ft_posx']
+        y = self.ft2['ft_posy']
+        x,y = self.fictrac_repair(x,y)
+        acv = self.ft2['instrip'].to_numpy()
+        inplume = acv>0
+        st  = np.where(inplume)[0][0]
+        x = x-x[st]
+        y = y-y[st]
+        
+        xrange = np.max(x)-np.min(x)
+        yrange = np.max(y)-np.min(y)
+        mrange = np.max([xrange,yrange])+100
+        y_med = yrange/2
+        x_med = xrange/2
+        ylims = [y_med-mrange/2, y_med+mrange/2]
+   
+        xlims = [x_med-mrange/2, x_med+mrange/2]
     
+        plt.scatter(x[inplume],y[inplume],color=[0.7,0.7,0.7])
+        from Utils.utils_plotting import uplt
+        ax = plt.gca()
+        
+        colour[colour<cmin] = cmin
+        colour[colour>cmax] = cmax 
+        colour[0] = cmin # Hacky fix to get over scaling issues
+        colour[-1] = cmax # Hacky fix to get over scaling issues
     
+        uplt.coloured_line(x,y,colour,ax,cmap='coolwarm')
     
-    
-    
-    
-    
-    
-    
+        plt.xlim(xlims)
+        plt.ylim(ylims)
+        plt.xlabel('x position (mm)')
+        plt.ylabel('y position (mm)')
+        plt.title('Flur range 0 - ' + str(cmax))
+        x1 = np.min(x)-10
+        x2 = np.max(x)+10
+        plt.xlim([x1,x2])
+        #ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
     
     def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0,pw=5):    
         colour = self.ca
@@ -670,7 +703,7 @@ class fci_regmodel:
         xvec = np.array([x1,x2,x2,x1])
         yvec = [y1,y1,y2,y2]
         
-        cents = [-630,-420,-210, 0,210,420,630]
+        cents = [-1050,-840,-630,-420,-210, 0,210,420,630,840,1050]
         
         plt.fill(xvec,yvec,color=[0.7,0.7,0.7])
         for c in cents:
@@ -691,6 +724,8 @@ class fci_regmodel:
         
         colour[colour<cmin] = cmin
         colour[colour>cmax] = cmax 
+        colour[0] = cmin # Hacky fix to get over scaling issues
+        colour[-1] = cmax # Hacky fix to get over scaling issues
         uplt.coloured_line(x,y,colour,ax,cmap='coolwarm')
         # for i in range(len(x)-1):
         #     ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
@@ -784,7 +819,7 @@ class fci_regmodel:
         x = ft2['ft_posx'].to_numpy()
         y = ft2['ft_posy'].to_numpy()
         times = pv2['relative_time']
-        #x,y = self.fictrac_repair(x,y)
+        x,y = self.fictrac_repair(x,y)
         insd = np.diff(ins)
         ents = np.where(insd>0)[0]+1
         exts = np.where(insd<0)[0]+1 

@@ -60,7 +60,7 @@ class CX:
             if self.read_voltage_recording() is not None:
                 self.read_voltage_recording().to_hdf(pre_processing_file, key='spikes')
                 
-    def process_rois(self):
+    def process_rois(self,dynamicbaseline=False):
         # Aim is to process rois, save as csvs. These can then be loaded in save post-processing
         # This is essentially the same as how Andy extacts glomeruli for the PB
         # It can be applied for any region provided the tiffs are made correctly,
@@ -122,12 +122,14 @@ class CX:
                 
             tseries_condensed = np.divide(tseries,tot_pixels)
             #tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
+            
+                
             tseries_df = pd.DataFrame(tseries_condensed)
-            
-            # Dynamic baselining - use with caution
-            #tseries_df = tseries_df.apply(fn.lnorm_dynamic).to_numpy()
-            
-            tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
+            if dynamicbaseline:
+                # Dynamic baselining - useful to correct for drift, though use with caution
+                tseries_df = tseries_df.apply(fn.lnorm_dynamic).to_numpy()
+            else:
+                tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
             # May want to add another function that interpolates a dynamic baseline as was done for my PhD
             pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
                 
@@ -141,6 +143,7 @@ class CX:
             ft.to_hdf(post_processing_file, key='ft')
             ft2.to_hdf(post_processing_file, key='ft2')
             pd.DataFrame(ix).to_hdf(post_processing_file, key='ix')
+    
     def load_postprocessing(self):
         post_processing_file = os.path.join(self.processedfol,'postprocessing.h5')
         pv2 = pd.read_hdf(post_processing_file, 'pv2')

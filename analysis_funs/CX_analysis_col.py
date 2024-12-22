@@ -15,6 +15,7 @@ from scipy.stats import circmean, circstd
 from analysis_funs.utilities import funcs as fn
 import pickle
 from scipy.stats import circmean, circstd
+from Utils.utils_general import utils_general as ug
 #%%
 class CX_a:
     def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True):
@@ -93,6 +94,7 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
+            self.interpolate_over_stim(regions) # interpolates signal over shutter blockage with stimulation
             #self.pv2 = self.pv2.drop(columns=['0_fsbtn']) # drop any reference to tangential neurons
             x= self.ft2['ft_posx']
             y = self.ft2['ft_posy']
@@ -136,19 +138,19 @@ class CX_a:
                         if i==0:
                             self.phase =p
                             self.amp = p
-                            self.phase_offset = o
-                            self.phase_offset = self.phase_offset.to_numpy()
+                            #self.phase_offset = o
+                            #self.phase_offset = self.phase_offset.to_numpy()
                             self.phase = self.phase.reshape(-1, 1)
-                            self.phase_offset = self.phase_offset.reshape(-1,1)
+                            #self.phase_offset = self.phase_offset.reshape(-1,1)
                             self.amp = self.amp.reshape(-1,1)
                             self.pdat = {'wedges_' + r:wedges,'phase_'+r:p,'amp_'+r:a}
                             
                         else:
                             p = p.reshape(-1,1)
-                            o = o.reshape(-1,1)
+                            #o = o.reshape(-1,1)
                             a = a.reshape(-1,1)
                             self.phase = np.append(self.phase,p,axis =1)
-                            self.phase_offset = np.append(self.phase_offset,o,axis =1)
+                            #self.phase_offset = np.append(self.phase_offset,o,axis =1)
                             self.amp = np.append(self.amp,a,axis = 1)
                             self.pdat.update({'wedges_' + r:wedges,'phase_'+r:p,'amp_'+r:a})
                         
@@ -160,25 +162,93 @@ class CX_a:
                     self.pdat = pickle.load(f)
                 self.phase_eb = self.pdat['phase_'+self.stab]
                 self.amp_eb = self.pdat['amp_' + self.stab]
-                
-                self.phase = self.pdat['phase_'+regions[1]]
-                self.amp = self.pdat['amp_' + regions[1]]
-                self.phase = self.phase.reshape(-1, 1)
-                self.amp = self.amp.reshape(-1,1)
-                for i,r in enumerate(regions[2:]):
-                    p = self.pdat['phase_'+r]
-                    a = self.pdat['amp_'+r]
-                    p = p.reshape(-1,1)                 
-                    a = a.reshape(-1,1) 
-                    self.phase = np.append(self.phase,p,axis =1)
-                    self.amp = np.append(self.amp,a,axis = 1)
+                if len(regions)>1:
+                    self.phase = self.pdat['phase_'+regions[1]]
+                    self.amp = self.pdat['amp_' + regions[1]]
+                    self.phase = self.phase.reshape(-1, 1)
+                    self.amp = self.amp.reshape(-1,1)
+                    for i,r in enumerate(regions[2:]):
+                        p = self.pdat['phase_'+r]
+                        a = self.pdat['amp_'+r]
+                        p = p.reshape(-1,1)                 
+                        a = a.reshape(-1,1) 
+                        self.phase = np.append(self.phase,p,axis =1)
+                        self.amp = np.append(self.amp,a,axis = 1)
+                else:
+                    self.phase = self.pdat['phase_'+regions[0]]
+                    self.amp = self.pdat['amp_' + regions[0]]
+                    self.phase = self.phase.reshape(-1, 1)
+                    self.amp = self.amp.reshape(-1,1)
             
     def save_phases(self):
         savedir = os.path.join(self.datadir,'processed','phase_dict.pkl')
         save_dict = self.pdat
         with open(savedir, 'wb') as f:
             pickle.dump(save_dict, f)
-            
+    def interpolate_over_stim(self,rois):
+        # Interpolates over LED stimulation artefacts
+        from scipy.signal import find_peaks
+        
+        try :
+            pv2 = self.pv2_original
+        except:
+            pv2 = self.pv2
+        ft2 = self.ft2
+        self.pv2_original = pv2.copy()
+        led1 = (ft2['led1_stpt'].to_numpy()-1)*-1
+        
+        led1[led1>0] =1
+        if np.sum(led1)==0:
+            return
+        bi,bs = ug.find_blocks(led1,mergeblocks=True,merg_threshold = 5)
+        
+        
+        cnames = pv2.columns.to_list()
+        
+        for ir, r in enumerate(rois):
+            roidx = [r in c for c in cnames ]
+            y_all = pv2.iloc[:,roidx].to_numpy()
+            ynew = y_all.copy()
+                   
+            t_all = np.arange(0,len(y_all)/10,.1)
+            for iy in range(np.shape(y_all)[1]):
+                y = y_all[:,iy]
+                ynew[np.isnan(ynew[:,iy]),iy] = np.nanmean(y)
+                y[np.isnan(y)] = 0
+                
+                for i in range(len(bs)):
+                    seg = np.arange(bi[i]-5,bi[i]+bs[i]+5)
+                    ty = y[seg]
+                    ty = ty-np.percentile(ty,30)
+                    ty[ty<0] = 0
+                    tyo = y[seg]
+                    tt = t_all[seg]
+                    yp = np.percentile(ty,60)-np.percentile(ty,40)
+                    peaks = find_peaks(ty,prominence=yp )[0]
+                    
+                    # Uncomment below for additional peaks if you think it is missing some 
+                    
+                    # pdiff = np.diff(peaks)
+                    # mdiff = stats.mode(pdiff)
+                    # pdub = (pdiff-mdiff[0])/mdiff[0]
+                    # xtra = np.where(pdub>0.8)[0]
+                    # for x in xtra:
+                    #     pr = np.round(pdub[x]).astype('int')
+                    #     for p in range(pr):
+                      
+                    #         peaks = np.append(peaks,peaks[x]+mdiff[0]*p)
+                    
+                    
+                    peaks = np.append(0,peaks)
+                    peaks = np.append(peaks,len(ty)-1)
+                    peaks = np.unique(peaks)
+                      
+                    ny = np.interp(tt,tt[peaks],tyo[peaks])
+                    ynew[seg,iy] = ny
+                         
+            yp = np.percentile(ynew,5,axis=0)
+            pv2.iloc[:,roidx] = ynew-yp
+        self.pv2 = pv2
     def von_mises_fit(self,gsigma=7,samsize=1000,regions=['fsb_upper']):
         """Function fits a von mises distribution to bump data
         This can then be used to fit a probability of pointing to plume edge"""
@@ -237,7 +307,7 @@ class CX_a:
        # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
         print(np.shape(eb))
         t = np.arange(0,len(eb))
-        plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],97),vmin=np.nanpercentile(eb[:],5))
+        plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],99),vmin=np.nanpercentile(eb[:],5))
         if yeseb:
             new_phase = np.interp(phase_eb, (-np.pi, np.pi), (-0.5, 15.5))
             if plotphase:
@@ -1472,7 +1542,7 @@ class CX_a:
         ax.set_aspect('equal', adjustable='box')
         plt.ylabel('Time (s)')
         plt.show()
-    def plot_traj_arrow(self,phase,amp,a_sep= 20):
+    def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False):
         try:
             phase_eb = self.pdat['offset_eb_phase'].to_numpy()
         except:
@@ -1481,10 +1551,14 @@ class CX_a:
         amp_eb = self.amp_eb.copy()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
-        it = self.ft2['intrain'].to_numpy()>0
+        
+        
         x,y = self.fictrac_repair(x,y)
         instrip = self.ft2['instrip'].to_numpy()
-        mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+        if traindat:
+            mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+            it = self.ft2['intrain'].to_numpy()>0
+            
         is1 =np.where(instrip)[0][0]
         dist = np.sqrt(x**2+y**2)
         dist = dist-dist[0]
@@ -1493,19 +1567,24 @@ class CX_a:
         x = x[is1:]
         y = y[is1:]
         dist = dist[is1:]
-        it = it[is1:]
+        
         instrip = instrip[is1:]
-        mfc = mfc[is1:]
+        if traindat:
+            it = it[is1:]
+            mfc = mfc[is1:]
         phase = phase[is1:]
         phase_eb = phase_eb[is1:]
         amp = amp[is1:]
         amp_eb = amp_eb[is1:]
         
-        plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
-        ito = np.logical_and(it,mfc)
+        
+        if traindat:
+            plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
+            ito = np.logical_and(it,mfc)
             
         plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
-        plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
+        if traindat:
+            plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
         
         plt.plot(x,y,color='k')
         t_sep = a_sep
@@ -1515,7 +1594,7 @@ class CX_a:
                 
                 xa = 50*amp_eb[i]*np.sin(phase_eb[i])
                 ya = 50*amp_eb[i]*np.cos(phase_eb[i])
-                #plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
                 
                 xa = 50*amp[i]*np.sin(phase[i])
                 ya = 50*amp[i]*np.cos(phase[i])
@@ -1775,13 +1854,15 @@ class CX_a:
         plt.xlabel('return/train instance')
         plt.xlim([-0.5,offs])
         
-    def plot_train_arrow_mean(self,plumeang=22.5,plumewidth=30,bins=100):
+    def plot_train_arrow_mean(self,plumeang=22.5,plumewidth=30,bins=100,anum=15):
         plt.figure()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
         x,y = self.fictrac_repair(x, y)
         phase = self.pdat['offset_fsb_upper_phase'].to_numpy()
-        
+        wd = 0.5*plumewidth*np.cos(np.pi*plumeang/180)
+        wd = plumewidth/2+2 # added one for fuzziness of boundary
+        paxo = np.array([-wd,wd,wd,-wd])
         tron,troff,mon,moff,inon,inoff = self.get_train()
         offset = 0
         for i,r in enumerate(tron):
@@ -1789,8 +1870,13 @@ class CX_a:
             tsoff = inoff[inoff<=r]
             trajmean = np.zeros((bins,2,len(tsoff)-1))
             phasemean = np.zeros((bins,len(tsoff)-1))
+            
+            trajmean_in = np.zeros((bins,2,len(tsoff)-1))
+            phasemean_in = np.zeros((bins,len(tsoff)-1))
+            # Plume 1
             for ti,t in enumerate(tsoff[:-1]):
-                dx = np.arange(t,tson[ti+1])
+                
+                dx = np.arange(t,tson[ti+1]+2)
                 tx = x[dx]
                 ty = y[dx]
                 tp = phase[dx]
@@ -1798,51 +1884,134 @@ class CX_a:
                 newtime = np.linspace(0,len(tx),bins)
                 txi = np.interp(newtime,oldtime,tx)
                 tyi = np.interp(newtime,oldtime,ty)
-                txi = txi-txi[0]
-                tyi = tyi-tyi[0]
+                subx = txi[0]
+                suby = tyi[0]
+                txi = txi-subx
+                tyi = tyi-suby
                 
                 tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
                 tpi = fc.wrap(tpi)
                 
-                
+                plt.plot(txi+offset,tyi,color='k',alpha=0.3)
                 trajmean[:,0,ti] = txi
                 trajmean[:,1,ti] = tyi
                 phasemean[:,ti] = tpi
+                
+                
+                
+                
+                
+                dx = np.arange(tson[ti+1]+1,tsoff[ti+1]+1)
+                
+                tx = x[dx]
+                ty = y[dx]
+                tp = phase[dx]
+                oldtime = np.arange(0,len(tx))
+                newtime = np.linspace(0,len(tx),bins)
+                txi = np.interp(newtime,oldtime,tx)
+                tyi = np.interp(newtime,oldtime,ty)
+                
+                txi = txi-subx
+                tyi = tyi-suby
+                
+                tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
+                tpi = fc.wrap(tpi)
+                
+                plt.plot(txi+offset,tyi,color='r',alpha=0.3)
+                trajmean_in[:,0,ti] = txi
+                trajmean_in[:,1,ti] = tyi
+                phasemean_in[:,ti] = tpi
+                
             tmean = np.mean(trajmean,axis=2)
+            tmean_in = np.mean(trajmean_in,axis=2)
+            tside = np.sign(tmean[-1,0]-tmean[0,0])
+            ym = np.max(np.max(trajmean_in[:,1,:]))
+            ymin = np.min(np.min(trajmean_in[:,1,:]))
+            xdiff = ym*np.tan(tside*np.pi*plumeang/180)
+            xdiff2 = ymin*np.tan(tside*np.pi*plumeang/180)
+            pax = paxo.copy()
+            pax[2:] = pax[2:]+xdiff
+            pax[:2] = pax[:2]+xdiff2
+            yax = np.array([ymin,ymin,ym,ym])
+            plt.fill(pax+offset+tside*wd,yax,color=[0.8,0.8,0.8])
+            
             plt.plot(tmean[:,0]+offset,tmean[:,1],color='k')
             pmean = circmean(phasemean,axis=1,high=np.pi,low=-np.pi)
-            ta = np.linspace(0,bins-1,10,dtype='int')
+            ta = np.linspace(0,bins-1,anum,dtype='int')
             for t in ta:
                 
-                print(t)
-                xa = 2*np.sin(pmean[t])
-                ya = 2*np.cos(pmean[t])
+                xa = 3*np.sin(pmean[t])
+                ya = 3*np.cos(pmean[t])
                 
-                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
+                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
             
+            plt.plot(tmean_in[:,0]+offset,tmean_in[:,1],color='r')
+            pmean = circmean(phasemean_in,axis=1,high=np.pi,low=-np.pi)
+            ta = np.linspace(0,bins-1,anum,dtype='int')
+            for t in ta:
+                
+                xa = 3*np.sin(pmean[t])
+                ya = 3*np.cos(pmean[t])
+                
+                plt.arrow(tmean_in[t,0]+offset,tmean_in[t,1],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
+            
+            # Training
             trainon = mon[np.logical_and( mon>r, mon<=troff[i])] # 30s  before
             trainoff = moff[np.logical_and( mon>r, mon<=troff[i])]
-            trainoff = np.append(trainon[0]-5,trainon)
-            offset = offset+5
+            print('Trainoff',trainoff)
+            print('trainon',trainon)
+            trainoff = np.append(trainon[0]-5,trainoff)
+            print('trainoff2',trainoff)
+            offset = offset+10
             for ti,t in enumerate(trainoff[:-1]):
-                dx = np.arange(t,trainon[ti])
+                dx = np.arange(t,trainon[ti]+1)
                 if len(dx)>50:
                     dx = dx[-50:]
                 tx = x[dx]
                 ty = y[dx]
-                tx = tx-tx[0]
-                ty = ty-ty[0]
+                subx = tx[0]
+                suby = ty[0]
+                tx = tx-subx
+                ty = ty-suby
+                
+                
                 tp = phase[dx]
                 plt.plot(tx+offset,ty,color='k')
                 
-                ta = np.linspace(0,len(tp)-1,10,dtype='int')
-                for t in ta:
-                    xa = 2*np.sin(tp[t])
-                    ya = 2*np.cos(tp[t])
-                    
-                    plt.arrow(tx[t]+offset,ty[t],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
                 
-                offset = offset+5+np.max(tx)
+                
+                ta = np.linspace(0,len(tp)-1,anum,dtype='int')
+                for t in ta:
+                    xa = 3*np.sin(tp[t])
+                    ya = 3*np.cos(tp[t])
+                    
+                    plt.arrow(tx[t]+offset,ty[t],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
+                    
+                dx = np.arange(trainon[ti],trainoff[ti+1])
+                print('to',trainon[ti])
+                print('toff',trainoff[ti])
+                tx = x[dx]
+                ty = y[dx]
+                tx = tx-subx
+                ty = ty-suby
+
+                tp = phase[dx]
+                plt.plot(tx+offset,ty,color='r')
+                
+                
+                
+                ta = np.linspace(0,len(tp)-1,anum,dtype='int')
+                for t in ta:
+                    xa = 3*np.sin(tp[t])
+                    ya = 3*np.cos(tp[t])
+                    
+                    plt.arrow(tx[t]+offset,ty[t],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
+                
+                
+                
+                
+                
+                offset = offset+7.5+np.max(tx)
             
             if (i)==(len(tron)-1):
                 tson = inon[inon>=troff[i]]
@@ -1853,13 +2022,16 @@ class CX_a:
                 
             if len(tsoff)>len(tson):
                 tsoff = tsoff[:-1]
+                
+            # Plume 2
             trajmean = np.zeros((bins,2,len(tsoff)-1))
             phasemean = np.zeros((bins,len(tsoff)-1))
-            
+            trajmean_in = np.zeros((bins,2,len(tsoff)-1))
+            phasemean_in = np.zeros((bins,len(tsoff)-1))
             
             for ti,t in enumerate(tsoff[:-1]):
                 
-                dx = np.arange(t,tson[ti+1])
+                dx = np.arange(t,tson[ti]+2)
                 tx = x[dx]
                 ty = y[dx]
                 tp = phase[dx]
@@ -1867,27 +2039,74 @@ class CX_a:
                 newtime = np.linspace(0,len(tx),bins)
                 txi = np.interp(newtime,oldtime,tx)
                 tyi = np.interp(newtime,oldtime,ty)
-                txi = txi-txi[0]
-                tyi = tyi-tyi[0]
+                subx = txi[0]
+                suby = tyi[0]
+                txi = txi-subx
+                tyi = tyi-suby
                 
                 tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
                 tpi = fc.wrap(tpi)
                 
-                
+                plt.plot(txi+offset,tyi,color='k',alpha=0.3)
                 trajmean[:,0,ti] = txi
                 trajmean[:,1,ti] = tyi
                 phasemean[:,ti] = tpi
+                
+                dx = np.arange(tson[ti]+1,tsoff[ti+1]+1)
+                
+                tx = x[dx]
+                ty = y[dx]
+                tp = phase[dx]
+                oldtime = np.arange(0,len(tx))
+                newtime = np.linspace(0,len(tx),bins)
+                txi = np.interp(newtime,oldtime,tx)
+                tyi = np.interp(newtime,oldtime,ty)
+                
+                txi = txi-subx
+                tyi = tyi-suby
+                
+                tpi = np.interp(newtime,oldtime,fc.unwrap(tp))
+                tpi = fc.wrap(tpi)
+                
+                plt.plot(txi+offset,tyi,color='r',alpha=0.3)
+                trajmean_in[:,0,ti] = txi
+                trajmean_in[:,1,ti] = tyi
+                phasemean_in[:,ti] = tpi
+                
+                
             tmean = np.mean(trajmean,axis=2)
+            tmean_in = np.mean(trajmean_in,axis=2)
+            tside = np.sign(tmean[-1,0]-tmean[0,0])
+            ym = np.max(np.max(trajmean_in[:,1,:]))
+            xdiff = ym*np.tan(tside*np.pi*plumeang/180)
+            pax = paxo.copy()
+            pax[2:] = pax[2:]+xdiff
+            
+            yax = np.array([0,0,ym,ym])
+            plt.fill(pax+offset+tside*wd,yax,color=[0.8,0.8,0.8])
+            
             plt.plot(tmean[:,0]+offset,tmean[:,1],color='k')
             pmean = circmean(phasemean,axis=1,high=np.pi,low=-np.pi)
-            ta = np.linspace(0,bins-1,10,dtype='int')
+            ta = np.linspace(0,bins-1,anum,dtype='int')
             for t in ta:
                 
                 print(t)
-                xa = 2*np.sin(pmean[t])
-                ya = 2*np.cos(pmean[t])
+                xa = 3*np.sin(pmean[t])
+                ya = 3*np.cos(pmean[t])
                 
-                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.2,color=[0.3,0.3,1])
+                plt.arrow(tmean[t,0]+offset,tmean[t,1],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
+                
+            plt.plot(tmean_in[:,0]+offset,tmean_in[:,1],color='r')
+            pmean = circmean(phasemean_in,axis=1,high=np.pi,low=-np.pi)
+            ta = np.linspace(0,bins-1,anum,dtype='int')
+            for t in ta:
+                
+                xa = 3*np.sin(pmean[t])
+                ya = 3*np.cos(pmean[t])
+                
+                plt.arrow(tmean_in[t,0]+offset,tmean_in[t,1],xa,ya,length_includes_head=True,head_width=0.3,color=[0.3,0.3,1],zorder=10)
+            
+            
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show() 

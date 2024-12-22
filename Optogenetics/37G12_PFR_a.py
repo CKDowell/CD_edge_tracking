@@ -29,34 +29,37 @@ meta_data = {'stim_type': 'plume',
 rootdir = "Y:\Data\Optogenetics\\37G12_PFR_a\\37G12_PFR_a_inhibition\\Test"
 #
 flies = [
-     #"241013\\f1\\Trial1",
-#     "241013\\f2\\Trial1",
-#     "241013\\f3\\Trial1",
-#     "241014\\f1\\Trial1",
-#     "241014\\f2\\Trial1",
-#     "241014\\f3\\Trial1",
-#     "241014\\f4\\Trial1",
-#     "241014\\f5\\Trial1",
-#     "241015\\f1\\Trial1",
-#     "241015\\f2\\Trial1",
-#     "241015\\f3\\Trial1",
-#     "241015\\f4\\Trial1",
-#     "241015\\f5\\Trial1",
-#     "241015\\f6\\Trial1",
-#     "241015\\f4\\Trial2",
-#     "241015\\f5\\Trial2",
-#     "241015\\f6\\Trial2",
+     "241013\\f1\\Trial1",
+    "241013\\f2\\Trial1",
+    "241013\\f3\\Trial1",
+    "241014\\f1\\Trial1",
+    "241014\\f2\\Trial1",
+    "241014\\f3\\Trial1",
+    "241014\\f4\\Trial1",
+    "241014\\f5\\Trial1",
+    "241015\\f1\\Trial1",
+    "241015\\f2\\Trial1",
+    "241015\\f3\\Trial1",
+    "241015\\f4\\Trial1",
+    "241015\\f5\\Trial1",
+    "241015\\f6\\Trial1",
+    "241015\\f4\\Trial2",
+    "241015\\f5\\Trial2",
+    "241015\\f6\\Trial2",
     
     "241023\\f1\\Trial1",#0 thresh
     "241023\\f2\\Trial1",# crap walker
-    "241015\\f3\\Trial1",# 0 thresh
+    
     "241015\\f4\\Trial1",# led off
     "241015\\f5\\Trial1",# crap walker
     
     "241107\\f1\\Trial1",# 0 thresh
     "241107\\f3\\Trial1",# led off
-    "241107\\f4\\Trial1"# -1000 mm threshold
+    "241107\\f4\\Trial1",# -1000 mm threshold
     
+    "241114\\f1\\Trial1",
+    "241114\\f3\\Trial1",
+    "241114\\f5\\Trial1",
     
         ]
 
@@ -69,3 +72,59 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
+    plt.title(f)
+#%% Test LED ON
+rootdir = "Y:\Data\Optogenetics\\37G12_PFR_a\\37G12_PFR_a_inhibition\\Test"
+#
+flies = [
+    "241023\\f1\\Trial1",#0 thresh
+    "241107\\f1\\Trial1",# 0 thresh
+    "241107\\f4\\Trial1",# -1000 mm threshold
+    "241114\\f5\\Trial1",
+    ]
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+    plt.title(f)
+#%% Controls - No LED
+rootdir = "Y:\Data\Optogenetics\\37G12_PFR_a\\37G12_PFR_a_inhibition\\Test"
+#
+flies = [
+    "241114\\f3\\Trial1",
+    "241107\\f3\\Trial1",# led off
+    ]
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+    plt.title(f)
+#%% Controls - UAS:GtACR1;Canton S
+rootdir = "Y:\Data\Optogenetics\\37G12_PFR_a\\37G12_PFR_a_inhibition\\Control"
+flies = [
+    "241107\\f2\\Trial1",# led off
+    "241107\\f5\\Trial1",
+    "241107\\f6\\Trial1",
+    "241114\\f2\\Trial1",
+    "241114\\f4\\Trial1",
+    ]
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+    plt.title(f)

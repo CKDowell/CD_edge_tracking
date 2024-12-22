@@ -70,6 +70,8 @@ cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'],cxa.pdat['amp_fsb_upper']
 cxa.plot_train_arrows(plumewidth=20,tperiod = 0.5)
 plt.figure()
 cxa.mean_phase_train(trng=1)
+
+cxa.plot_train_arrow_mean()
 #%% Get summary of phase and heading for test and train epochs
 train = ft2['intrain']
 train[train.isnull()] = 0
@@ -78,3 +80,10 @@ plt.plot(train)
 
 odour = ft2['mfc2_stpt']
 instrip = ft2['instrip']
+#%% 
+r = np.random.random(10)**10
+x = r*np.cos(np.pi*22.5/180)
+y = r*np.sin(np.pi*22.5/180)
+
+plt.scatter(x,y)
+plt.scatter(np.mean(x),np.mean(y))

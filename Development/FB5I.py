@@ -70,7 +70,10 @@ for d in datadirs:
     cxt.fc.example_trajectory_jump(cmin=-0.4,cmax =0.4) 
     #plt.figure()
     #cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
-
+#%%
+cxt = CX_tan(datadirs[0])
+plt.figure()
+cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 #%%
 savedir = "Y:\Data\FCI\Hedwig\\FB5I_SS100553\\SummaryFigures"
 regchoice = ['odour onset', 'odour offset', 'in odour', 

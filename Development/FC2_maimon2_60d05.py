@@ -139,7 +139,8 @@ datadirs = [
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5"]
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2"]
 datadir =datadirs[3]
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
