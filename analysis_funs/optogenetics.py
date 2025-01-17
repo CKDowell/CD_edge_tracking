@@ -187,7 +187,7 @@ class opto:
             pi = np.pi
             psize =meta_data['PlumeWidth']
             pa = meta_data['PlumeAngle']
-            
+            plt.scatter(x[led_on],y[led_on],color='r')
             if pa ==90:
                 xp = [xrange[0], xrange[1],xrange[1], xrange[0]]
                 yp = [psize/2, psize/2,-psize/2,-psize/2]
@@ -201,6 +201,7 @@ class opto:
 
             lon = np.where(led_diff>0)[0]
             loff = np.where(led_diff<0)[0]
+            print(lon)
             plt.plot([-100,100],[meta_data['ledOny'],meta_data['ledOny']],color='k',linestyle='--')
             plt.plot(x[0:lon[0]],y[0:lon[0]],color='k')
             if len(lon)>len(loff):

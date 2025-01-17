@@ -7,7 +7,7 @@ Created on Tue Aug 27 18:30:53 2024
 
 import numpy as np
 import pandas as pd
-import src.utilities.funcs as fc
+import analysis_funs.utilities.funcs as fc
 from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt
@@ -46,7 +46,7 @@ for i,f in enumerate(flies):
 rootdir = 'Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Chrimson_Corridor_outside_alt\Test_Flies'
 plt.close('all')
 flies = [
-    '240827\\f5\\Trial1']
+    '240827\\f3\\Trial1']
 meta_data['stim_type'] = 'alternation'
 for i,f in enumerate(flies):
     searchdir = os.path.join(rootdir,f)

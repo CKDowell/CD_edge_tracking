@@ -650,7 +650,7 @@ class fci_regmodel:
         plt.show()
     
     def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0,pw=5):    
-        colour = self.ca
+        colour = self.ca.copy()
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
         jumps = self.ft2['jump']

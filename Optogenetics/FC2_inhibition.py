@@ -32,6 +32,7 @@ meta_data = {'stim_type': 'alternation',
 rootdir = 'Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Chrimson_Corridor_outside\Test_Flies'
 plt.close('all')
 flies = [
+
     '240827\\f3\\Trial1',
          ]
 for i,f in enumerate(flies):
@@ -90,6 +91,17 @@ for i,f in enumerate(flies):
     savename = os.path.join(savedir,sname)
     with open(savename,'wb') as fp:
         pickle.dump(out_dict,fp)
+#%%
+
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
 #%% Extract stats alternation experiment - Control flies
 plt.close('all')
 rootdir = 'Y:\\Data\\Optogenetics\\FC2\\FC2_maimon2_alternation_inhibition\\Control_UAS_GtACR1'
@@ -116,6 +128,17 @@ for i,f in enumerate(flies):
     savename = os.path.join(savedir,sname)
     with open(savename,'wb') as fp:
         pickle.dump(out_dict,fp)
+#%%
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+
 #%% Plot data
 savedir = 'Y:\\Data\\Optogenetics\\FC2\\FC2_maimon2_alternation_inhibition\\ProcessedData'
 indir = os.listdir(savedir)

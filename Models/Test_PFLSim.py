@@ -209,7 +209,7 @@ th =cxa.ft2['ft_heading'].to_numpy()
 #v =cxa.ft2['net_motion'].to_numpy()
 tg  = np.append(th[1:],th[-1:])
 #cxa.pdat['offset_fsb_upper_phase']
-x,y = output_trajectory(v[xs:],th[xs:],tg[xs:],PFL3_meta,gain=0.3)
+x,y = output_trajectory(v[xs:],th[xs:],tg[xs:],PFL3_meta,gain=0.03)
 plt.plot(x,y)
 
 plt.plot(xo[xs:],yo[xs:],color='k')

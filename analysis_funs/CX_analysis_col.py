@@ -18,7 +18,7 @@ from scipy.stats import circmean, circstd
 from Utils.utils_general import utils_general as ug
 #%%
 class CX_a:
-    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True):
+    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True,stim=False):
         # Will need to edit more if yoking to PB and multiple FSB layers
         self.stab = regions[0]
         self.datadir = datadir
@@ -94,7 +94,8 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
-            self.interpolate_over_stim(regions) # interpolates signal over shutter blockage with stimulation
+            if stim:
+                self.interpolate_over_stim(regions) # interpolates signal over shutter blockage with stimulation
             #self.pv2 = self.pv2.drop(columns=['0_fsbtn']) # drop any reference to tangential neurons
             x= self.ft2['ft_posx']
             y = self.ft2['ft_posy']
@@ -1602,6 +1603,14 @@ class CX_a:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+    def plot_traj_arrow_jump_amp(self,phase,amp,a_sep= 20,traindat=False):
+        from analysis_funs.regression import fci_regmodel
+        fci = fci_regmodel(amp,self.ft2,self.pv2)
+        cmin = np.percentile(amp,10)
+        cmax = np.percentile(amp,90)
+        fci.mean_traj_heat_jump(amp,set_cmx=True,cmx = cmax)
+        
+        
     def plot_traj_cond(self,phase,amp,cond):
         phase_eb = self.pdat['offset_eb_phase']
         

@@ -119,7 +119,7 @@ for e in experiment_dirs:
     cxa.mean_jump_arrows()
     cxa.mean_jump_lines()
 #%%
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='pb')
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
 #cxa.simple_raw_plot(plotphase=True)
 #%%
 plt.figure()
@@ -352,6 +352,37 @@ for ir, datadir in enumerate(datadirs):
     plt.figure()
     plt.title(str(ir))
     plt.savefig(os.path.join(savedir,'Ca_withreg_' + str(ir)+ '.png'))
+#%% Amplitude modulation with returns
+plt.close('all')
+angles = np.linspace(-np.pi,np.pi,16)
+for ir, datadir in enumerate(datadirs):
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    ft2 = cxa.ft2
+    pv2 = cxa.pv2
+    weds = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.sin(angles),axis=1)
+    wedc = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.cos(angles),axis=1)
+    
+    y  = np.sqrt(weds**2+wedc**2)
+    fc = fci_regmodel(y,ft2,pv2)
+    fc.rebaseline(500)
+    
+    plt.figure()
+    plt.subplot(1,2,1)
+    fc.mean_traj_heat_jump(fc.ca)
+    plt.title('PVA')
+    
+    plt.subplot(1,2,2)
+    y = np.mean(cxa.pdat['fit_wedges_fsb_upper'],axis=1)
+    fc = fci_regmodel(y,ft2,pv2)
+    fc.rebaseline(500)
+    fc.mean_traj_heat_jump(fc.ca)
+    plt.title('mean dF/F')
+    
+    
+    fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
+    
 
 #%% 
 plt.figure()

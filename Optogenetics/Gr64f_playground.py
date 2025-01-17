@@ -45,7 +45,7 @@ for i in range(len(savedirs)):
 
 plt.close('all')
 meta_data = {'stim_type': 'plume',
-              'act_inhib':'act',
+              'act_inhib':'inhib',
     'ledOny': -float(50)/2,
               'ledOffy':float(50)/2,
               'ledOnx': 10,

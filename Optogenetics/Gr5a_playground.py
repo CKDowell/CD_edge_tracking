@@ -13,8 +13,8 @@ import os
 import matplotlib.pyplot as plt
 #%%
 plt.close('all')
-meta_data = {'stim_type': 'plume',
-              'act_inhib':'act',
+meta_data = {'stim_type': 'pulse',
+              'act_inhib':'inhib',
     'ledOny': -float(50)/2,
               'ledOffy':float(50)/2,
               'ledOnx': 10,
