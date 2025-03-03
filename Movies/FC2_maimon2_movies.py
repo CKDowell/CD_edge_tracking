@@ -73,6 +73,7 @@ axs.set_xticks([])
 axs.set_yticks([])
 axs.get_yaxis().set_visible(False)
 axs.get_xaxis().set_visible(False)
+axs.axis("off")
 # fig, axs = plt.subplots(2, 2, gridspec_kw={'height_ratios': [1, 1], 'width_ratios': [1, 1]})
 # ax = axs[0]
 # ax2 = axs[1]
@@ -80,17 +81,29 @@ axs.get_xaxis().set_visible(False)
 ax = plt.subplot2grid((2, 2), (0, 0), colspan=2)
 ax2 = plt.subplot2grid((2, 2), (1, 0))
 ax3 = plt.subplot2grid((2, 2), (1, 1))
+
+for axis in [ax, ax2, ax3]:
+    axis.spines['top'].set_visible(False)
+    axis.spines['left'].set_visible(False)
+    axis.spines['right'].set_visible(False)
+
+    if axis in [ax2, ax3]:
+        axis.spines['bottom'].set_visible(True)
+        axis.xaxis.set_visible(True)
+    else:
+        axis.spines['bottom'].set_visible(False)
+
 # Merge the two columns in the first row
 
-line2, = ax.plot([],[],color=[0.2,0.2,1])
-line3, = ax.plot([],[],lw=2,color=[0.2,0.2,0.2])
-line, = ax.plot([], [], lw=2,color=[0.2,0.2,0.2])  # Empty line plot with line width specified
+line2, = ax.plot([],[],lw=3,color=[0.2,0.2,1])
+line3, = ax.plot([],[],lw=3,color=[0.2,0.2,0.2])
+line, = ax.plot([], [], lw=1,color=[0.2,0.2,0.2])  # Empty line plot with line width specified
 px = np.array([-10,-10,10,10])
 py = np.array([-10,10,10,-10])
 line_e, = ax.plot([],[],lw=3,color='k',linestyle='--')
 line_e2, = ax.plot([],[],lw=3,color='k',linestyle='--')
 
-sc = ax.scatter([],[],color=[0.5,0.5,0.5])
+sc = ax.scatter([],[],color=[1,0.5,0.5],s=100)
 
 ax.set_xticks([])
 ax.set_yticks([])
@@ -118,7 +131,7 @@ ax2.plot(xtarray,ytarray,color='k',linestyle='--')
 ax3.plot(xtarray,ytarray,color='k',linestyle='--')
 ax2.set_xlim([-1.5, 16.5])
 ax3.set_xlim([-1.5, 16.5])
-
+plt.box('False')
 x_plm = np.array([-5, -5, 5,5])
 y_plm = [0, np.max(y), np.max(y), 0]
 #ax.fill(x_plm,y_plm,color =[0.8,0.8,0.8])

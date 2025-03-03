@@ -45,7 +45,7 @@ for i in [1,3]:
 #pv2, ft, ft2, ix = cx.load_postprocessing()
 
 #%% 
-datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS67631\\240912\\f2\\Trial3")
+datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\240912\f2\Trial3")
 
 #%%
 cxt = CX_tan(datadir)

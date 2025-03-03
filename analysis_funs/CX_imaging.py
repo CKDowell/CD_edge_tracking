@@ -42,6 +42,7 @@ class CX:
         self.regfol = os.path.join(self.folderloc, 'registered') # register folder contains registered .tiffs
         self.processedfol = os.path.join(self.folderloc, 'processed')
         self.roi_names = roi_names # these should be the same names as the tiff files
+        self.pb_logic2anat = np.array([8,0,9,1,10,2,11,3,12,4,13,5,14,6,15,7],dtype='int')
         for item in os.scandir(self.datafol):
             if item.is_dir():
                 for file in os.scandir(item):
@@ -156,10 +157,18 @@ class CX:
         wedges = pv2.filter(regex=roi_name)
         wedges.fillna(method='ffill', inplace=True)
         wedges = wedges.to_numpy()
-        phase,amp = self.get_centroidphase(wedges)
-        offset = self.continuous_offset(wedges,ft2)
+ 
+        if roi_name=='pb': #Need a fft phase calculation
+            print('FFT phase for PB')
+            pb_wedges = np.zeros_like(wedges)
+            pb_wedges[:,self.pb_logic2anat] = wedges # Alignement to anatomy from imaging
+            pb_wedges = np.fliplr(pb_wedges) # Flip lr
+            phase,amp = fn.get_fftphase(pb_wedges)
+        else: # Population vector average phase
+            phase,amp = self.get_centroidphase(wedges)
+            
+        offset = self.continuous_offset(phase,ft2)
         phase_offset = fn.wrap(phase-offset)
-        
         return phase, phase_offset, amp
     def phase_yoke(self,yoke_roi,tether_roi,ft2,pv2):
         # Function will output phase and amplitude of columnar regions.
@@ -175,8 +184,14 @@ class CX:
         yoke_wedges = pv2.filter(regex=yoke_roi)
         yoke_wedges.fillna(method='ffill', inplace=True)
         yoke_wedges = yoke_wedges.to_numpy()
-        phase,amp = self.get_centroidphase(yoke_wedges)
-        offset = self.continuous_offset(yoke_wedges,ft2)
+        if yoke_roi=='pb':
+            pb_wedges = np.zeros_like(yoke_wedges)
+            pb_wedges[:,self.pb_logic2anat] = yoke_wedges # Alignement to anatomy from imaging
+            pb_wedges = np.fliplr(pb_wedges) # Flip lr
+            phase,amp = fn.get_fftphase(pb_wedges)
+        else:
+            phase,amp = self.get_centroidphase(yoke_wedges)
+        offset = self.continuous_offset(phase,ft2)
         phase_yoke_offset = fn.wrap(phase-offset)
         fit_wedges, all_params = self.wedges_to_cos(yoke_wedges,phase_offset = offset)
         rot_wedges = self.rotate_wedges(yoke_wedges,phase_offset =offset)
@@ -238,11 +253,11 @@ class CX:
             
         return rot_wedges
             
-    def continuous_offset(self, data,ft2):
+    def continuous_offset(self, phase,ft2):
         """
         calculate the phase offset between tube and epg bumps
         """
-        phase,amp = self.get_centroidphase(data)
+        #phase,amp = self.get_centroidphase(data)
         
         tube = ft2['ft_heading'].to_numpy()
         offset = fn.unwrap(phase) - fn.unwrap(tube)

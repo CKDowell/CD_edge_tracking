@@ -39,6 +39,12 @@ flies = [
     #"240731\\f1\\Trial1",#No ET
     #"240808\\f1\\Trial1",# no ET
     #"240808\\f3\\Trial1", # no ET
+    
+    r"250128\f5\Trial1", # made it to stim but not really et
+    
+  #  r"250130\f1\Trial1",
+    r"250130\f2\Trial1",
+    r"250130\f3\Trial1",
     ]
 
 plt.rcParams['pdf.fonttype'] = 42 
@@ -51,3 +57,4 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
+    plt.title(f)

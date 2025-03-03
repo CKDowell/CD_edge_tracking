@@ -57,7 +57,9 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
-#%% Pulses
+    
+    
+#%% Activation Pulses
 rootdir = 'Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Chrimson_Pulses\Test_Flies'
 plt.close('all')
 flies = [
@@ -75,3 +77,100 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
+#%% Inhibition alternation
+rootdir = r"Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Corridor_Outside_Stim_Inhib\Test"
+plt.close('all')
+flies = [
+   # r'250121\f1\Trial1', Did not make stim
+      #   r'250121\f2\Trial1', Did not make stim
+         #r'250121\f4\Trial1', Did not make stim
+         r'250121\f6\Trial1',
+         
+         r'250122\f1\Trial1',
+         #r'250122\f3\Trial1', Did not make stim
+         #r'250122\f5\Trial1', Did not make stim
+         #r'250122\f6\Trial1', Did not make stim
+         
+         r'250124\f1\Trial1',
+         r'250124\f3\Trial1',
+        # r'250124\f5\Trial1', Did not make stim
+         
+        # r'250127\f1\Trial1', Did not make stim
+         #r'250127\f2\Trial1',
+         #r'250127\f5\Trial1',# Did not make stim
+         #r'250127\f6\Trial1',
+         
+         #r'250128\f1\Trial1',
+         r'250128\f3\Trial1',
+         ]
+meta_data['stim_type'] = 'alternation'
+meta_data['act_inhib'] = 'inhib'
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+
+#%% Inhibition jumps - Test
+# Need: 4 more good trackers before analysis
+rootdir = r"Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Inhibition_Jumps"
+plt.close('all')
+flies = [
+    r'Test\250212\f1\Trial1', #Good tracker
+    r'Test\250212\f3\Trial1', #One jump
+    r'Test\250218\f1\Trial1', # Good tracker
+    r'Test\250218\f3\Trial1', # Good tracker
+    #r'Test\250219\f1\Trial1',
+    #r'Test\250220\f1\Trial1',
+    r'Test\250220\f3\Trial1',# One jump
+    r'Test\250221\f1\Trial1' # Good tracker
+    ]
+
+meta_data['stim_type'] = 'alternation_jump'
+meta_data['act_inhib'] = 'inhib'
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+
+#%% Inhibition jumps - Control +/GtACR1
+rootdir = r"Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Inhibition_Jumps"
+plt.close('all')
+# Need: 4 more good trackers before analysis
+flies =[
+        r'Control\250212\f2\Trial1',# Good tracker
+        r'Control\250212\f4\Trial1',# Good tracker
+        r'Control\250218\f2\Trial1',# Good tracker
+        r'Control\250220\f2\Trial1',# Good tracker
+        r'Control\250221\f2\Trial1',# Strange downwind animal
+        ]
+
+meta_data['stim_type'] = 'alternation_jump'
+meta_data['act_inhib'] = 'inhib'
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+
+
+
+
+
+
+
+
+

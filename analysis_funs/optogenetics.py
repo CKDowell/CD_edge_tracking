@@ -105,8 +105,8 @@ class opto:
             led_colour = [1,0.8,0.8]
         elif a_s=='inhib':
             led_colour = [0.8, 1, 0.8]
+            
         if s_type =='plume':
-        
             #pon = pd.Series.to_numpy(df['mfc2_stpt']>0)
             pon = pd.Series.to_numpy(df['instrip']>0)
             pw = np.where(pon)
@@ -196,13 +196,14 @@ class opto:
                 xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
                 yp = [0, yrange[1], yrange[1],0,0]
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
-            plt.fill(xp,yp,color =[0.8,0.8,0.8])
+            plt.fill(xp,yp,color =[0.8,0.8,0.8],zorder=1)
             led_diff = np.diff(led_on.astype(int))
 
             lon = np.where(led_diff>0)[0]
             loff = np.where(led_diff<0)[0]
-            print(lon)
+            #print(lon)
             plt.plot([-100,100],[meta_data['ledOny'],meta_data['ledOny']],color='k',linestyle='--')
+            
             plt.plot(x[0:lon[0]],y[0:lon[0]],color='k')
             if len(lon)>len(loff):
                 plt.plot(x[lon[-1]:],y[lon[-1]:],color=led_colour)
@@ -213,16 +214,49 @@ class opto:
             for il,l in enumerate(lon):
                 plt.plot(x[l:loff[il]],y[l:loff[il]],color=led_colour)
             for il,l in enumerate(loff[:-1]):
+                print(l)
                 xsmall = x[loff[il]+1:lon[il+1]-2]
                 ysmall = y[loff[il]+1:lon[il+1]-2]
+                
+                plt.plot(xsmall,ysmall,color='k')
+                
                 inplume = instrip[loff[il]+1:lon[il+1]-2]
                 
-                plt.plot(xsmall[inplume],ysmall[inplume],color='k')
-                plt.plot(xsmall[inplume==False],ysmall[inplume==False],color=[0.5,0.5,1])
-                
-                
-                                         
+                #plt.plot(xsmall[inplume],ysmall[inplume],color='k')
+                #plt.plot(xsmall[inplume==False],ysmall[inplume==False],color=[0.5,0.5,1])
+        elif s_type=='alternation_jump':
+            ac = df['adapted_center'].to_numpy()
+            psize =meta_data['PlumeWidth']
+            pon = pd.Series.to_numpy(df['instrip']>0)
+            pw = np.where(pon)[0]
             
+            x = x-x[pw[0]]
+            y = y-y[pw[0]]
+            ac[np.isnan(ac)] = 0
+            d_ac = np.diff(ac)
+            jumps = np.where(np.abs(d_ac)>0)[0]+1
+            # Plot first plume
+            xp = np.array([-psize/2,-psize/2,psize/2,psize/2])
+            jplm = np.max(pw[pw<jumps[0]])
+            ym = y[jplm]
+            yp = np.array([0,ym,ym,0])
+            plt.fill(xp,yp,color=[0.5,0.5,0.5],alpha=0.5)
+            for i,j in enumerate(jumps):
+                jplm = np.max(pw[pw<j])
+                
+                tj = ac[j]
+                xpj = xp+tj
+                ymin = y[jplm]
+                if i<len(jumps)-1:
+                    ymax =y[np.max(pw[pw<jumps[i+1]])]
+                else:
+                    ymax = np.max(y)
+                yp = np.array([ymin,ymax,ymax,ymin])
+                plt.fill(xpj,yp,color=[0.5,0.5,0.5],alpha=0.5)
+                
+            #plt.scatter(x[pon],y[pon],color='r')    
+            plt.scatter(x[led_on],y[led_on],color=led_colour)                     
+            plt.plot(x,y,color='k')
             
         plt.gca().set_aspect('equal')
         plt.show()

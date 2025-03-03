@@ -24,8 +24,8 @@ from analysis_funs.utilities import funcs as fn
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [5]:
-    datadir =os.path.join("Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial"+str(i))
+for i in [2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_maimon2\250221\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -37,7 +37,7 @@ for i in [5]:
     ex.t_projection_mask_slice()
     
 #%% To check
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\241024\\f2\\Trial2"
+
     
 #%% Basic data processing
 experiment_dirs = [
@@ -65,13 +65,29 @@ experiment_dirs = [
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial3",
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4",
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5" # 8jumps
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial1",#Not quite jumps
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",#Lots of jumps
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial5"#Training
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial1",#Not quite jumps
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",#Lots of jumps
+                   # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial5"#Training
+                   
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250124\f1\Trial1", #Some jumps
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250124\f1\Trial4",# Training - suspend primed, 1.5 orientations
+                   #r"Y:\Data\FCI\Hedwig\FC2_maimon2\250124\f1\Trial5",# Training - suspend primed, 1 orientation
+                   
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4"
+                   
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial1",
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial2",
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial3",
+                   
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial1",
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial2",
                    
                    ]
 
-regions = ['fsb_lower','fsb_upper','eb']
+regions = ['eb','fsb_upper','fsb_lower']
 for e in experiment_dirs:
     datadir =os.path.join(e)
     print(e)
@@ -88,12 +104,31 @@ for e in experiment_dirs:
     cx.crop = False
     cx.save_postprocessing()#upsample to 50Hz
     pv2, ft, ft2, ix = cx.load_postprocessing()
-    cxa = CX_a(datadir,regions=np.flipud(regions))
+    cxa = CX_a(datadir,regions=regions)
     
     
         
     
     cxa.save_phases()
+    
+#%%
+regions = ['pb','fsb_upper','fsb_lower']
+datadir = r'Y:\Data\FCI\Hedwig\FC2_maimon2\240916\f1\Trial3'
+
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+
+cxa = CX_a(datadir,regions=regions)
+
+#%%
+regions = ['eb','fsb_upper','fsb_lower']
+datadir = r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial2"
+
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+
+cxa = CX_a(datadir,regions=regions)
+plt.scatter(cxa.ft2['ft_heading'],cxa.phase_eb,color='k')
 #%% Data exploration
 experiment_dirs = [
 
@@ -108,7 +143,8 @@ experiment_dirs = [
                    #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial3",
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4",
                    # "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5" # 8 jumps
-                   "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2"
+                   #"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2"
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4" # 14 jumps
                    ]
 plt.close('all')
 for e in experiment_dirs:
@@ -140,7 +176,8 @@ datadirs = [
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5",
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2"]
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",
+r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4"]
 datadir =datadirs[3]
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -261,7 +298,10 @@ datadirs = [
     "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f1\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240418\\f2\\Trial3",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\240502\\f1\\Trial2",
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2"]
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\240514\\f1\\Trial2",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5",
+"Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",
+r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4"]
 plt.close('all')
 x_offset = 0
 
@@ -269,8 +309,12 @@ for datadir in datadirs:
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
-    cxa.save_phases()
+    #cxa.save_phases()
+    plt.figure()
     cxa.mean_jump_arrows(x_offset)
+    plt.savefig(os.path.join(savedir,'EgJumps' + name +'_arrows.png'))
+    plt.savefig(os.path.join(savedir,'EgJumps'+ name+ '_arrows.pdf'))
+    plt.figure()
     cxa.mean_jump_lines()
     x_offset = x_offset+30
     plt.savefig(os.path.join(savedir,'EgJumps' + name +'.png'))
@@ -355,34 +399,86 @@ for ir, datadir in enumerate(datadirs):
 #%% Amplitude modulation with returns
 plt.close('all')
 angles = np.linspace(-np.pi,np.pi,16)
+plt.figure()
+xoffset = 0
 for ir, datadir in enumerate(datadirs):
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    # y = np.mean(cxa.pdat['fit_wedges_fsb_upper'],axis=1)
+    # fc = fci_regmodel(y,cxa.ft2,cxa.pv2)
+    # fc.rebaseline()
+    #cxa.mean_jump_lines(p_amp=y*3)
+    
     ft2 = cxa.ft2
     pv2 = cxa.pv2
-    weds = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.sin(angles),axis=1)
-    wedc = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.cos(angles),axis=1)
+    weds = np.mean(cxa.pdat['wedges_fsb_upper']*np.sin(angles),axis=1)
+    wedc = np.mean(cxa.pdat['wedges_fsb_upper']*np.cos(angles),axis=1)
     
-    y  = np.sqrt(weds**2+wedc**2)
-    fc = fci_regmodel(y,ft2,pv2)
-    fc.rebaseline(500)
+    y1  = np.sqrt(weds**2+wedc**2)
+    fc = fci_regmodel(y1,ft2,pv2)
+    #fc.rebaseline(500)
+    # plt.figure()
+    # fc.mean_traj_nF_jump(fc.ca,plotjumps=True)
+    # plt.title('PVA')
     
-    plt.figure()
+    
+    
+    
+    
+    #plt.figure(figsize=(20,20))
     plt.subplot(1,2,1)
-    fc.mean_traj_heat_jump(fc.ca)
+    fc.mean_traj_heat_jump(fc.ca,set_cmx=True,cmx=0.15,set_cmn=True,cmn=0.05,colormap = cm,xoffset=xoffset)
     plt.title('PVA')
+    #plt.xlim([-50,50])
+    #plt.ylim([-50,50])    
+    
     
     plt.subplot(1,2,2)
-    y = np.mean(cxa.pdat['fit_wedges_fsb_upper'],axis=1)
-    fc = fci_regmodel(y,ft2,pv2)
-    fc.rebaseline(500)
-    fc.mean_traj_heat_jump(fc.ca)
+    y2 = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    fc = fci_regmodel(y2,ft2,pv2)
+    #fc.rebaseline(500)
+    fc.mean_traj_heat_jump(fc.ca,set_cmx=True,cmx=0.5,set_cmn=True,cmn=0.4,colormap = cm,xoffset=xoffset)
     plt.title('mean dF/F')
+   # plt.xlim([-50,50])
+    #plt.ylim([-50,50])    
+    xoffset = xoffset+30
+    #plt.savefig(os.path.join(savedir,'BumpSize_' +cxa.name + '.pdf'))
+    #plt.savefig(os.path.join(savedir,'BumpSize_' +cxa.name + '.png'))
     
+    # plt.figure()
+    # fc.mean_traj_nF_jump(fc.ca,plotjumps=True)
+    # plt.title('mean dF/F')
+    # jumps = cxa.get_jumps(time_threshold=60)
+    # dat_od = np.empty((0,2))
+    # dat_ret = np.empty((0,2))
+    # plt.figure()
+    # for ij,j in enumerate(jumps):
+    #     odx = np.arange(j[0],j[1])
+    #     rdx = np.arange(j[1],j[2])
+    #     dat_od = np.append(dat_od,np.append(y1[odx,np.newaxis],y2[odx,np.newaxis],axis=1),axis=0)
+    #     dat_ret = np.append(dat_ret,np.append(y1[rdx,np.newaxis],y2[rdx,np.newaxis],axis=1),axis=0)
+    #     plt.plot(y1[odx,np.newaxis],y2[odx,np.newaxis],color='r')
+    #     plt.plot(y1[rdx,np.newaxis],y2[rdx,np.newaxis],color='k')
     
-    fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
-    
+    # plt.figure()
+    # plt.scatter(dat_od[:,0],dat_od[:,1],color='r',s=5)
+    # plt.scatter(dat_ret[:,0],dat_ret[:,1],color='k',s=5)
+    # #fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
+    # cxa.plot_traj_arrow_jump_amp(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),y,a_sep=5) 
+#%% Custom colormap
+cm = np.zeros((101,4))
+cm[:,-1] = 1
+cm[:41,0] = np.linspace(0,0.3,41)
+cm[40:,0] = np.linspace(0.3,1,61)
+
+cm[:61,2] = np.linspace(0,0.4,61)
+cm[60:,2] = np.linspace(0.4,0.1,41)
+
+cm[60:,1] = np.linspace(0,0.1,41)
+mpl.colors.ListedColormap(cm,N=101)
+#%%
+cxa.plot_traj_arrow_jump_amp(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),y,a_sep=5)    
 
 #%% 
 plt.figure()

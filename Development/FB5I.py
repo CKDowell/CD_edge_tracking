@@ -73,6 +73,7 @@ for d in datadirs:
 #%%
 cxt = CX_tan(datadirs[0])
 plt.figure()
+cxt.fc.example_trajectory_jump(cmin=-0.5,cmax=0.5)
 cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 #%%
 savedir = "Y:\Data\FCI\Hedwig\\FB5I_SS100553\\SummaryFigures"

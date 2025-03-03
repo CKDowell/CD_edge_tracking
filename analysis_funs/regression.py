@@ -906,7 +906,7 @@ class fci_regmodel:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         return traj, tca
-    def jump_heat(self,traj,ca,xoffset,set_cmx=False):
+    def jump_heat(self,traj,ca,xoffset,set_cmx=False,set_cmn=False,colormap='coolwarm'):
         
         yrange = [np.min(traj[:,1]),np.max(traj[:,1])]
         xfl = np.array([-10,0,0,-10,-10])+xoffset
@@ -920,24 +920,36 @@ class fci_regmodel:
         colour = ca
         if set_cmx==False:
             cmx = np.max(np.abs(ca))
+            
         else:
             cmx = set_cmx
-        c_map = plt.get_cmap('coolwarm')
-        cnorm = mpl.colors.Normalize(vmin=-cmx, vmax=cmx)
+        if set_cmn==False:
+            cmn=-cmx
+        else:
+            cmn = set_cmn
+        if len(colormap)<50:        
+            c_map = plt.get_cmap(colormap)
+        else:
+            c_map = mpl.colors.ListedColormap(colormap)
+        cnorm = mpl.colors.Normalize(vmin=cmn, vmax=cmx)
         scalarMap = cm.ScalarMappable(cnorm, c_map)
         c_map_rgb = scalarMap.to_rgba(colour)
+        
         
         for i in range(len(ca)-1):
             x = traj[i:i+2,0]
             y = traj[i:i+2,1]
             #ca = np.mean(ca[i:i+2])
             plt.plot(x+xoffset,y,color=c_map_rgb[i,:])
-    def mean_traj_heat_jump(self,CA,xoffset=0,set_cmx =False,cmx=1):
+    def mean_traj_heat_jump(self,CA,xoffset=0,set_cmx =False,cmx=1,set_cmn = False,cmn=-1,colormap='coolwarm'):
         traj,ca = self.mean_traj_nF_jump(CA)
         if set_cmx==False:
-            self.jump_heat(traj,ca,xoffset)
+            self.jump_heat(traj,ca,xoffset,colormap=colormap)
+        elif set_cmn==False:
+            self.jump_heat(traj,ca,xoffset,set_cmx=cmx,set_cmn=False,colormap=colormap)
         else:
-            self.jump_heat(traj,ca,xoffset,set_cmx=cmx)
+            print(cmn)
+            self.jump_heat(traj,ca,xoffset,set_cmx=cmx,set_cmn=cmn,colormap=colormap)
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         

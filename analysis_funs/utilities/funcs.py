@@ -910,7 +910,8 @@ def get_fftphase(sig, n=100, axis=-1):
     phase = phase[:, 1:midpoint]
     ix = np.where(period==8)
     phase_8 = phase[:,ix]
-    return phase_8.flatten()
+    power_8 = power[:,ix]
+    return phase_8.flatten(),power_8.flatten()
 
 def nan_helper(y):
     """Helper to handle indices and logical indices of NaNs.

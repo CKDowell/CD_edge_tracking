@@ -11,6 +11,8 @@ import src.utilities.funcs as fc
 from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt
+plt.rcParams['pdf.fonttype'] = 42 
+
 #%%
 plt.close('all')
 meta_data = {'stim_type': 'plume',
@@ -34,6 +36,7 @@ savedirs = ["Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240118\\f2\Trial1",
         "Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240124\\f2\Trial2",
         "Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240124\\f4\Trial1",
         ]
+figdir = r'Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\SummaryFigures'
 for i in range(len(savedirs)):
     sdir = savedirs[i]
     lname = os.listdir(sdir)
@@ -41,6 +44,10 @@ for i in range(len(savedirs)):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_horizontal(meta_data,df)
+    snames = sdir.split('\\')
+    plt.savefig(os.path.join(figdir,snames[-3]+snames[-2]+snames[-1] +'.png'))
+    plt.savefig(os.path.join(figdir,snames[-3]+snames[-2]+snames[-1] +'.pdf'))
+    
 #%% Horizontal delay
 
 plt.close('all')
@@ -178,6 +185,10 @@ animation = FuncAnimation(fig, update, frames=len(x_values), interval=100)
 # Save the animation to a file (e.g., GIF or MP4)
 #animation.save('sequence_animation.gif', writer='imagemagick')
 #%% 
+datadir = "Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240121\\f3\Trial1"
+lname = os.listdir(datadir)
+savepath = os.path.join(datadir,lname[0])
+df = fc.read_log(savepath)
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -196,16 +207,22 @@ pon = pd.Series.to_numpy(df['instrip']>0)
 pw = np.where(pon)
 x = x-x[pw[0][0]]
 y = y-y[pw[0][0]]
-
+x = x[pw[0][0]:]
+y = y[pw[0][0]:]
+z = z[pw[0][0]:]
 # Create initial line plot
 
-fig, ax = plt.subplots(figsize=(10,10))
+fig, ax = plt.subplots(figsize=(20,20))
 line2, = ax.plot([],[],lw=2,color=[0.2,0.2,0.2])
 line, = ax.plot([], [], lw=2,color=[0.2,0.4,1])  # Empty line plot with line width specified
-sc = ax.scatter([],[],color='red')
-
+sc = ax.scatter([],[],color='red',s=100,zorder=10)
+plt.box('False')
 ax.set_xticks([])
 ax.set_yticks([])
+ax.spines['top'].set_visible(False)
+ax.spines['left'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_visible(False)
 pa = meta_data['PlumeWidth']
 yrange = [min(y), max(y)]
 xrange = [min(x), max(x)]
@@ -269,7 +286,7 @@ path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
 writer = FFMpegWriter(fps=300)
 #writer.program = path_to_magick
 
-animation.save(os.path.join(savedir,'Outisde_Stim_fly1.avi'), writer=writer)
+animation.save(os.path.join(savedir,'Outisde_Stim_fly1_better.avi'), writer=writer)
 
 plt.show()         
 #%%

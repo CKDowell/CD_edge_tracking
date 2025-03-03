@@ -56,7 +56,8 @@ for datadir in datadirs:
 
 
 #%% Plume
-cxt = CX_tan(datadirs[2])
+cxt = CX_tan(datadirs[0])
+cxt.fc.example_trajectory(cmin=-0.5,cmax=0.5)
 cxt.fc.example_trajectory_jump(cmin=-0.5,cmax=0.5)
 
 cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True,cmx=False,offsets=20)
@@ -104,11 +105,14 @@ flies =['Y:\\Data\\FCI\\AndyData\\21D07\\20220103_21D07_sytjGCaMP7f_Fly1_001\\pr
         'Y:\\Data\\FCI\\AndyData\\21D07\\20220110_21D07_sytjGCaMP7f_Fly1_001\\processed',
         'Y:\\Data\\FCI\\AndyData\\21D07\\20220111_21D07_sytjGCaMP7f_Fly1_001\\processed']
 #%%
+
+
 datadir = 'Y:\\Data\\FCI\\AndyData\\21D07\\20220111_21D07_sytjGCaMP7f_Fly1_001\\processed'
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-post_processing_file = os.path.join(datadir,'postprocessing.h5')
-pv2 = pd.read_hdf(post_processing_file, 'pv2')
-ft2 = pd.read_hdf(post_processing_file, 'ft2')
-fc = fci_regmodel(pv2['fb5ab_dff'],ft2,pv2)
-fc.example_trajectory(cmin=-0.2,cmax=0.2)
+for datadir in flies:
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    post_processing_file = os.path.join(datadir,'postprocessing.h5')
+    pv2 = pd.read_hdf(post_processing_file, 'pv2')
+    ft2 = pd.read_hdf(post_processing_file, 'ft2')
+    fc = fci_regmodel(pv2['fb5ab_dff'],ft2,pv2)
+    fc.example_trajectory(cmin=-0.2,cmax=0.2)

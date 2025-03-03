@@ -5,6 +5,40 @@ Created on Thu Jun 20 14:27:58 2024
 @author: dowel
 """
 
+
+
+#%%
+wedges = cxa.pdat['wedges_pb']
+wedges_pb = np.zeros_like(wedges)
+wedges_pb[:,cxa.logic2anat] = wedges
+plt.imshow(wedges_pb, interpolation='None',aspect='auto',cmap='Blues')
+
+from scipy import fftpack
+n = 100
+axlen = wedges_pb.shape[-1]*n
+epg_fft = fftpack.fft(wedges_pb, axlen, -1)
+power = np.abs(epg_fft)**2
+freq = fftpack.fftfreq(axlen, 1/n)/n
+phase = np.angle(epg_fft)
+midpoint = int(freq.size/2)
+freq = freq[1:midpoint]
+period = (1./freq)
+power = power[:, 1:midpoint]
+phase = phase[:, 1:midpoint]
+ix = np.where(period==8)
+phase_8 = phase[:,ix].flatten()
+
+
+
+
+
+
+
+
+
+
+
+
 #%% Get odour pulse statistics
 
 import numpy as np
