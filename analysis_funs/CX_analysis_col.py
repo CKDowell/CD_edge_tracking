@@ -15,7 +15,7 @@ from scipy.stats import circmean, circstd
 from analysis_funs.utilities import funcs as fn
 import pickle
 from scipy.stats import circmean, circstd
-from Utils.utils_general import utils_general as ug
+from Utilities.utils_general import utils_general as ug
 from statistics import mode
 #%%
 class CX_a:

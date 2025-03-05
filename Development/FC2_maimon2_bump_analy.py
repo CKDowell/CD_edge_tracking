@@ -20,7 +20,7 @@ from scipy import stats
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
-
+from analysis_funs.CX_behaviour_pred_col import CX_b
 plt.rcParams['pdf.fonttype'] = 42 
 
 #%% 
@@ -48,15 +48,15 @@ cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 # pva
 
 
-weds = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.sin(angles),axis=1)
-wedc = np.sum(cxa.pdat['fit_wedges_fsb_upper']*np.cos(angles),axis=1)
+weds = np.sum(cxa.pdat['wedges_fsb_upper']*np.sin(angles),axis=1)
+wedc = np.sum(cxa.pdat['wedges_fsb_upper']*np.cos(angles),axis=1)
 pva  = np.sqrt(weds**2+wedc**2)
 p0 = np.mean(pva[pva<np.percentile(pva,10)])
 pva = (pva-p0)/p0
 
 # pva_norm - measure of coherence
 
-wednorm = cxa.pdat['fit_wedges_fsb_upper']
+wednorm = cxa.pdat['wedges_fsb_upper']
 wednorm = wednorm/np.max(wednorm,axis=1)[:,np.newaxis]
 
 weds = np.sum(wednorm*np.sin(angles),axis=1)
@@ -67,7 +67,7 @@ pva_norm = (pva_norm-p0)/p0
 
 
 
-ymn = np.mean(cxa.pdat['fit_wedges_fsb_upper'],axis=1)
+ymn = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
 y0 = np.mean(ymn[ymn<np.percentile(ymn,10)])
 ymn = (ymn-y0)/y0
 pva_z = pva/np.std(pva)
@@ -82,6 +82,10 @@ fci.example_trajectory_jump(cmin=0,cmax=6)
 # plt.plot(pva_z)
 # plt.plot(ymn_z)
 # plt.plot(pva_norm)
+#%%
+cxb = CX_b(datadir,regions = ['eb','fsb_upper','fsb_lower'])
+cxb.reg_traj_model(twindow=2,regions=['eb','fsb_upper','fsb_lower'])
+
 #%% 
 fc = fci_regmodel(pva_norm,ft2,pv2)
 fc.rebaseline()
