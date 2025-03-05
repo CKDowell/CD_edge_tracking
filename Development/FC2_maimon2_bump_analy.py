@@ -83,6 +83,7 @@ fci.example_trajectory_jump(cmin=0,cmax=6)
 # plt.plot(ymn_z)
 # plt.plot(pva_norm)
 #%%
+datadir = datadirs[5]
 cxb = CX_b(datadir,regions = ['eb','fsb_upper','fsb_lower'])
 cxb.reg_traj_model(twindow=2,regions=['eb','fsb_upper','fsb_lower'])
 

@@ -7,6 +7,76 @@ Created on Thu Jun 20 14:27:58 2024
 
 
 
+from analysis_funs.regression import fci_regmodel
+
+import numpy as np
+import pandas as pd
+import analysis_funs.utilities.funcs as fc
+from analysis_funs.optogenetics import opto 
+import os
+import matplotlib.pyplot as plt 
+from analysis_funs.utilities import imaging as im
+from skimage import io, data, registration, filters, measure
+from scipy import signal as sg
+from scipy import stats
+from analysis_funs.CX_imaging import CX
+from analysis_funs.CX_analysis_col import CX_a
+from analysis_funs.utilities import funcs as fn
+
+plt.rcParams['pdf.fonttype'] = 42 
+#%% Image registraion
+
+
+datadir =os.path.join(r"F:\2p\LadyBird\prairie\60D05-sytGCa7f\02282025\imaging\tapping_test-M_60D05-GcaMP7f_volume_D3-FD4-1-1-001")
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+#% Registration
+ex = im.fly(name, datadir)
+ex.register_all_images(overwrite=True)
+ex.z_projection()
+#%
+ex.t_projection_mask_slice()
+
+#%% Phase analysis
+regions = ['pb']
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+
+cx = CX(name,regions,datadir)
+# save preprocessing, consolidates behavioural data
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()#upsample to 50Hz
+pv2, ft, ft2, ix = cx.load_postprocessing()
+
+
+cxa = CX_a(datadir,regions=regions)    
+cxa.save_phases()
+
+
+#%%
+import src.utilities.funcs as fc
+file_path = os.path.join(datadir,'data','fictrac-20250228_112318.log')
+#df = pd.read_table(file_path, delimiter='[,]', engine='python')
+df = pd.read_table(file_path, delimiter='[,]', engine='python')
+
+df = fc.read_log(file_path)
+
+
+
+
+
+
+
+
+
+
+
+
+
 #%%
 wedges = cxa.pdat['wedges_pb']
 wedges_pb = np.zeros_like(wedges)
