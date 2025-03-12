@@ -85,7 +85,7 @@ fci.example_trajectory_jump(cmin=0,cmax=6)
 #%%
 datadir = datadirs[5]
 cxb = CX_b(datadir,regions = ['eb','fsb_upper','fsb_lower'])
-cxb.reg_traj_model(twindow=2,regions=['eb','fsb_upper','fsb_lower'])
+cxb.reg_traj_model(twindow=2,regions=['fsb_lower'])
 
 #%% 
 fc = fci_regmodel(pva_norm,ft2,pv2)
