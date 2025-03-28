@@ -54,7 +54,10 @@ class fci_regmodel:
                 x = self.ft2['instrip'].copy()
                 x = np.diff(x)>0
                 x = np.append([0],x)
-                
+            elif r=='oct onset':
+                x = self.ft2['mfc3_stpt'].copy()
+                x = np.diff(x)>0
+                x = np.append([0],x)
             elif r=='odour offset':  
                 x = self.ft2['instrip'].copy()
                 x = np.diff(x)<0
@@ -63,7 +66,18 @@ class fci_regmodel:
             elif r=='in odour':
                 x = self.ft2['instrip'].copy()
                 x = x>0
-                
+            elif r =='first odour':
+                x = self.ft2['instrip'].copy()
+                x = np.diff(x)>0
+                x = np.append([0],x)
+                xon = np.where(x>0)[0]
+                x[xon[1:]] = 0
+            elif r == 'first oct':
+                x = self.ft2['mfc3_stpt'].copy()
+                x = np.diff(x)>0
+                x = np.append([0],x)
+                xon = np.where(x>0)[0]
+                x[xon[1:]] = 0
             elif r == 'cos heading pos':
                 x = np.cos(self.ft2['ft_heading'].copy())
                 x[x<0] = 0 
@@ -238,18 +252,31 @@ class fci_regmodel:
         regmatrix_preconv = regmatrix.copy()    
         # convolve with Ca response kernel
         ts = self.pv2['relative_time'].copy()
-        cirf = np.exp(-ts[0:1000]/cirftau[0]) - np.exp(-ts[0:1000]/cirftau[1])
+        cirftau= np.array(cirftau)
         zpad = np.zeros(100)
-        #plt.plot(regmatrix[:,0])
-        for i in range(len(regchoice)):
-            x = regmatrix[:,i]
-            #print(np.shape(x))
-            
-            x = np.concatenate((zpad,x,zpad),0)
-            c_conv = np.convolve(x,cirf)
-            #(np.shape(c_conv))
-            c_conv = c_conv[99:-1100]
-            regmatrix[:,i] = c_conv
+        if len(cirftau.shape)>1:#if you want a different tau for each regressor
+            lts = len(ts)
+            tend = lts+100
+            for i in range(len(regchoice)):
+                cirf = np.exp(-ts/cirftau[i,0]) - np.exp(-ts/cirftau[i,1])
+                x = regmatrix[:,i]
+                x = np.concatenate((zpad,x,zpad),0)
+                c_conv = np.convolve(x,cirf)
+                #(np.shape(c_conv))
+                c_conv = c_conv[99:-tend]
+                regmatrix[:,i] = c_conv
+        else:
+            cirf = np.exp(-ts[0:1000]/cirftau[0]) - np.exp(-ts[0:1000]/cirftau[1])
+            #plt.plot(regmatrix[:,0])
+            for i in range(len(regchoice)):
+                x = regmatrix[:,i]
+                #print(np.shape(x))
+                
+                x = np.concatenate((zpad,x,zpad),0)
+                c_conv = np.convolve(x,cirf)
+                #(np.shape(c_conv))
+                c_conv = c_conv[99:-1100]
+                regmatrix[:,i] = c_conv
         #plt.plot(regmatrix[:,0])
         
         #plt.show()
@@ -258,9 +285,9 @@ class fci_regmodel:
         regmatrix[np.isnan(regmatrix)] = 0# deals with divide by zero for when animal does not do the behaviour
         regmatrix[:,-1] = 1
         return regmatrix, regmatrix_preconv
-    def run_pearson(self,regchoice):
+    def run_pearson(self,regchoice,cirftau =[0.3,0.01]):
         print('Determining regressors')
-        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice)
+        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice,cirftau)
         self.regmatrix = regmatrix
         self.regmatrix_preconv = regmatrix_preconv.copy()
         
@@ -268,8 +295,8 @@ class fci_regmodel:
         # Iterate through regressors getting pearson corr
         rhos = np.zeros(len(regchoice))
         ps = np.zeros(len(regchoice))
-        print(len(regchoice))
-        print(np.shape(rhos))
+        #print(len(regchoice))
+        #print(np.shape(rhos))
         for r in range(len(regchoice)):
             st = stats.pearsonr(y,regmatrix[:,r])
             rhos[r] = st.statistic
@@ -277,11 +304,11 @@ class fci_regmodel:
         self.pearson_rho = rhos
         self.pearson_p = ps
         
-    def run(self,regchoice,partition=False):
+    def run(self,regchoice,partition=False,cirftau =[0.3,0.01]):
         
         # Set up regessors
-        print('Determining regressors')
-        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice)
+        #print('Determining regressors')
+        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice,cirftau)
         
         self.regmatrix = regmatrix
         self.regmatrix_preconv = regmatrix_preconv.copy()
@@ -297,6 +324,7 @@ class fci_regmodel:
         # determine temporal offset
         xs = np.shape(x)
         xpad = np.zeros([20,xs[1]])
+        xpad[:,-1] = 1
         x_p = np.concatenate((xpad,x,xpad),axis= 0)
         
         r2forward = np.zeros(20)
@@ -321,8 +349,8 @@ class fci_regmodel:
         else:
             i = np.argmax(r2backward)
             xft = x_p[20-i:-20-i,:]
-        print(np.shape(xft))
-        print(np.shape(y))
+        #print(np.shape(xft))
+        #print(np.shape(y))
         self.y = y
         self.isfor = isfor
         self.delay = i
@@ -606,8 +634,8 @@ class fci_regmodel:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
-    def example_trajectory_scatter(self,cmin=0,cmax=1,xcent= 0):
-        colour = self.ca
+    def example_trajectory_scatter(self,ca,cmin=0,cmax=1,xcent= 0):
+        colour = ca#self.ca
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
         x,y = self.fictrac_repair(x,y)
@@ -627,7 +655,7 @@ class fci_regmodel:
         xlims = [x_med-mrange/2, x_med+mrange/2]
     
         plt.scatter(x[inplume],y[inplume],color=[0.7,0.7,0.7])
-        from Utils.utils_plotting import uplt
+        from Utilities.utils_plotting import uplt
         ax = plt.gca()
         
         colour[colour<cmin] = cmin
@@ -649,12 +677,12 @@ class fci_regmodel:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
-    def example_trajectory_jump(self,cmin=0,cmax=1,xcent= 0,pw=5):    
-        colour = self.ca.copy()
+    def example_trajectory_jump(self,ca,cmin=0,cmax=1,xcent= 0,pw=5,jsize=3):    
+        colour = ca#self.ca.copy()
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
         jumps = self.ft2['jump']
-        jumps = jumps-np.mod(jumps,3)
+        jumps = jumps-np.mod(jumps,jsize)
         jd = np.diff(jumps)
         jn = np.where(np.abs(jd)>0)[0]+1
         jkeep = np.where(np.diff(jn)>1)[0]
@@ -719,7 +747,7 @@ class fci_regmodel:
             for c in cents:
                 plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
 
-        from Utils.utils_plotting import uplt
+        from Utilities.utils_plotting import uplt
         ax = plt.gca()
         
         colour[colour<cmin] = cmin

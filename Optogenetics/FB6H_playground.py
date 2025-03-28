@@ -45,8 +45,11 @@ flies = [r'Test\250213\f1\Trial1',# Good tracker, walked off
          r'Test\250305\f1\Trial1', # Long returns
          r'Test\250306\f2\Trial1', # Normal ET
          r'Test\250306\f5\Trial1',# Walked off
+         r'Test\250307\f2\Trial1',# Walked off
+         
          ]
 meta_data['act_inhib'] = 'inhib'
+savedir = r'Y:\Data\Optogenetics\Summaries\FB6H'
 for i,f in enumerate(flies):
     searchdir = os.path.join(rootdir,f)
     indir = os.listdir(searchdir)
@@ -57,7 +60,10 @@ for i,f in enumerate(flies):
     op = opto()
     op.plot_plume_simple(meta_data,df)
     plt.title(f)
-    
+    savename = f.split('\\')
+    savename = "".join(savename)
+    plt.savefig(os.path.join(savedir,savename + '.pdf'))
+    plt.savefig(os.path.join(savedir,savename + '.png'))
 #%% Blanket inhibition - Control
 plt.close('all')
 rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_inhibition'
@@ -97,8 +103,24 @@ for i,f in enumerate(flies):
     op.plot_plume_simple(meta_data,df)
     plt.title(f)
 
+#%% Entry count alt
+plt.close('all')
+flies = [r'Test\250311\f4\Trial1',# Entry count alt
+r'Test\250312\f2\Trial1'#Entry count alt
+]
+rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_inhibition'
+meta_data['stim_type'] = 'alternation'
+meta_data['act_inhib'] = 'inhib'
 
-
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
 
 
 

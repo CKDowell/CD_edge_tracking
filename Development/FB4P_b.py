@@ -15,8 +15,8 @@ from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
 #%%
-for i in [3]:
-    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial"+str(i))
+for i in [1,2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -28,8 +28,8 @@ for i in [3]:
     ex.t_projection_mask_slice()
 
 #%% ROI processing
-for i in [1,3]:
-    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial"+str(i))
+for i in [1,2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cx = CX(name,['fsbTN'],datadir)
@@ -45,11 +45,15 @@ for i in [1,3]:
 #pv2, ft, ft2, ix = cx.load_postprocessing()
 
 #%% 
-datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\240912\f2\Trial3")
-
+datadirs = [r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\240912\f2\Trial3",
+            r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial1",# ET Good 5 mm jumps
+            r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial2" #Replay
+            ]
+datadir = datadirs[2]
 #%%
 cxt = CX_tan(datadir)
-cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5) 
+cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5,jsize=5) 
+cxt.fc.example_trajectory_scatter(cmin=-0.5,cmax=0.5)
 savename = os.path.join(datadir , 'Eg_traj'+ name +'.pdf')
 plt.savefig(savename)
 #%%

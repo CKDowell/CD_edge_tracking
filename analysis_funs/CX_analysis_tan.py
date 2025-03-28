@@ -16,7 +16,7 @@ import matplotlib as mpl
 import pickle
 from matplotlib import cm
 from analysis_funs.regression import fci_regmodel
-from Utils.utils_plotting import uplt
+from Utilities.utils_plotting import uplt
 #%%
 class CX_tan:
     def __init__(self,datadir,tnstring='0_fsbtn',Andy=False,span=500):
@@ -35,7 +35,12 @@ class CX_tan:
         
         self.ca = self.fc.ca
         self.fc.rebaseline(span=span,plotfig=False)
-        self.ca_rebase = self.ca
+        self.ca_rebase = self.fc.ca
+        self.tnstring = tnstring
+        
+    def reinit_fc(self):    
+        self.fc = fci_regmodel(self.pv2[[self.tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
+        
     def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
         """
         Function outputs mean trajectory of animal entering and exiting the plume

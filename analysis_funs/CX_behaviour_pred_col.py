@@ -119,11 +119,26 @@ class CX_b:
                         input_mat[i,:,-1] = tpl
                         tbef = befplume[i:i+winlen]
                         input_mat[i,:,-2] = tbef
+        elif mtype=='wedges':
+            input_mat = np.zeros((len(heading)-winlen,winlen,16*(len(regions))))
+            for ir,r in enumerate(regions):
+                two = cxa.pdat['wedges_offset_'+r]
+                if downsample:
+                    tw = np.zeros((len(heading),16))
+                    for w in range(16):
+                        tw[:,w] = np.interp(tt,tt_o,two[:,w])
+                else: 
+                    tw = two
+                for i in range(len(heading)-winlen):
+                    wmini = tw[i:i+winlen,:]
+                    input_mat[i,:,np.arange(0,16)+16*ir] = wmini.T
+                    
             
         self.input_mat =input_mat
         self.y =heading
         self.tt = tt
         self.instrip = instrip
+        self.winlen = winlen
     def reg_traj_model(self,twindow,regions,mtype='Phase_amp',index='all'):
         # Here we are going to make a simple regression based model to predict the 
         # New direction of the fly based upon neural data.

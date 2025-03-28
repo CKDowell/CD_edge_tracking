@@ -104,7 +104,7 @@ class opto:
         if a_s=='act':
             led_colour = [1,0.8,0.8]
         elif a_s=='inhib':
-            led_colour = [0.8, 1, 0.8]
+            led_colour = [0.7, 1, 0.7]
             
         if s_type =='plume':
             #pon = pd.Series.to_numpy(df['mfc2_stpt']>0)
@@ -187,7 +187,7 @@ class opto:
             pi = np.pi
             psize =meta_data['PlumeWidth']
             pa = meta_data['PlumeAngle']
-            plt.scatter(x[led_on],y[led_on],color='r')
+            #plt.scatter(x[led_on],y[led_on],color='r')
             if pa ==90:
                 xp = [xrange[0], xrange[1],xrange[1], xrange[0]]
                 yp = [psize/2, psize/2,-psize/2,-psize/2]
@@ -196,7 +196,7 @@ class opto:
                 xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
                 yp = [0, yrange[1], yrange[1],0,0]
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
-            plt.fill(xp,yp,color =[0.8,0.8,0.8],zorder=1)
+            plt.fill(xp,yp,color =[0.8,0.8,0.8],zorder=0)
             led_diff = np.diff(led_on.astype(int))
 
             lon = np.where(led_diff>0)[0]
@@ -237,6 +237,7 @@ class opto:
             jumps = np.where(np.abs(d_ac)>0)[0]+1
             # Plot first plume
             xp = np.array([-psize/2,-psize/2,psize/2,psize/2])
+           
             jplm = np.max(pw[pw<jumps[0]])
             ym = y[jplm]
             yp = np.array([0,ym,ym,0])

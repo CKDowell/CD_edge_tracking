@@ -140,7 +140,13 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
-    op.plot_plume_simple(meta_data,df)
+    try:
+        meta_data['stim_type'] = 'alternation_jump'
+        op.plot_plume_simple(meta_data,df)
+    except:
+        meta_data['stim_type'] = 'alternation'
+        op.plot_plume_simple(meta_data,df)
+
 
 #%% Inhibition jumps - Control +/GtACR1
 rootdir = r"Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Inhibition_Jumps"
@@ -164,7 +170,12 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
-    op.plot_plume_simple(meta_data,df)
+    try:
+        meta_data['stim_type'] = 'alternation_jump'
+        op.plot_plume_simple(meta_data,df)
+    except:
+        meta_data['stim_type'] = 'alternation'
+        op.plot_plume_simple(meta_data,df)
 
 
 

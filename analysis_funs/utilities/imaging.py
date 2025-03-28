@@ -549,9 +549,11 @@ class fly:
         key = 'All'    
         stack = []
         stackm = []
+        slices = slices[np.argsort(slices)]
         for slice in slices:
             for file in os.scandir(self.regfol):
                 if file.name.endswith('slice'+str(slice)+'.tif') and not file.name.startswith('._'):
+                    print(slice)
                     image = io.imread(file.path, plugin='tifffile')                     
                     proj = np.mean(image, axis=0)
                     stack.append(proj)
