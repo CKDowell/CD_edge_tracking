@@ -33,7 +33,9 @@ class CX_tan:
             self.ft2 = pd.read_hdf(post_processing_file, 'ft2')
         self.fc = fci_regmodel(self.pv2[[tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
         
-        self.ca = self.fc.ca
+        #self.ca = self.fc.ca
+        self.ca = self.pv2[[tnstring]].to_numpy() # keeps nan values, which are useful for plotting
+        self.ca_no_nan = self.fc.ca
         self.fc.rebaseline(span=span,plotfig=False)
         self.ca_rebase = self.fc.ca
         self.tnstring = tnstring

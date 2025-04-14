@@ -61,7 +61,7 @@ class CX:
             if self.read_voltage_recording() is not None:
                 self.read_voltage_recording().to_hdf(pre_processing_file, key='spikes')
                 
-    def process_rois(self,dynamicbaseline=False):
+    def process_rois(self,dynamicbaseline=False,saveraw=False):
         # Aim is to process rois, save as csvs. These can then be loaded in save post-processing
         # This is essentially the same as how Andy extacts glomeruli for the PB
         # It can be applied for any region provided the tiffs are made correctly,
@@ -123,7 +123,9 @@ class CX:
                 
             tseries_condensed = np.divide(tseries,tot_pixels)
             #tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
-            
+            if saveraw:
+                print(saveraw)
+                pd.DataFrame(tseries_condensed).to_csv(os.path.join(self.regfol,'raw_' +r+ '.csv'))
                 
             tseries_df = pd.DataFrame(tseries_condensed)
             if dynamicbaseline:

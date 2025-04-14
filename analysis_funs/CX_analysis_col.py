@@ -64,7 +64,7 @@ class CX_a:
             
             
             self.pdat = {'offset_eb_phase': data['offset_phase_eb'].to_numpy(),
-                         'offset_fsb_phase': data['offset_phase_fb_upper'].to_numpy(),
+                         'offset_fsb_upper_phase': data['offset_phase_fb_upper'].to_numpy(),
                          'offset_fsb_lower_phase': data['offset_phase_fb_lower'].to_numpy(),
                          'wedges_fsb_lower':w_eb,
                          'wedges_fsb_upper': w_fb_u,
@@ -1607,6 +1607,106 @@ class CX_a:
         ax.set_aspect('equal', adjustable='box')
         plt.ylabel('Time (s)')
         plt.show()
+    def plot_traj_arrow_peaks(self,region):
+        from scipy import signal as sg
+        from scipy import stats
+        angles = np.linspace(-np.pi,np.pi,16)
+        try:
+            phase = self.pdat['offset_'+region+'_phase'].to_numpy()
+        except:
+            phase = self.pdat['offset_'+region+'_phase']
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        instrip = self.ft2['instrip'].to_numpy()
+        is1 =np.where(instrip)[0][0]
+        is2 = np.where(instrip)[0]
+        wedges = self.pdat['wedges_'+region]
+        weds = np.sum(wedges*np.sin(angles),axis=1)
+        wedc = np.sum(wedges*np.cos(angles),axis=1)
+        pva  = np.sqrt(weds**2+wedc**2)
+        p0 = np.mean(pva[pva<np.percentile(pva,10)])
+        pva = (pva-p0)/p0
+        pva = pva/np.max(pva)
+        
+        pvsmooth = sg.savgol_filter(pva,40,3)
+        pvstd = np.std(pvsmooth)
+        peaks = sg.find_peaks(pvsmooth,prominence=pvstd) #height=pvstd,
+        
+        plt.figure()
+        tt = self.pv2['relative_time'].to_numpy()
+        heading = self.ft2['ft_heading'].to_numpy()
+        plt.plot(tt,pva,color='k')
+        plt.plot(tt,instrip-1,color='r')
+        plt.plot(tt,pvsmooth)
+        p_phases = np.zeros(len(peaks[0]))
+        h_sum = np.zeros(len(peaks[0]))
+        idiff = np.diff(instrip)
+        iw = np.append(0,np.where(idiff<0)[0])
+        
+        for i, p in enumerate(peaks[0]):
+           # print(p)
+            # dx = np.cos(peakphase[p])
+            # dy = np.sin(peakphase[p])
+            # plt.arrow(p,pvsmooth[p],dx,dy)
+            an = stats.circmean(phase[p-5:p+5],low=-np.pi,high=np.pi)
+            p_phases[i] = an
+            an = 180*an/np.pi
+            an = np.round(an)
+            
+            try: 
+                nodour = np.min(is2[is2>p])
+                tx = x[p]
+                nx = x[nodour]
+                side = np.sign(tx-nx)
+                if side<0:
+                    plt.text(tt[p],pvsmooth[p]+0.2,str(an)+ ' ls',ha='center')
+                    plt.scatter(tt[p],pvsmooth[p],marker='>',zorder=10,color='r')
+                else:
+                    plt.text(tt[p],pvsmooth[p]+0.2,str(an) +' rs',ha='center')
+                    plt.scatter(tt[p],pvsmooth[p],marker='<',zorder=10,color='r')
+            except:
+                print('end of odour')
+                
+            
+            nodour2 = np.max(iw[iw<p])
+            th = heading[nodour2:p]
+            thu = fn.unwrap(th)
+            #h_sum[i] = fn.wrap(thu[-1])
+            
+                
+        plt.figure()
+        
+        plt.plot(x,y,color='k')
+        plt.scatter(x[is2],y[is2],color=[0.7,0.7,0.7])
+        for i,p in enumerate(peaks[0]):
+            parray = np.arange(p-50,p,5)
+            ip = p
+            alpha = np.linspace(0.3,1,len(parray))
+            # for i1,ip in enumerate(parray):
+           
+            #     xa = 50*pvsmooth[ip]*np.sin(phase[ip])
+            #     ya = 50*pvsmooth[ip]*np.cos(phase[ip])
+            #     plt.arrow(x[ip],y[ip],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1],alpha=alpha[i1])
+            
+            xa = 50*pvsmooth[ip]*np.sin(phase[ip])
+            ya = 50*pvsmooth[ip]*np.cos(phase[ip])
+            plt.arrow(x[ip],y[ip],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1],alpha=1)
+            
+            # ta = -h_sum[i]
+            # xa = 50*pvsmooth[p]*np.sin(ta)
+            # ya = 50*pvsmooth[p]*np.cos(ta)
+            # plt.arrow(x[p],y[p],xa,ya,length_includes_head=True,head_width=1,color='k')
+        
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
+        
+        
+        
+        
+        
+        
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False):
         try:
             phase_eb = self.pdat['offset_eb_phase'].to_numpy()
@@ -1623,8 +1723,11 @@ class CX_a:
         if traindat:
             mfc = self.ft2['mfc2_stpt'].to_numpy()>0
             it = self.ft2['intrain'].to_numpy()>0
-            
-        is1 =np.where(instrip)[0][0]
+        try:    
+            is1 =np.where(instrip)[0][0]
+        except:
+            instrip = self.ft2['mfc3_stpt'].to_numpy>0
+            is1 = np.where(instrip)[0][0]
         dist = np.sqrt(x**2+y**2)
         dist = dist-dist[0]
         plt.figure()

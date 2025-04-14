@@ -56,11 +56,16 @@ for datadir in datadirs:
 
 
 #%% Plume
-cxt = CX_tan(datadirs[0])
-cxt.fc.example_trajectory(cmin=-0.5,cmax=0.5)
-cxt.fc.example_trajectory_jump(cmin=-0.5,cmax=0.5)
-
-cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True,cmx=False,offsets=20)
+plt.close('all')
+for d in datadirs[:-1]:
+    cxt = CX_tan(d)
+    cxt.reinit_fc()
+    cxt.fc.example_trajectory(cmin=0,cmax=1)
+    cxt.fc.example_trajectory_jump(cxt.ca_no_nan.copy(),cxt.ft,cmin=0,cmax=1,cmap='magma')
+    plt.figure()
+    plt.plot(cxt.ca_no_nan)
+    plt.plot(cxt.ft2['instrip'])
+    #cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True,cmx=False,offsets=20)
 #%% Pulses
 cxt = CX_tan(datadirs[0])
 #%%
@@ -116,3 +121,6 @@ for datadir in flies:
     ft2 = pd.read_hdf(post_processing_file, 'ft2')
     fc = fci_regmodel(pv2['fb5ab_dff'],ft2,pv2)
     fc.example_trajectory(cmin=-0.2,cmax=0.2)
+    plt.figure()
+    plt.plot(pv2['fb5ab_dff'])
+    plt.plot(ft2['instrip'])

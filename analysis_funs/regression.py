@@ -42,7 +42,7 @@ class fci_regmodel:
             plt.plot(y)
             plt.plot(yf[:,1])
             plt.show()
-    def set_up_regressors(self,regchoice,cirftau =[0.3,0.01]):
+    def set_up_regressors(self,regchoice,cirftau =[0.3,0.01],odour_num=0):
         #Cirf is very approximate and should be verified
         
         xs = np.shape(self.ft2['instrip'])
@@ -50,10 +50,41 @@ class fci_regmodel:
         regmatrix = np.ones([xs[0],len(regchoice)+1],dtype = float)
         # define regressors
         for i,r in enumerate(regchoice):
+            
+            
             if r=='odour onset':
                 x = self.ft2['instrip'].copy()
                 x = np.diff(x)>0
                 x = np.append([0],x)
+            elif r=='each odour':
+                regmatrix = np.append(regmatrix,np.ones((xs[0],odour_num-1)),axis=1)
+                ins = self.ft2['instrip'].to_numpy()
+                insd = np.diff(ins)
+                iw = np.where(insd>0)[0]
+                
+                for o in range(odour_num):
+                    
+                    x = np.zeros(xs[0])
+                    x[iw[o]] = 1
+                    regmatrix[:,i+o] = x
+            elif r=='each odour sparse':
+                regmatrix = np.append(regmatrix,np.ones((xs[0],odour_num-1)),axis=1)
+                ins = self.ft2['instrip'].to_numpy()
+                insd = np.diff(ins)
+                iw = np.where(insd>0)[0]
+                iworder = np.zeros_like(iw)
+                iwd = np.diff(iw)
+                iwdrank = iwd[:-1]+iwd[1:]
+                ir = np.argsort(-iwdrank)
+                iworder[0] = iw[0]
+                iworder[1] = iw[-1]
+                iworder[2:] = iw[ir+1]
+                
+                for o in range(odour_num):
+                    x = np.zeros(xs[0])
+                    x[iworder[o]] = 1
+                    regmatrix[:,i+o] = x
+                    
             elif r=='oct onset':
                 x = self.ft2['mfc3_stpt'].copy()
                 x = np.diff(x)>0
@@ -65,6 +96,9 @@ class fci_regmodel:
                 
             elif r=='in odour':
                 x = self.ft2['instrip'].copy()
+                x = x>0
+            elif r== 'in oct':
+                x = self.ft2['mfc3_stpt'].copy()
                 x = x>0
             elif r =='first odour':
                 x = self.ft2['instrip'].copy()
@@ -188,7 +222,7 @@ class fci_regmodel:
                 x2 = np.append([0],trans_diff)
                 xp = np.percentile(np.abs(x2),1)
                 x = np.zeros_like(x2)
-                x[np.abs(x2)<0.05] = 1
+                x[np.abs(x2)<0.1] = 1
 
             
             elif r == 'ramp to entry':
@@ -246,9 +280,12 @@ class fci_regmodel:
                 
                 
             x[np.isnan(x)] = 0
-            regmatrix[:,i] = x
+            if r!='each odour sparse':
+                regmatrix[:,i] = x
              
-            
+        #plt.plot(regmatrix[:,0]) 
+    
+        
         regmatrix_preconv = regmatrix.copy()    
         # convolve with Ca response kernel
         ts = self.pv2['relative_time'].copy()
@@ -257,13 +294,16 @@ class fci_regmodel:
         if len(cirftau.shape)>1:#if you want a different tau for each regressor
             lts = len(ts)
             tend = lts+100
-            for i in range(len(regchoice)):
+            for i in range(np.shape(regmatrix)[1]-1):
+               # print(cirftau[i,0])
                 cirf = np.exp(-ts/cirftau[i,0]) - np.exp(-ts/cirftau[i,1])
                 x = regmatrix[:,i]
+                
                 x = np.concatenate((zpad,x,zpad),0)
                 c_conv = np.convolve(x,cirf)
                 #(np.shape(c_conv))
                 c_conv = c_conv[99:-tend]
+                
                 regmatrix[:,i] = c_conv
         else:
             cirf = np.exp(-ts[0:1000]/cirftau[0]) - np.exp(-ts[0:1000]/cirftau[1])
@@ -277,11 +317,12 @@ class fci_regmodel:
                 #(np.shape(c_conv))
                 c_conv = c_conv[99:-1100]
                 regmatrix[:,i] = c_conv
-        #plt.plot(regmatrix[:,0])
+       # plt.plot(regmatrix[:,0])
         
         #plt.show()
         # normalise by standard deviation
-        regmatrix = regmatrix/np.std(regmatrix,0)
+        
+        regmatrix[:,:-1] = regmatrix[:,:-1]/np.std(regmatrix[:,:-1],0)
         regmatrix[np.isnan(regmatrix)] = 0# deals with divide by zero for when animal does not do the behaviour
         regmatrix[:,-1] = 1
         return regmatrix, regmatrix_preconv
@@ -303,12 +344,63 @@ class fci_regmodel:
             ps[r] = st.pvalue
         self.pearson_rho = rhos
         self.pearson_p = ps
+    def run_lsq(self,regchoice,partition=False,cirftau =[0.3,0.01],odour_num=0):
+        # runs least squares rather than ridge
+        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice,cirftau=cirftau,odour_num=odour_num)
         
-    def run(self,regchoice,partition=False,cirftau =[0.3,0.01]):
+        self.regmatrix = regmatrix
+        self.regmatrix_preconv = regmatrix_preconv.copy()
+        # regression engine
+        y = self.ca
+        x = regmatrix
+        yn = ~np.isnan(y)
+        y = y[yn]
+        x = x[yn,:]
+        ts_2 = self.ts.copy()
+        self.yn = yn.copy()
+        self.ts_y = ts_2[yn]
+        # determine temporal offset
+        xs = np.shape(x)
+        xpad = np.zeros([20,xs[1]])
+        xpad[:,-1] = 1
+        x_p = np.concatenate((xpad,x,xpad),axis= 0)
         
+        r2forward = np.zeros(20)
+        reg = lm.LinearRegression(fit_intercept=False)
+        for i in range(20):
+            xft = x_p[20-i:-20-i,:]
+            reg.fit(xft,y)
+            r2forward[i] = reg.score(xft,y)
+            
+        r2backward = np.zeros(20)
+        
+        for i in range(20):
+            xft = x_p[20+i:-20+i,:]
+            reg.fit(xft,y)
+            r2backward[i] = reg.score(xft,y)    
+            
+        isfor = max(r2forward)>max(r2backward)
+        
+        if isfor:
+            i = np.argmax(r2forward)
+            xft = x_p[20-i:-20-i,:]
+        else:
+            i = np.argmax(r2backward)
+            xft = x_p[20-i:-20-i,:]
+        #print(np.shape(xft))
+        #print(np.shape(y))
+        self.y = y
+        self.isfor = isfor
+        self.delay = i
+        self.xft = xft
+        self.r2backward = r2backward
+        self.r2forward = r2forward
+        reg.fit(xft,y)
+        self.r2 = reg.score
+    def run(self,regchoice,partition=False,cirftau =[0.3,0.01],odour_num=0):
         # Set up regessors
         #print('Determining regressors')
-        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice,cirftau)
+        regmatrix, regmatrix_preconv = self.set_up_regressors(regchoice,cirftau=cirftau,odour_num=odour_num)
         
         self.regmatrix = regmatrix
         self.regmatrix_preconv = regmatrix_preconv.copy()
@@ -480,7 +572,8 @@ class fci_regmodel:
         plt.figure(figsize=(18,8))
         plt.plot(self.ts,self.ca,color='k')
         plt.plot(self.ts_y,self.predy,color='r')
-        plt.plot(self.ts,self.ft2['instrip']*np.max(self.ca),color=[0.2,0.2,1])
+        
+        plt.plot(self.ts,self.ft2['instrip'],color=[0.2,0.2,1])
         plt.xlabel('Time (s)')
         plt.ylabel('dF/F')
         plt.show()
@@ -677,11 +770,12 @@ class fci_regmodel:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
-    def example_trajectory_jump(self,ca,cmin=0,cmax=1,xcent= 0,pw=5,jsize=3):    
+    def example_trajectory_jump(self,ca,ft,cmin=0,cmax=1,xcent= 0,pw=5,jsize=3,cmap='coolwarm',selection=[]):    
         colour = ca#self.ca.copy()
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
-        jumps = self.ft2['jump']
+        jumps = self.ft2['jump'].to_numpy()
+        tt = self.pv2['relative_time'].to_numpy()
         jumps = jumps-np.mod(jumps,jsize)
         jd = np.diff(jumps)
         jn = np.where(np.abs(jd)>0)[0]+1
@@ -689,11 +783,24 @@ class fci_regmodel:
         jn = jn[jkeep]
         
         x,y = self.fictrac_repair(x,y)
+        x,y,h = self.bumpstraighten(x.to_numpy(),y.to_numpy(),self.ft2['ft_heading'].to_numpy(),ft)
         acv = self.ft2['instrip'].to_numpy()
         inplume = acv>0
         st  = np.where(inplume)[0][0]
         x = x-x[st]
         y = y-y[st]
+        
+        if len(selection)>0:
+            dx = np.logical_and( tt>selection[0],tt<selection[1])
+            x = x[dx]
+            y = y[dx]
+            colour = colour[dx]
+            jdx = np.logical_and(jn>np.where(dx)[0][0],jn<np.where(dx)[0][-1])
+            jn = jn[jdx]-np.where(dx)[0][0]
+            inplume = inplume[dx]
+            jumps = jumps[dx]
+            tt = tt[dx]
+        
         
         xrange = np.max(x)-np.min(x)
         yrange = np.max(y)-np.min(y)
@@ -718,10 +825,11 @@ class fci_regmodel:
         fig = plt.figure(figsize=(15,15))
         
         ax = fig.add_subplot(111)
-        #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5])
+        #ax.scatter(x[inplume],y[inplume],color=[0.5, 0.5, 0.5],zorder=2)
         
-        yj = y[jn].to_numpy()
-        yj = np.append(yj,y.to_numpy()[-1])
+        yj = y[jn]
+        
+        yj = np.append(yj,y[np.where(inplume)[0][-1]])
         plt.fill()
         tj = 0
         x1 = xcent+pw+tj
@@ -738,6 +846,7 @@ class fci_regmodel:
             plt.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
         for i,j in enumerate(jn):
             tj = jumps[j]
+            
             x1 = xcent+pw+tj
             x2 = xcent-pw+tj
             y1 = yj[i]
@@ -754,7 +863,7 @@ class fci_regmodel:
         colour[colour>cmax] = cmax 
         colour[0] = cmin # Hacky fix to get over scaling issues
         colour[-1] = cmax # Hacky fix to get over scaling issues
-        uplt.coloured_line(x,y,colour,ax,cmap='coolwarm')
+        uplt.coloured_line(x,y,colour,ax,cmap=cmap)
         # for i in range(len(x)-1):
         #     ax.plot(x[i:i+2],y[i:i+2],color=c_map_rgb[i+1,:3])
         #plt.scatter(x[inplume],y[inplume],color='b')
@@ -769,6 +878,8 @@ class fci_regmodel:
         #ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+        if len(selection)>0:
+            return x,y,tt
     
     def entries_in_a_row(self):
         # Plots entries all in same strip
@@ -1190,6 +1301,61 @@ class fci_regmodel:
         plt.plot(bump_size[si],bca[si],color='k')
         
         
+    def bumpstraighten(self,x,y,heading,ft):
         
+        ft2 = self.ft2
+        obumps = ft['bump'].to_numpy()
+        obumps_u = obumps[np.abs(obumps)>0]
+        obumpsfr = ft['frame'][np.abs(obumps)>0]
+        bumps = ft2['bump']
+        frames = ft2['frame']
+        bumps_new = np.zeros_like(bumps)
+        for i,f in enumerate(obumpsfr):
+            
+            frd = frames-f
+            w = np.argmin(np.abs(frd))
+            
+            bumps_new[w] = obumps_u[i]
+        
+        
+        bumps = bumps_new
+        binst = np.where(np.abs(bumps)>0)[0]
+        xnew = x.copy()
+        ynew = y.copy()
+        headingnew = heading.copy()
+        tbold = 0
+        for b in range(len(binst)-1):
+            bi = binst[b]
+            tb = bumps[bi]+tbold
+            tbold = tb
+            bdx = np.arange(bi,binst[b+1],step=1,dtype=int)
+            bc =np.cos(-tb)
+            bs = np.sin(-tb)
+            tx = x[bdx]
+            ty = y[bdx]
+            tx = tx-tx[0]
+            ty = ty-ty[0]
+            tx2 = tx*bc-ty*bs
+            ty2 = tx*bs+ty*bc
+            dx = tx2[0]-xnew[bdx[0]-1]
+            dy = tx2[0]-ynew[bdx[0]-1]
+            tx2 = tx2-dx
+            ty2 = ty2-dy
+            xnew[bdx] = tx2
+            ynew[bdx] = ty2
+            
+            th = heading[bdx]+tb
+            tc = np.cos(th)
+            ts = np.sin(th)
+            th = np.arctan2(ts,tc)
+            headingnew[bdx] = th
+            
+            
+        dx = xnew[(bdx[-1]+1)]-xnew[bdx[-1]]
+        xnew[(bdx[-1]+1):] = xnew[(bdx[-1]+1):]-dx
+        dy = ynew[(bdx[-1]+1)]-ynew[bdx[-1]]
+        ynew[(bdx[-1]+1):] = ynew[(bdx[-1]+1):]-dy
+        
+        return xnew,ynew,headingnew
         
         

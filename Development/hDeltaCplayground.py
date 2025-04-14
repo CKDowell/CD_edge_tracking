@@ -69,6 +69,7 @@ plt.savefig(sname)
 sname = os.path.join(savedir,'hDeltaC_mean.pdf')
 plt.savefig(sname)
 #%% Bump modulation
+from Utilities.utils_plotting import uplt as up
 rootdir = 'Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv'
 datadirs = ['20220517_hdc_split_60d05_sytgcamp7f',
  '20220627_hdc_split_Fly1',
@@ -78,18 +79,61 @@ datadirs = ['20220517_hdc_split_60d05_sytgcamp7f',
  '20220629_HDC_split_sytjGCaMP7f_Fly1',
  '20220629_HDC_split_sytjGCaMP7f_Fly3']
 plotmat = np.zeros((100,len(datadirs)))
+plt.close('all')
 for ir, ddir in enumerate(datadirs):
     datadir = os.path.join(rootdir,ddir,"et")
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,Andy='hDeltaC')
-
-    y = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
-    ft2 = cxa.ft2
-    pv2 = cxa.pv2
-    fc = fci_regmodel(y,ft2,pv2)
-    t,yt = fc.mean_traj_nF(use_rebase=True)
-    plotmat[:,ir] = yt
+    #cxa.plot_traj_arrow_peaks('fsb_upper')
+    
+    
+    #cxa = datadict['f'+str(i)]
+    x = cxa.ft2['ft_posx']
+    y = cxa.ft2['ft_posy']
+    x,y = cxa.fictrac_repair(x,y)
+    wedges = cxa.pdat['wedges_'+'fsb_upper']
+    weds = np.sum(wedges*np.sin(angles),axis=1)
+    wedc = np.sum(wedges*np.cos(angles),axis=1)
+    pva  = np.sqrt(weds**2+wedc**2)
+    p0 = np.mean(pva[pva<np.percentile(pva,10)])
+    pva = (pva-p0)/p0
+    pva = pva/np.max(pva)
+    tt = cxa.pv2['relative_time'].to_numpy()
+    ins = cxa.ft2['instrip'].to_numpy()
+    inson = np.where(np.diff(ins)>0)[0]+1
+    insoff = np.where(np.diff(ins)<0)[0]+1
+    pvsmooth = sg.savgol_filter(pva,30,3)
+    pvstd = np.std(pvsmooth)
+    phase = cxa.pdat['offset_fsb_upper_phase']
+    
+    peaks,meta = sg.find_peaks(pvsmooth,prominence=pvstd)
+    
+    fig,ax = plt.subplots()
+    #up.coloured_line(phase[peaks[:-1]],phase[peaks[1:]],tt[peaks[1:]],ax)
+    #ax.plot(phase[peaks[:-1]],phase[peaks[1:]],color='k')
+    ax.scatter(phase[peaks[:-1]],phase[peaks[1:]],c=tt[peaks[1:]],s=pvsmooth[peaks[1:]]*100)
+    plt.xlabel('peak phase t')
+    plt.ylabel('peak phase t+1')
+    
+    plt.figure()
+    heading = cxa.ft2['ft_heading']
+    plt.scatter(heading[peaks],phase[peaks],c=pvsmooth[peaks])
+    plt.xlabel('heading')
+    plt.ylabel('peak phase')
+    
+    plt.figure()
+    heading_sub = ug.circ_subtract(heading,np.pi)
+    plt.scatter(heading_sub[peaks],phase[peaks])
+    plt.xlabel('rev heading')
+    plt.ylabel('peak phase')
+    
+    # y = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    # ft2 = cxa.ft2
+    # pv2 = cxa.pv2
+    # fc = fci_regmodel(y,ft2,pv2)
+    # t,yt = fc.mean_traj_nF(use_rebase=True)
+    # plotmat[:,ir] = yt
    
 #%%
 savedir = "Y:\\Data\\FCI\\FCI_summaries\\hDeltaC"
@@ -111,9 +155,22 @@ plt.xticks([49,99],labels=['Plume entry','Plume exit'])
 plt.xlim([0,101])
 plt.ylabel('Mean norm fluor')
 plt.savefig(os.path.join(savedir,'MeanFluorMod.png'))
+#%%
+rootdir = 'Y:\\Data\\FCI\\AndyData\\hDeltaC_imaging\\csv'
+datadirs = ['20220517_hdc_split_60d05_sytgcamp7f',
+ '20220627_hdc_split_Fly1',
+ '20220627_hdc_split_Fly2',
+ '20220628_HDC_sytjGCaMP7f_Fly1',
+ #'20220628_HDC_sytjGCaMP7f_Fly1_45-004', 45 degree plume
+ '20220629_HDC_split_sytjGCaMP7f_Fly1',
+ '20220629_HDC_split_sytjGCaMP7f_Fly3']
+
 #%% old
-
-
+datadir = os.path.join(rootdir,datadirs[2],"et")
+cxa = CX_a(datadir,Andy='hDeltaC')
+wedges = cxa.pdat['wedges_fsb_upper']
+plt.imshow(wedges.T,interpolation='None',aspect='auto',vmin=0,vmax=1,cmap='Blues')
+plt.plot(-0.5+cxa.ft2['instrip']*16,color='r')
 #%% repair csv data  as is a nightmare
 w_eb_o = data['wedges_eb']
 w_fb_u_o = data['wedges_fb_upper']
