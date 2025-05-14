@@ -213,7 +213,8 @@ class CX_tan:
                 print(jn)
                 ca[-len(jrange):,i] = tca[jrange]-jn2
             else:
-                ca[-len(jrange):,i] = tca[jrange]
+                
+                ca[-len(jrange):,i] = tca[jrange].ravel()
             
         #phases = np.flipud(phases)
         ca[ca==1000] = np.nan

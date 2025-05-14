@@ -106,7 +106,15 @@ for i,f in enumerate(flies):
 #%% Entry count alt
 plt.close('all')
 flies = [r'Test\250311\f4\Trial1',# Entry count alt
-r'Test\250312\f2\Trial1'#Entry count alt
+r'Test\250312\f2\Trial1',#Entry count alt inhib did not make it back
+r'Test\250319\f1\Trial1', # Inhib did not make it back
+r'Test\250319\f2\Trial1',# Inhib did not make it back
+
+
+r'Test\250319\f3\Trial1', # Shorter returns with inhib
+r'Test\250320\f1\Trial1', # Not enough entries
+r'Test\250320\f2\Trial1',# Downwind tracker
+r'Test\250320\f3\Trial1',# Longer plume returns on inhib
 ]
 rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_inhibition'
 meta_data['stim_type'] = 'alternation'
@@ -121,8 +129,137 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
+    plt.title(f)
+    
+
+
+#%% Blanket excitation
+savedir = r'Y:\Data\Optogenetics\Summaries\FB6H\Activation'
+meta_data['act_inhib'] = 'act'
+plt.close('all')
+rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_activation'
+flies_test = [r'Test\250408\f1\Trial1', # not really ET before act
+         #r'Test\250410\f1\Trial1', # Did not reach stim
+         r'Test\250410\f3\Trial1', # ET then wandered off. +
+         r'Test\250410\f5\Trial1', # Did not ET, but reached stim
+        # r'Test\250423\f1\Trial1', # Did not reach stim
+         r'Test\250423\f2\Trial1', # Some ET, reached stim outside plume, wandered off + (caveat, not walking much)
+        # r'Test\250424\f1\Trial1', # Did not reach stim
+         r'Test\250424\f3\Trial1', # In plume for pre stim, some ET with long returns after stim +-
+         r'Test\250425\f1\Trial1', # No ET, not walking great, reached stim and did not ET
+         r'Test\250425\f3\Trial1', # Reached stim, good edge tracking -
+         r'Test\250426\f1\Trial1', # Not much walking outside plume, got to stim, seems like ET and unaffected -
+         r'Test\250426\f3\Trial1', # ET before and after, walking in plume a lot -
+        # r'Test\250429\f4\Trial1', # Did not reach stim zone
+         r'Test\250429\f6\Trial1', # Did not leave plume before stim, but relatively normal ET after that -
+        # r'Test\250430\f2\Trial1', # Did not reach stim zone
+         r'Test\250430\f4\Trial1', # Long returns to plume, not really ET, unaffected by stim -
+         r'Test\250430\f6\Trial1', # Good ET before and after no effect -
+         r'Test\250501\f1\Trial1',#Tracked whole way but moved further from plume +-
+         r'Test\250501\f3\Trial1',# Left after stim +
+         r'Test\250503\f2\Trial1',
+         r'Test\250503\f4\Trial1',
+         r'Test\250506\f3\Trial1'
+    ]
+
+for i,f in enumerate(flies_test):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+    plt.title(f + ' '+ str(i))
+    savename = f.split('\\')
+    savename = "".join(savename)
+    plt.xlim([-400,400])
+    plt.ylim([-200, 2500])
+    plt.savefig(os.path.join(savedir,savename + '.pdf'))
+    plt.savefig(os.path.join(savedir,savename + '.png'))
+    
+    plt.figure(101)
+    op.opto_raster(meta_data,df,offset=i)
+    
+plt.plot([0,0],[0,i+1],color='k',linestyle='--')
+
+#%% Blanket excitation - controls
+
+meta_data['act_inhib'] = 'act'
+plt.close('all')
+rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_activation'
+flies_control = [r'Control_w\250410\f2\Trial1', # wondered off
+         #r'Control_w\250410\f4\Trial1',
+        # r'Control_w\250410\f6\Trial1', # Did not make stim
+         r'Control_w\250423\f2\Trial1', # Strange tracker and wondered off
+         r'Control_w\250423\f4\Trial1',# Strange tracker and wondered off
+         r'Control_w\250426\f2\Trial1',# Excellent tracker
+         r'Control_w\250426\f4\Trial1',# Excellent tracker
+        # r'Control_w\250428\f2\Trial1',# No data
+         r'Control_w\250429\f5\Trial1',# Good tracker
+        # r'Control_w\250430\f3\Trial1',# Fictrac failed too much  
+        r'Control_w\250501\f2\Trial1',# Good tracker
+        #r'Control_w\250501\f4\Trial1', Fly barely walked
+        #r'Control_w\250501\f5\Trial1', # Did not make to stim
+        r'Control_w\250503\f1\Trial1',
+        r'Control_w\250503\f3\Trial1',
+        r'Control_w\250506\f1\Trial1',
+        r'Control_w\250506\f2\Trial1'
+    ]
+
+for i,f in enumerate(flies_control):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    op.plot_plume_simple(meta_data,df)
+    plt.title(f + ' '+ str(i))
+    
+    savename = f.split('\\')
+    savename = "".join(savename)
+    plt.xlim([-400,400])
+    plt.ylim([-200, 2500])
+    plt.savefig(os.path.join(savedir,savename + '.pdf'))
+    plt.savefig(os.path.join(savedir,savename + '.png'))
+
+    plt.figure(101)
+    op.opto_raster(meta_data,df,offset=i)
+    
+plt.plot([0,0],[0,i+1],color='k',linestyle='--')
 
 
 
-
-
+#%% Compare test and control stim
+plt.close('all')
+for i,f in enumerate(flies_test):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure(101)
+    op.opto_raster(meta_data,df,offset=i)
+plt.plot([0,0],[0,i+1],color='k',linestyle='--')
+i2 = i+2
+for i,f in enumerate(flies_control):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure(101)
+    op.opto_raster(meta_data,df,offset=i+i2)
+    
+plt.plot([0,0],[i2,i2+i+1],color='k',linestyle='--')

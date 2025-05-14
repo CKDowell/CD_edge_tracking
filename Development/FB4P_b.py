@@ -49,10 +49,10 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\240912\f2\Trial3",
             r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial1",# ET Good 5 mm jumps
             r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial2" #Replay
             ]
-datadir = datadirs[2]
+datadir = datadirs[1]
 #%%
 cxt = CX_tan(datadir)
-cxt.fc.example_trajectory_jump(cmin=-0.5,cmax =0.5,jsize=5) 
+cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.5,cmax =0.5,jsize=5) 
 cxt.fc.example_trajectory_scatter(cmin=-0.5,cmax=0.5)
 savename = os.path.join(datadir , 'Eg_traj'+ name +'.pdf')
 plt.savefig(savename)
@@ -74,7 +74,7 @@ plt.plot(y)
 plt.plot(ft2['instrip'],color='k')
 
 #%%
-fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
+fc = fci_regmodel(cxt.pv2[['0_fsbtn']].to_numpy().flatten(),cxt.ft2,cxt.pv2)
 fc.rebaseline(span=500,plotfig=True)
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
@@ -101,3 +101,40 @@ plt.subplots_adjust(bottom=0.4)
 plt.ylabel('Coefficient weight')
 plt.xlabel('Regressor name')
 plt.show()
+
+#%% Columnar check
+datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial1")
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+cx = CX(name,['fsbTN','fsb'],datadir)
+# save preprocessing, consolidates behavioural data
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()
+#%%
+from analysis_funs.CX_analysis_col import CX_a
+from EdgeTrackingOriginal.ETpap_plots.ET_paper import ET_paper
+cxa = CX_a(datadir,regions=['fsb'],yoking=False)
+cxa.simple_raw_plot(yeseb=False)
+
+    
+
+cxa.save_phases()
+#%%
+plt.close('all')
+etp = ET_paper(datadir,regions=['fsb'])
+#%%
+plt.close('all')
+tstart = 110
+tend = 300
+savedir = r'Y:\Presentations\ForVanessa'
+etp.example_trajectory(tstart,tend)
+plt.savefig(os.path.join(savedir,'FB4P_bTraj.pdf'))
+etp.example_heatmaps(tstart,tend,regions=['fsb'],yoking=False,cmaps=['Purples'])
+plt.figure(2)
+plt.savefig(os.path.join(savedir,'FB4P_bCa.pdf'))
+plt.figure(4)
+plt.savefig(os.path.join(savedir,'plume.pdf'))

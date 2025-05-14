@@ -16,8 +16,8 @@ from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
 from Utilities.utils_general import utils_general as ug
 #%%
-for i in [3,4,5,6]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial"+str(i))
+for i in [2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -30,8 +30,8 @@ for i in [3,4,5,6]:
     
 
 #%% ROI processing
-for i in [1,3,4,5,6]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial"+str(i))
+for i in [2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cx = CX(name,['fsbTN'],datadir)
@@ -72,18 +72,22 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250313\f1\Trial1",# walking in cir
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial3",# Made a few jumps, not a great tracker
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial4",# Not a great tracker
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial5",# ACV two timecourses. Animal walks well
-            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial6"# Octanol pulses. Two timecourses
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial6",# Octanol pulses. Two timecourses
+            
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial2" # Made a few jumps, ramps after plume exits
             
             ]
 #%%
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250328\f2\Trial6"
+datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial2"
 
 cxt = CX_tan(datadir)
-cxt.fc.example_trajectory_jump(cxt.ca.copy(),cmin=-0.5,cmax =0.5,jsize=5) 
+ca = cxt.ca.copy().ravel()
+ca[-1] = 0
+cxt.fc.example_trajectory_jump(ca,cxt.ft,cmin=-0.5,cmax =0.5,jsize=5) 
 cxt.fc.example_trajectory_scatter(cxt.ca.copy(),cmin=-0.5,cmax=0.5)
 
-cxt.fc.example_trajectory_jump(cxt.ca_rebase.copy(),cmin=-0.5,cmax =0.5,jsize=5) 
+cxt.fc.example_trajectory_jump(cxt.ca_rebase.copy(),cxt.ft,cmin=-0.5,cmax =0.5,jsize=5) 
 cxt.fc.example_trajectory_scatter(cxt.ca_rebase.copy(),cmin=-0.5,cmax=0.5)
 
 

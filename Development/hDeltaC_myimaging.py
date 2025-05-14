@@ -96,11 +96,11 @@ for e in experiment_dirs:
 
 experiment_dirs = [
     #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250313\f1\Trial1",#Lots of plume cross overs
-    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250313\f1\Trial2",#Lots of plume cross overs
+#    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250313\f1\Trial2",#Lots of plume cross overs
                    
                    #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial1",#Not great behaviour
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial2",# Simple plume no jumps
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial3",#Made a few jumps
+#                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial3",#Made a few jumps
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial4",#Octanol [?] pulses - neuron is inhibited
                    #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial5"#ACV pulses
                    
@@ -108,13 +108,16 @@ experiment_dirs = [
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250327\f2\Trial4", #Octanol pulses files missing near end :( reanalyse
                   
                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial1",# Walked until first jump
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial2",# Multiple plumes 2 jumps
+#                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial2",# Multiple plumes 2 jumps
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial3",#No jumps just going straight thru
                    #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial4",'Octanol'
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",'ACV
                   
-                    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",
-                  ]
+#                    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1", # Image quality not amazing (edges have higher fluor), but loads of jumps, consistent plume edge pointing
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial2",
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4"
+                    ]
 plt.close('all')
 for e in experiment_dirs:
     cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
@@ -125,6 +128,7 @@ for e in experiment_dirs:
     wedges = cxa.pdat['wedges_fsb_upper']
     wamp = np.mean(wedges,axis=1)
     plt.plot(wamp,color='k')
+    plt.plot(cxa.ft2['mfc3_stpt']/np.max(cxa.ft2['mfc3_stpt']),color='g')
     plt.plot(cxa.ft2['instrip'],color='r')
     
     try :

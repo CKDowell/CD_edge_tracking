@@ -1726,7 +1726,7 @@ class CX_a:
         try:    
             is1 =np.where(instrip)[0][0]
         except:
-            instrip = self.ft2['mfc3_stpt'].to_numpy>0
+            instrip = self.ft2['mfc3_stpt'].to_numpy()>0
             is1 = np.where(instrip)[0][0]
         dist = np.sqrt(x**2+y**2)
         dist = dist-dist[0]
@@ -1775,7 +1775,7 @@ class CX_a:
         fci = fci_regmodel(amp,self.ft2,self.pv2)
         cmin = np.percentile(amp,10)
         cmax = np.percentile(amp,90)
-        fci.example_trajectory_jump(cmin=cmin,cmax=cmax)
+        fci.example_trajectory_jump(amp,self.ft,cmin=cmin,cmax=cmax)
         
         try:
             phase_eb = self.pdat['offset_eb_phase'].to_numpy()
@@ -2085,7 +2085,7 @@ class CX_a:
         #plt.plot([0,offs],np.array([0,0])-np.pi/2,color='k',linestyle='--')
         plt.ylim([-np.pi,np.pi])
         plt.ylabel('mean FC2/EPG phase (deg)')
-        plt.yticks([-np.pi,0,np.pi],labels=[-180,0,180])
+        plt.yticks([-np.pi,-np.pi/2,0,np.pi/2,np.pi],labels=[-180,-90,0,90,180])
         plt.xlabel('return/train instance')
         plt.xlim([-0.5,offs])
         

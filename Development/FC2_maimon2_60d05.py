@@ -24,8 +24,8 @@ from analysis_funs.utilities import funcs as fn
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_maimon2\250221\f1\Trial"+str(i))
+for i in [1]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_maimon2_recombi\250401\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -78,13 +78,13 @@ experiment_dirs = [
                    # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial3",
                    # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4"
                    
-                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial1",
-                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial2",
-                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial3",
                    
-                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial1",
-                   r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial2",
-                   
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial2",
+                   r"Y:\Data\FCI\Hedwig\FC2_maimon2_recombi\250401\f1\Trial1",#test of cytosolic GC7f expression signal looks great
                    ]
 
 regions = ['eb','fsb_upper','fsb_lower']
@@ -112,23 +112,12 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%%
-regions = ['pb','fsb_upper','fsb_lower']
-datadir = r'Y:\Data\FCI\Hedwig\FC2_maimon2\240916\f1\Trial3'
-
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-
-cxa = CX_a(datadir,regions=regions)
-
-#%%
 regions = ['eb','fsb_upper','fsb_lower']
-datadir = r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f2\Trial2"
+datadir = r'Y:\Data\FCI\Hedwig\FC2_maimon2_recombi\250401\f1\Trial1'
 
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-
-cxa = CX_a(datadir,regions=regions)
-plt.scatter(cxa.ft2['ft_heading'],cxa.phase_eb,color='k')
+cxa = CX_a(datadir,regions=regions,denovo=False)
+cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'],yk='eb')
+cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
 #%% Data exploration
 experiment_dirs = [
 

@@ -781,7 +781,7 @@ class fci_regmodel:
         jn = np.where(np.abs(jd)>0)[0]+1
         jkeep = np.where(np.diff(jn)>1)[0]
         jn = jn[jkeep]
-        
+
         x,y = self.fictrac_repair(x,y)
         x,y,h = self.bumpstraighten(x.to_numpy(),y.to_numpy(),self.ft2['ft_heading'].to_numpy(),ft)
         acv = self.ft2['instrip'].to_numpy()
@@ -1092,7 +1092,7 @@ class fci_regmodel:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         
-    def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
+    def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn',interp_points=50):
         """
         Function outputs mean trajectory of animal entering and exiting the plume
         alongside the mean fluorescence
@@ -1174,8 +1174,8 @@ class fci_regmodel:
         t_exts = exts[sides==ts]
         t_pc = plume_centre[sides==ts]
         # initialise arrays
-        trajs = np.empty((100,2,len(t_ents)))
-        Ca = np.empty((100,len(t_ents)))
+        trajs = np.empty((interp_points*2,2,len(t_ents)))
+        Ca = np.empty((interp_points*2,len(t_ents)))
         trajs[:] = np.nan
         Ca[:] = np.nan
         for i,en in enumerate(t_ents):
@@ -1215,7 +1215,7 @@ class fci_regmodel:
             if max(old_time)<20 or dx2[-1]-dx2[0]<20 :
                 #print(max(old_time))
                 continue
-            new_time = np.linspace(0,max(old_time),50)
+            new_time = np.linspace(0,max(old_time),interp_points)
             x_int = np.interp(new_time,old_time,x1)
             y_int = np.interp(new_time,old_time,y1)
             ca_int = np.interp(new_time,old_time,ca1)
@@ -1223,13 +1223,13 @@ class fci_regmodel:
             # plt.plot(new_time,ca_int,color='r')
             # plt.plot(old_time,ca1,color='k')
             mn = max(old_time)
-            trajs[:50,0,i] = x_int
-            trajs[:50,1,i] = y_int
-            Ca[:50,i] = ca_int
+            trajs[:interp_points,0,i] = x_int
+            trajs[:interp_points,1,i] = y_int
+            Ca[:interp_points,i] = ca_int
             
             #Interpolate onto timebase: in plume
             old_time = dx2-dx2[0]
-            new_time = np.linspace(0,max(old_time),50)
+            new_time = np.linspace(0,max(old_time),interp_points)
             x_int = np.interp(new_time,old_time,x2)
             y_int = np.interp(new_time,old_time,y2)
             ca_int = np.interp(new_time,old_time,ca2)
@@ -1237,9 +1237,9 @@ class fci_regmodel:
             # plt.plot(new_time+mn,ca_int,color='r',linestyle='--')
             # plt.plot(old_time+mn,ca2,color='k',linestyle='--')
             # plt.title(str(dx1[0]) +' -' + str(dx2[-1]))
-            trajs[50:,0,i] = x_int
-            trajs[50:,1,i] = y_int
-            Ca[50:,i] = ca_int
+            trajs[interp_points:,0,i] = x_int
+            trajs[interp_points:,1,i] = y_int
+            Ca[interp_points:,i] = ca_int
             
         traj_mean = np.nanmean(trajs,axis=2)
         Ca_mean = np.nanmean(Ca,axis=1)

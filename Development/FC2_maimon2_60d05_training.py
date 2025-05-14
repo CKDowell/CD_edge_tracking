@@ -20,7 +20,7 @@ from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
 from src.utilities import funcs as fn
 plt.rcParams['pdf.fonttype'] = 42 
-from Utils.utils_general import utils_general as ug
+from Utilities.utils_general import utils_general as ug
 
 #%% Image registraion
 
@@ -117,20 +117,32 @@ plt.scatter(np.mean(x),np.mean(y))
 #%% Good trainers - operant
 datadirs =[
 
-    "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial5"]
+    "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial5",
+    r"Y:\Data\FCI\Hedwig\FC2_maimon2\250220\f1\Trial2"]
 ebs = [
-       'eb']
+       'eb','eb']
 
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_maimon2_training'
 for i,d in enumerate(datadirs):
     
-    cxa = CX_a(d,regions=[ebs[i],'fsb_upper','fsb_lower'],denovo=True,suspend=False)
-    cxa.plot_train_arrow_mean(eb=ebs[i],arrowhead=False,anum=7)
-    plt.savefig(os.path.join(savedir,'SummaryTraining' + cxa.name + '.pdf'))
+    cxa = CX_a(d,regions=[ebs[i],'fsb_upper','fsb_lower'],denovo=False,suspend=False)
+    plt.figure()
+    cxa.mean_phase_train(trng=1)
+    plt.xlim([-1,61])
+    #plt.savefig(os.path.join(savedir,'SummaryTrainingDot' + cxa.name + '.pdf'))
+    plt.figure()
+    #cxa.plot_train_arrow_mean(eb=ebs[i],arrowhead=False,anum=7)
+    #plt.savefig(os.path.join(savedir,'SummaryTraining' + cxa.name + '.pdf'))
+    cxa.plot_train_v(plumewidth=30,tperiod = 0.5,plumeang=22.5)
     
+#%% Plot behavioural data
+plt.close('all')
+from matplotlib._pylab_helpers import Gcf
+
+cxa.plot_train_v(plumewidth=30,tperiod = 0.5,plumeang=22.5)
     
-    
-    
-    
-    
-    
+for i,manager in enumerate(Gcf.get_all_fig_managers()):
+    fig = manager.canvas.figure
+    for ax in fig.axes:  
+        ax.set_xlim(-500, 500)
+    fig.savefig(os.path.join(savedir,'Training' + cxa.name + '_epoch_'+ str(i)+ '.pdf'))

@@ -115,13 +115,30 @@ def time_varying_correlation(x,y,window):
 plt.plot(pvan_z)
 plt.plot(cxa.ft2['instrip'],color='k')
 
+def sine_correlation(wedge,phase):
+    output = np.zeros(len(phase))
+    angles = np.linspace(-np.pi,np.pi,16)
+    for i,p in enumerate(phase):
+        tfit = np.cos(angles-p)
+        cor = np.corrcoef(wedge[i,:],tfit)
+        output[i] = cor[0,1]
+        
+    return output
+#%%         
+
+s_c_fsb = sine_correlation(cxa.pdat['wedges_fsb_upper'],cxa.pdat['phase_fsb_upper'])
+plt.plot(s_c_fsb,color='b')
+
+s_c = sine_correlation(cxa.pdat['wedges_eb'],cxa.pdat['phase_eb'])
+plt.plot(s_c,color='k')
+plt.plot(ft2['instrip'],color='r')
 #%%
 t_c = time_varying_correlation(pvan_z, ymn_z, 10)
 ft2 = cxa.ft2
 pv2 = cxa.pv2
-fc = fci_regmodel(pvan_z,ft2,pv2)
+fc = fci_regmodel(s_c_fsb,ft2,pv2)
 #fc.rebaseline(plotfig=True)
-fc.example_trajectory_jump(cmin=0,cmax=3)
+fc.example_trajectory_jump(s_c_fsb,cxa.ft,cmin=0.25,cmax=1) # plot with phase on top
 #%%
 plt.close('all')
 jumps = cxa.get_jumps()
@@ -129,10 +146,10 @@ for j in jumps:
     plt.figure()
     ip = np.arange(j[0],j[1]+1)
     op = np.arange(j[1],j[2])
-    plt.plot(pvan_z[ip]-pvan_z[ip[0]],ymn_z[ip]-ymn_z[ip[0]],color='r')
+    plt.plot(s_c_fsb[ip],ymn_z[ip]-ymn_z[ip[0]],color='r')
     #plt.scatter(pvan_z[ip[0]],pvan_z[ip[0]],color='r')
-    plt.plot(pvan_z[op]-pvan_z[ip[0]],ymn_z[op]-ymn_z[ip[0]],color='k')
+    plt.plot(s_c_fsb[op],ymn_z[op]-ymn_z[ip[0]],color='k')
     plt.xlabel('PAV norm')
     plt.ylabel('Mean Fluor')
-    plt.xlim([-4,4])
+    plt.xlim([-1,1])
     plt.ylim([-4,4])

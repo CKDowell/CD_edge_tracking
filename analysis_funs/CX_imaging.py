@@ -681,6 +681,7 @@ class CX:
         for file in os.scandir(self.datafol):
             if file.name.endswith('.log') and not file.name.startswith('._'):
                 file_path = os.path.join(self.datafol, file.name)
+        print(file_path)
         df = pd.read_table(file_path, delimiter='[,]', engine='python')
 
         #split timestamp and motor into separate columns

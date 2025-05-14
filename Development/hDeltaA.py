@@ -75,7 +75,7 @@ for e in experiment_dirs:
     
     
 #%%
-for e in experiment_dirs[3]:
+for e in experiment_dirs:
     datadir =os.path.join(e)
     cxa = CX_a(datadir,regions=np.flipud(regions),denovo='False')
     cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'],yk='eb') 

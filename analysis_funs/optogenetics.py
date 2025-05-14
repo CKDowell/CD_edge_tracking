@@ -7,6 +7,7 @@ Created on Wed Jan 10 11:02:48 2024
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from Utilities.utils_general import utils_general as ug
 #%%
 class opto:
     def __init__(self):
@@ -16,6 +17,28 @@ class opto:
         idx = (np.abs(array - value)).argmin()
         idx =idx
         return idx
+    
+    def opto_raster(self,meta_data,df,offset=0,distance_thresh=2000):
+        pon = pd.Series.to_numpy(df['instrip'])
+        stimon = np.where(pon>0)[0][0]
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        x,y = self.fictrac_repair(x,y)
+        y = y-y[stimon]
+        ym = np.max(y[pon>0])
+        ym = np.round(ym)
+        led = df['led1_stpt'].to_numpy()
+        s_type = meta_data['stim_type']
+        ls = np.where(led==0)[0][0]
+        tt = ug.get_ft_time(df)
+        tt = tt-tt[ls]
+        plt.fill_between(tt,pon*0+offset,pon*0+offset+1,color=[0.7,0.7,0.7])
+        plt.fill_between(tt,pon+offset,pon*0+offset,color='r',linewidth=0)
+        if ym>=distance_thresh:
+            plt.text(tt[-1]+50,offset+0.5,str(ym),color='r')
+        else:
+            plt.text(tt[-1]+50,offset+0.5,str(ym),color='k')
+        
     def plot_plume(self,meta_data,df):
         x = pd.Series.to_numpy(df['ft_posx'])
         y = pd.Series.to_numpy(df['ft_posy'])
@@ -203,27 +226,29 @@ class opto:
             loff = np.where(led_diff<0)[0]
             #print(lon)
             plt.plot([-100,100],[meta_data['ledOny'],meta_data['ledOny']],color='k',linestyle='--')
-            
-            plt.plot(x[0:lon[0]],y[0:lon[0]],color='k')
-            if len(lon)>len(loff):
-                plt.plot(x[lon[-1]:],y[lon[-1]:],color=led_colour)
-                lon = lon[:-1]
-            else:
-                plt.plot(x[loff[-1]:],y[loff[-1]:],color='k')
-                
-            for il,l in enumerate(lon):
-                plt.plot(x[l:loff[il]],y[l:loff[il]],color=led_colour)
-            for il,l in enumerate(loff[:-1]):
-                print(l)
-                xsmall = x[loff[il]+1:lon[il+1]-2]
-                ysmall = y[loff[il]+1:lon[il+1]-2]
-                
-                plt.plot(xsmall,ysmall,color='k')
-                
-                inplume = instrip[loff[il]+1:lon[il+1]-2]
-                
-                #plt.plot(xsmall[inplume],ysmall[inplume],color='k')
-                #plt.plot(xsmall[inplume==False],ysmall[inplume==False],color=[0.5,0.5,1])
+            try:
+                plt.plot(x[0:lon[0]],y[0:lon[0]],color='k')
+                if len(lon)>len(loff):
+                    plt.plot(x[lon[-1]:],y[lon[-1]:],color=led_colour)
+                    lon = lon[:-1]
+                else:
+                    plt.plot(x[loff[-1]:],y[loff[-1]:],color='k')
+                    
+                for il,l in enumerate(lon):
+                    plt.plot(x[l:loff[il]],y[l:loff[il]],color=led_colour)
+                for il,l in enumerate(loff[:-1]):
+                    print(l)
+                    xsmall = x[loff[il]+1:lon[il+1]-2]
+                    ysmall = y[loff[il]+1:lon[il+1]-2]
+                    
+                    plt.plot(xsmall,ysmall,color='k')
+                    
+                    inplume = instrip[loff[il]+1:lon[il+1]-2]
+                    
+                    #plt.plot(xsmall[inplume],ysmall[inplume],color='k')
+                    #plt.plot(xsmall[inplume==False],ysmall[inplume==False],color=[0.5,0.5,1])
+            except:
+                plt.plot(x,y,color='k')
         elif s_type=='alternation_jump':
             ac = df['adapted_center'].to_numpy()
             psize =meta_data['PlumeWidth']
