@@ -25,8 +25,8 @@ from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2,3,4]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial"+str(i))
+for i in [1,2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -61,11 +61,20 @@ experiment_dirs = [
                    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",
                    
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial2",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4",
                    
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7",
                    
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"
                    
                    ]
 regions = ['eb','fsb_upper','fsb_lower']
@@ -114,9 +123,22 @@ experiment_dirs = [
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",'ACV
                   
 #                    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1", # Image quality not amazing (edges have higher fluor), but loads of jumps, consistent plume edge pointing
-                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial2",
-                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
-                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4"
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial2",
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4"
+                  
+                  
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1", # One entry but encoding prior entry location
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2", # No jumps but goal encoding
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3", # Three jumps, not strong goal encoding, mainly look back activity - high dopamine...?
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4", # V plume, did left plume, failed on right. Looks like animal had right goal but failed to pay attention to it... very interesting
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5", # Poor tracker
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6", # ACV pulses
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7", # octanol pulses
+                  
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1", # one odour pulse
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2" # Three jumps, but very good goal encoding for entire experiment, interesting dynamics with locomotion
+                  
                     ]
 plt.close('all')
 for e in experiment_dirs:
@@ -137,7 +159,23 @@ for e in experiment_dirs:
         cxa.mean_jump_lines()
     except:
         print('no jumps')
-        
+#%% Single data check
+
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1"  
+cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+cxa.mean_jump_arrows(fsb_names=['fsb_upper'],ascale=100,jsize=5)
+plt.ylim([-40,40])
+#%% Tally of good flies
+plt.close('all')
+datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",
+            r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
+            r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"]
+for d in datadirs:
+    cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    plt.figure()
+    cxa.mean_jump_arrows()
+    cxa.mean_jump_lines(time_threshold=120)
 #%%
 plt.close('all')
 angles = np.linspace(-np.pi,np.pi,16)
@@ -215,7 +253,7 @@ for e in experiment_dirs:
 datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250313\f1\Trial2",#Lots of plume cross overs
                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial3",#Made a few jumps
                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial2",
-           
+           r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2",#Three jumps
                ]
 angles = np.linspace(-np.pi,np.pi,16)
 plt.close('all')

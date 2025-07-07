@@ -44,13 +44,14 @@ experiment_dirs = [
     # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240806\\f1\\Trial5"#decent
     
    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial2",
-    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial3",
-    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS67631_sytGC7f\\240906\\f2\\Trial4",
-    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial1",
-    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial2",
-    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial3",
-    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial4",
-    "Y:\Data\FCI\Hedwig\FB4P_b_SS67631_sytGC7f\\240909\\f1\\Trial5"
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240906\\f2\\Trial3",
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240906\\f2\\Trial4",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial1",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial2",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial3",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial4",
+    "Y:\Data\FCI\Hedwig\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial5"
+    
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -74,7 +75,18 @@ for e in experiment_dirs:
     cxa = CX_a(datadir,regions=['fsb'],yoking=False)
     cxa.save_phases()
 #%%
-cxa = CX_a(experiment_dirs[2],regions=['fsb'],yoking=False,denovo=True)
+datadirs = [
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240809\\f2\\Trial2",
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240805\\f1\\Trial3",#decent
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240806\\f1\\Trial1",
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240806\\f1\\Trial4",
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240806\\f1\\Trial6",
+     "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240806\\f1\\Trial5"#decent
+    
+                   ]
+
+
+cxa = CX_a(experiment_dirs[3],regions=['fsb'],yoking=False,denovo=True)
 #%%
 plt.close('all')
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb'],yeseb=False)

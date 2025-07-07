@@ -138,3 +138,65 @@ plt.figure(2)
 plt.savefig(os.path.join(savedir,'FB4P_bCa.pdf'))
 plt.figure(4)
 plt.savefig(os.path.join(savedir,'plume.pdf'))
+
+
+#%% Including syt gCaMP
+
+plt.close('all')
+datadirs = [
+    "Y:\\Data\\FCI\\Hedwig\\FB4P_b_SS60296\\240912\\f2\\Trial3",#27 jumps
+    "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240809\\f2\\Trial2",#24 jumps
+     "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240806\\f1\\Trial5",#2 jumps
+     "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240805\\f1\\Trial3",# 2 jumps
+    # "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240909\\f1\\Trial5",# 1 jump
+       "Y:\Data\FCI\\Hedwig\\FB4P_b_SS60296_sytGC7f\\240906\\f2\\Trial2",# 2 jumps
+       r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\250311\f1\Trial1"
+      ]
+
+plt.close('all')
+
+regchoice = ['odour onset', 'odour offset', 'in odour', 
+                                'translational vel dirs',
+                                ]
+reglabels =['odour onset', 'odour offset', 'in odour', 
+                                'tv -157.5','tv -112.5', 'tv -67.5', 
+                                'tv -22.5', 'tv  22.5',   'tv 67.5',  
+                                'tv 112.5', 'tv 157.5'
+                                ]
+
+
+for d in datadirs:
+    cxt = CX_tan(d) 
+    fc = cxt.fc
+    fc.run(regchoice)
+    fc.run_dR2(20,fc.xft)
+    
+    plt.figure(1)
+    plt.plot(fc.dR2_mean)
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(2)
+    plt.plot(fc.coeff_cv[:-1])
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('Coefficient weight')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(3)
+    plt.plot([0,len(regchoice)],[0, 0],color='k',linestyle='--') 
+    plt.plot(-fc.dR2_mean*np.sign(fc.coeff_cv[:-1]),color='k')
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2 * sign(coeffs)')
+    fc.plot_example_flur()
+    plt.xlabel('Regressor name')
+    plt.show()
+
+
+
+

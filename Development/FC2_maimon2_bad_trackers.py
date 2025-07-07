@@ -45,7 +45,7 @@ r'Y:\Data\FCI\Hedwig\FC2_maimon2\240514\f1\Trial3', # decent tracker, plume cros
 
 r'Y:\Data\FCI\Hedwig\FC2_maimon2\240821\f2\Trial3', # bouts of tracking with long excursions
 
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241024\f2\Trial3', # ok on one plume
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241024\f2\Trial3', # ok on one plume
 
 r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial1', # fly walked off after some ET
 r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial3', # fly walked off after some ET

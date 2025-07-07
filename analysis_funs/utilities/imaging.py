@@ -550,21 +550,62 @@ class fly:
         stack = []
         stackm = []
         slices = slices[np.argsort(slices)]
-        for slice in slices:
-            for file in os.scandir(self.regfol):
-                if file.name.endswith('slice'+str(slice)+'.tif') and not file.name.startswith('._'):
-                    print(slice)
-                    image = io.imread(file.path, plugin='tifffile')                     
-                    proj = np.mean(image, axis=0)
-                    stack.append(proj)
-                    projm = np.max(image, axis =0)
-                    stackm.append(projm)
-        stack = np.array(stack)
-        stackm = np.array(stackm)
-        tif_name = os.path.join(self.regfol, self.name+'_'+key+'.tif')
-        io.imsave(tif_name, stack)
-        tif_name_m = os.path.join(self.regfol, self.name+'_'+key+'_max.tif')
-        io.imsave(tif_name_m, stackm)
+        slices = np.unique(slices)
+        snames = np.array(os.listdir(self.regfol))
+        snames = np.unique(snames)
+        allchans = np.zeros(len(snames),dtype='int')
+        for i,s in enumerate(snames):
+            sd = s.find('Ch')
+            if sd>-1:
+                allchans[i] = int(s[sd+2])
+                
+        
+        if sum(allchans)>0:
+            
+            uchan = np.unique(allchans[allchans>0])
+            
+            
+            for c in uchan:
+                tfiles = snames[allchans==c]
+                stack = []
+                stackm = []
+                for slice in slices:
+                    for file in tfiles:             
+                        if file.endswith('Ch'+str(c)+'_slice'+str(slice)+'.tif') and not file.startswith('._'):
+                            tfile= os.path.join(self.regfol,file)
+                            image = io.imread(tfile, plugin='tifffile')                     
+                            proj = np.mean(image, axis=0)
+                            stack.append(proj)
+                            projm = np.max(image, axis =0)
+                            stackm.append(projm)
+                            
+                stack = np.array(stack)
+                stackm = np.array(stackm)
+                tif_name = os.path.join(self.regfol, self.name+'_Ch' + str(c)+'_'+key+'.tif')
+                
+                io.imsave(tif_name, stack)
+                tif_name_m = os.path.join(self.regfol, self.name+'_Ch' + str(c)+key+'_max.tif')
+                io.imsave(tif_name_m, stackm)
+
+                            
+        
+        else:
+
+            for slice in slices:
+                for file in os.scandir(self.regfol):
+                    if file.name.endswith('slice'+str(slice)+'.tif') and not file.name.startswith('._'):
+                        print(slice)
+                        image = io.imread(file.path, plugin='tifffile')                     
+                        proj = np.mean(image, axis=0)
+                        stack.append(proj)
+                        projm = np.max(image, axis =0)
+                        stackm.append(projm)
+            stack = np.array(stack)
+            stackm = np.array(stackm)
+            tif_name = os.path.join(self.regfol, self.name+'_'+key+'.tif')
+            io.imsave(tif_name, stack)
+            tif_name_m = os.path.join(self.regfol, self.name+'_'+key+'_max.tif')
+            io.imsave(tif_name_m, stackm)
 
     def save_preprocessing(self, overwrite=True):
         pre_processing_file = os.path.join(self.processedfol, 'preprocessing.h5')

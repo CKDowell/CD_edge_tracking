@@ -169,6 +169,12 @@ class CX_tan:
         traj_mean = np.nanmean(trajs,axis=2)
         Ca_mean = np.nanmean(Ca,axis=1)
         return traj_mean,Ca_mean
+    # def orientation_bin_returns(self,binwidth):
+    #     jumps = self.get_jumps()
+    #     ca = self.ca
+    #     heading = self.ft2['ft_heading'].to_numpy()
+    #     for j in jumps:
+        
     def mean_traj_heat(self,xoffset=0,set_cmx =False,cmx=1):
         trj,ca = self.mean_traj_nF()
         colour = ca

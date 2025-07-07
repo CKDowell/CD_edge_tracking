@@ -98,6 +98,7 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
+            self.pv2 = self.pv2.drop(columns=self.pv2.filter(regex='fsbtn').columns) # needed to drop any whole TN masks
             if stim:
                 self.interpolate_over_stim(regions) # interpolates signal over shutter blockage with stimulation
             #self.pv2 = self.pv2.drop(columns=['0_fsbtn']) # drop any reference to tangential neurons
@@ -577,7 +578,7 @@ class CX_a:
             plt.plot([-2+offset, 2+offset],[0,0],linestyle='--',color='k')
             plt.plot([-2+offset,2+offset],[t[-idx_af],t[-idx_af]],linestyle='--',color='k')
             offset = offset+mult*2
-    def mean_jump_lines(self,fsb_names=['fsb_upper','fsb_lower'],p_amp=[False]):
+    def mean_jump_lines(self,fsb_names=['fsb_upper','fsb_lower'],p_amp=[False],time_threshold = 60):
          
         plt.figure(figsize=(20,20))
         from scipy.stats import circmean, circstd
@@ -602,7 +603,7 @@ class CX_a:
         jn = jn[jkeep]
         jns = np.sign(jd[jn])
 
-        time_threshold = 60
+        #time_threshold = 60
         # Pick the most common side
         v,c = np.unique(jns,return_counts=True)
         side = v[np.argmax(c)]
@@ -708,7 +709,99 @@ class CX_a:
         plt.plot([0,0],[-pi,pi],color='k')
         plt.plot([-pi,pi],[0,0],color='k')
         return omn
-    def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower']):
+    def mean_jump_wedges(self,fsb_names=['fsb_upper','fsb_lower']):
+        jumps = self.get_jumps()
+        output_array = np.zeros((100,16,jumps.shape[0],len(fsb_names)))
+        for inm,n in enumerate(fsb_names):
+            twedge = self.pdat['wedges_offset_'+n]
+            for ij,j in enumerate(jumps):
+                tbef = np.arange(j[0],j[1],dtype='int')
+                taf = np.arange(j[1],j[2],dtype='int')
+                wbef = twedge[tbef,:]
+                waf = twedge[taf,:]
+                
+                newtime = np.linspace(tbef[0],tbef[-1],50)
+                for iw in range(16):
+                    output_array[:50,iw,ij,inm] = np.interp(newtime,tbef,wbef[:,iw])
+                
+                newtime = np.linspace(taf[0],taf[-1],50)
+                for iw in range(16):
+                    output_array[50:,iw,ij,inm] = np.interp(newtime,taf,waf[:,iw])
+        return output_array
+    def phase_nulled_jump(self,bins=10,fsb_names=['fsb_upper']):
+        jumps = self.get_jumps()
+        output = np.zeros((16,bins*2,len(fsb_names)))
+        
+        for iw,w in enumerate(fsb_names):
+            twedge = self.pdat['wedges_'+w]
+            tphase = self.pdat['phase_'+w]
+            tphase = tphase*-self.side
+            if self.side==1:
+                twedge = np.fliplr(twedge)
+            wedgenull = ug.phase_nulling(twedge,tphase)
+            befdata = np.zeros((16,bins,len(jumps)))
+            afdata = np.zeros((16,bins,len(jumps)))
+            for ij,j in enumerate(jumps):
+                dxb = np.linspace(j[0],j[1],bins+1,dtype='int')
+                
+                
+                dxa = np.linspace(j[1],j[2],bins+1,dtype='int')
+                
+                for b in range(bins):
+                    bef_dx = np.arange(dxb[b],dxb[b+1])
+                    if len(bef_dx)==0:
+                        bef_dx = dxb[b]
+                    af_dx = np.arange(dxa[b],dxa[b+1])
+                    
+                    befdata[:,b,ij] = np.nanmean(wedgenull[bef_dx,:],axis=0)
+                    afdata[:,b,ij] = np.nanmean(wedgenull[af_dx,:],axis=0)
+                
+            output[:,:bins,iw] = np.mean(befdata,axis=2)
+            output[:,bins:,iw] = np.mean(afdata,axis=2)
+        return output
+    
+    def random_jump_wedge(self,fsb_names=['fsb_upper','fsb_lower']):
+        jumps = self.get_jumps()
+        jl = jumps.shape[0]
+        rj = np.random.randint(0,jl)
+        for inm,n in enumerate(fsb_names):
+            twedge = self.pdat['wedges_offset_'+n]
+            tphase = self.pdat['offset_'+n+'_phase'].to_numpy()
+            j = jumps[rj,:]
+            rdx = np.arange(j[0],j[2])
+            tw = twedge[rdx,:]
+            tp = tphase[rdx]
+            if inm==0:
+                output_array = np.zeros((tw.shape[0],tw.shape[1],len(fsb_names)))
+                out_phase = np.zeros((len(tp),len(fsb_names)))
+            out_phase[:,inm] = tp
+            output_array[:,:,inm] = tw
+            plumeoff = j[1]-j[0]
+        return output_array,plumeoff,out_phase
+        
+    def specific_jump_wedge(self,jump,fsb_names=['fsb_upper','fsb_lower']):
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        for inm,n in enumerate(fsb_names):
+            twedge = self.pdat['wedges_offset_'+n]
+            tphase = self.pdat['offset_'+n+'_phase'].to_numpy()
+            jump
+            rdx = np.arange(jump[0],jump[2])
+            tw = twedge[rdx,:]
+            tp = tphase[rdx]
+            if inm==0:
+                output_array = np.zeros((tw.shape[0],tw.shape[1],len(fsb_names)))
+                out_phase = np.zeros((len(tp),len(fsb_names)))
+                traj = np.zeros((len(tp),2))
+                traj[:,0] = x[rdx]
+                traj[:,0] = traj[:,0]-traj[0,0]
+                traj[:,1] = y[rdx]-y[jump[1]]
+            out_phase[:,inm] = tp
+            output_array[:,:,inm] = tw
+            plumeoff = jump[1]-jump[0]
+        return output_array,plumeoff,out_phase,traj
+    def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower'],ascale=50,jsize=3):
         
         ft2 = self.ft2
         pv2 = self.pv2
@@ -755,8 +848,8 @@ class CX_a:
         
         plt.fill([-10+x_offset,x_offset,x_offset,-10+x_offset],[-50,-50,0,0],color=[0.8,0.8,0.8])
         plt.plot([x_offset,x_offset],[-50,0],linestyle='--',color='k',zorder=1)
-        plt.fill([-13+x_offset,-3+x_offset,-3+x_offset,-13+x_offset],[50,50,0,0],color=[0.8,0.8,0.8])
-        plt.plot([-3+x_offset,-3+x_offset],[50,0],linestyle='--',color='k',zorder=2)
+        plt.fill([-13+x_offset,-jsize+x_offset,-jsize+x_offset,-13+x_offset],[50,50,0,0],color=[0.8,0.8,0.8])
+        plt.plot([-jsize+x_offset,-jsize+x_offset],[50,0],linestyle='--',color='k',zorder=2)
         x = x*side_mult
         for i,j in enumerate(this_j):
             ex = exts-j
@@ -838,15 +931,15 @@ class CX_a:
         tdx2 = np.arange(0,50,step=10,dtype=int)
         for p in range(3):
             for t in tdx2:
-                xa = 50*inmean_amp[t,p]*np.sin(inmean_phase[t,p])
-                ya = 50*inmean_amp[t,p]*np.cos(inmean_phase[t,p])
+                xa = ascale*inmean_amp[t,p]*np.sin(inmean_phase[t,p])
+                ya = ascale*inmean_amp[t,p]*np.cos(inmean_phase[t,p])
                 plt.arrow(inmean_traj[t,0],inmean_traj[t,1],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:],zorder=5)
                 
-                xa = 50*outmean_amp[t,p]*np.sin(outmean_phase[t,p])
-                ya = 50*outmean_amp[t,p]*np.cos(outmean_phase[t,p])
+                xa = ascale*outmean_amp[t,p]*np.sin(outmean_phase[t,p])
+                ya = ascale*outmean_amp[t,p]*np.cos(outmean_phase[t,p])
                 plt.arrow(outmean_traj[t,0],outmean_traj[t,1],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:],zorder=5)
-            xa = 50*outmean_amp[-1,p]*np.sin(outmean_phase[-1,p])
-            ya = 50*outmean_amp[-1,p]*np.cos(outmean_phase[-1,p])
+            xa = ascale*outmean_amp[-1,p]*np.sin(outmean_phase[-1,p])
+            ya = ascale*outmean_amp[-1,p]*np.cos(outmean_phase[-1,p])
             plt.arrow(outmean_traj[-1,0],outmean_traj[-1,1],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:],zorder=5)
         yl = [np.min(inmean_traj[:,1])-10,np.max(outmean_traj[:,1])+10]
         #plt.ylim(yl)

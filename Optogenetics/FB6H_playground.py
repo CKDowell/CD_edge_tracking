@@ -12,6 +12,8 @@ from analysis_funs.optogenetics import opto
 import os
 import matplotlib.pyplot as plt
 import pickle 
+from Utilities.utils_general import utils_general as ug
+plt.rcParams['pdf.fonttype'] = 42 
 meta_data = {'stim_type': 'alternation',
               'act_inhib':'act',
               'ledOny': 700,
@@ -205,8 +207,13 @@ flies_control = [r'Control_w\250410\f2\Trial1', # wondered off
         #r'Control_w\250501\f5\Trial1', # Did not make to stim
         r'Control_w\250503\f1\Trial1',
         r'Control_w\250503\f3\Trial1',
-        r'Control_w\250506\f1\Trial1',
-        r'Control_w\250506\f2\Trial1'
+       r'Control_w\250506\f1\Trial1',
+        r'Control_w\250506\f2\Trial1',
+       # r'Control_w\250530\f1\Trial1', Fly did not walk
+        r'Control_w\250530\f2\Trial1', # Tracked length with long in odour passages
+        r'Control_w\250530\f3\Trial1',# Tracked length with long in odour passages
+        r'Control_w\250530\f4\Trial1',# Tracked length with long in odour passages
+        r'Control_w\250530\f5\Trial1',# Tracked length with long in odour passages
     ]
 
 for i,f in enumerate(flies_control):
@@ -237,6 +244,8 @@ plt.plot([0,0],[0,i+1],color='k',linestyle='--')
 
 #%% Compare test and control stim
 plt.close('all')
+labmeetingdir = r'Y:\Presentations\2025\06_LabMeeting\FB6H'
+yoff = 0
 for i,f in enumerate(flies_test):
     searchdir = os.path.join(rootdir,f)
     indir = os.listdir(searchdir)
@@ -248,6 +257,11 @@ for i,f in enumerate(flies_test):
     op = opto()
     plt.figure(101)
     op.opto_raster(meta_data,df,offset=i)
+    plt.figure(10+i)
+    op.opto_return_raster(meta_data,df,offset=0)
+    yoff = yoff+1000
+    
+plt.figure(101)
 plt.plot([0,0],[0,i+1],color='k',linestyle='--')
 i2 = i+2
 for i,f in enumerate(flies_control):
@@ -261,5 +275,173 @@ for i,f in enumerate(flies_control):
     op = opto()
     plt.figure(101)
     op.opto_raster(meta_data,df,offset=i+i2)
+    plt.figure(150+i)
+    op.opto_return_raster(meta_data,df,offset=0)
+    yoff = yoff+1000
+
     
+plt.figure(101)
 plt.plot([0,0],[i2,i2+i+1],color='k',linestyle='--')
+plt.savefig(os.path.join(labmeetingdir,'SummaryTime.pdf'))
+plt.savefig(os.path.join(labmeetingdir,'SummaryTime.png'))
+
+#%% plot first stim
+plt.close('all')
+xoff = 0
+plt.figure(figsize=(20,8))
+for i,f in enumerate(flies_test):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    #plt.figure()
+    op.plot_first_stim(df,xoffset=xoff)
+    xoff = xoff+400
+    
+plt.xlim([-200,len(flies_test)*400])
+plt.savefig(os.path.join(savedir,'FirstStim_test.pdf')) 
+
+plt.figure(figsize=(20,8))
+xoff = 0
+
+
+for i,f in enumerate(flies_control):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    #plt.figure()
+    op.plot_first_stim(df,xoffset=xoff)
+    xoff = xoff+400
+plt.xlim([-200,len(flies_test)*400])
+plt.savefig(os.path.join(savedir,'FirstStim_control.pdf'))
+#%% extract 
+plt.close('all')
+statchoice = ['mean dist','mean ret time','returns per m','run length','first return','return status']
+test_data = np.empty((len(flies_test),len(statchoice)))
+for i,f in enumerate(flies_test):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    xdat = op.extract_stats_threshold(df,700,statchoice)
+    plt.scatter(np.arange(0,len(xdat))+np.random.rand(len(xdat))*0.05,xdat,color='r')
+    test_data[i,:] = xdat
+    
+control_data = np.empty((len(flies_control),len(statchoice)))    
+for i,f in enumerate(flies_control):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    xdat = op.extract_stats_threshold(df,700,statchoice)
+    plt.scatter(np.arange(0,len(xdat))+0.25+np.random.rand(len(xdat))*0.05,xdat,color='k')
+    control_data[i,:] = xdat
+
+
+#%% plot data and do stats
+from scipy import stats
+plt.close('all')
+ylabels = ['return distance (mm)','return time (s)','returns per metre', 'plume distance (mm)','distance (mm)' ]
+for i in range(len(statchoice)):
+    plt.figure(i,figsize=(5,10))
+    y_control = control_data[:,i]
+    
+    x_control = np.ones(y_control.shape)-0.25+np.random.randn(len(y_control))*0.05
+    
+    y_test = test_data[:,i]
+    x_test = np.ones(y_test.shape)+0.25+np.random.randn(len(y_test))*0.05
+    
+    plt.scatter(x_control,y_control,color='k')
+    plt.scatter(x_test,y_test,color='r')
+    plt.title(statchoice[i])
+    u1,p = stats.mannwhitneyu(y_test[~np.isnan(y_test)],y_control[~np.isnan(y_control)])
+    pr = ug.round_to_sig_figs(p,2)
+    plt.text(1,np.max(y_test[~np.isnan(y_test)]),'p: ' + str(pr))
+    plt.ylabel(ylabels[i])
+    plt.xticks([0.75,1.25],labels=['w[118]/UAS-CSChrimson','FB6H (SS95649)/UAS-CSChrimson'],rotation=45)
+    plt.subplots_adjust(bottom=0.4,left=0.4)
+    plt.xlim([0.5,1.5])
+    plt.savefig(os.path.join(savedir,'Blanket_'+statchoice[i]+'.pdf'))
+    plt.savefig(os.path.join(savedir,'Blanket_'+statchoice[i]+'.png'))
+    
+#%% return distance simple
+i = 4
+plt.figure(figsize=(5,10))
+motifdx = [1.1,1,0.1,0]
+motifs = ['+','o','+','o']
+y_control = control_data[:,i]
+x_control = np.ones(y_control.shape)-0.25+np.random.randn(len(y_control))*0.05
+dx_control = control_data[:,i+1]
+
+y_test = test_data[:,i]
+x_test = np.ones(y_test.shape)+0.25+np.random.randn(len(y_test))*0.05
+dx_test = test_data[:,i+1]
+
+for im,m in enumerate(motifdx):
+    dx = dx_control==m
+    plt.scatter(x_control[dx],y_control[dx],color='k',marker=motifs[im])
+    dx = dx_test==m
+    plt.scatter(x_test[dx],y_test[dx],color='r',marker=motifs[im])
+plt.yscale('log')
+
+
+plt.title(statchoice[i])
+u1,p = stats.mannwhitneyu(y_test[~np.isnan(y_test)],y_control[~np.isnan(y_control)])
+pr = ug.round_to_sig_figs(p,2)
+plt.text(1,np.max(y_test[~np.isnan(y_test)]),'p: ' + str(pr))
+plt.ylabel(ylabels[i])
+plt.xticks([0.75,1.25],labels=['w[118]/UAS-CSChrimson','FB6H (SS95649)/UAS-CSChrimson'],rotation=45)
+plt.subplots_adjust(bottom=0.4,left=0.4)
+plt.xlim([0.5,1.5])
+plt.savefig(os.path.join(savedir,'Blanket_FirstReturnSimple.pdf'))
+plt.savefig(os.path.join(savedir,'Blanket_FirstReturnSimple.png'))
+
+i = 4
+plt.figure(figsize=(5,10))
+motifdx = [1.1,1,0.1,0]
+motifs = ['x','<','+','>']
+y_control = control_data[:,i]
+x_control = np.ones(y_control.shape)-0.25+np.random.randn(len(y_control))*0.05
+dx_control = control_data[:,i+1]
+
+y_test = test_data[:,i]
+x_test = np.ones(y_test.shape)+0.25+np.random.randn(len(y_test))*0.05
+dx_test = test_data[:,i+1]
+
+for im,m in enumerate(motifdx):
+    dx = dx_control==m
+    plt.scatter(x_control[dx],y_control[dx],color='k',marker=motifs[im])
+    dx = dx_test==m
+    plt.scatter(x_test[dx],y_test[dx],color='r',marker=motifs[im])
+
+
+plt.title(statchoice[i])
+excldx = np.in1d(dx_test,[0.1,1.1])
+excldx_c = np.in1d(dx_control,[0.1,1.1])
+u1,p = stats.mannwhitneyu(y_test[~excldx],y_control[~excldx_c])
+pr = ug.round_to_sig_figs(p,2)
+plt.text(1,np.max(y_test[~np.isnan(y_test)]),'p: ' + str(pr))
+plt.ylabel(ylabels[i])
+plt.xticks([0.75,1.25],labels=['w[118]/UAS-CSChrimson','FB6H (SS95649)/UAS-CSChrimson'],rotation=45)
+plt.subplots_adjust(bottom=0.4,left=0.4)
+plt.xlim([0.5,1.5])
+plt.yscale('log')
+plt.savefig(os.path.join(savedir,'Blanket_FirstReturnDetailed.pdf'))
+plt.savefig(os.path.join(savedir,'Blanket_FirstReturnDetailed.png'))

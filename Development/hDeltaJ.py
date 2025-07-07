@@ -78,7 +78,7 @@ for datadir in datadirs:
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
     cxa.save_phases()
-    cxa.mean_jump_arrows(x_offset)
+    cxa.mean_jump_arrows(x_offset,fsb_names=['fsb_upper'],ascale=100)
     x_offset = x_offset+30
 
 
@@ -86,7 +86,8 @@ plt.ylim([-40,40])
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\hDeltaJ'
 plt.savefig(os.path.join(savedir,'MeanJumps.png'))
 plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
-
+#%%
+cxa.mean_jump_arrows(x_offset,fsb_names=['fsb_upper'])
 #%% regression for hDj
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                              'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',

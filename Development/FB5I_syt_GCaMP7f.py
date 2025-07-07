@@ -74,3 +74,10 @@ y = np.mean(pv2.filter(regex='fsb'),axis=1)
 fc = fci_regmodel(y.to_numpy().flatten(),ft2,pv2)
 fc.rebaseline()
 fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
+#%%
+datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553_sytGC7f\\240607\\f1\\Trial3"
+
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+#cx = CX(name,['eb','fsb'],datadir)
+cxa = CX_a(datadir,regions=['eb','fsb'])

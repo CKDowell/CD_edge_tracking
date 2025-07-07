@@ -62,7 +62,11 @@ for d in datadirs:
     cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
 
 #%%
-fc = fci_regmodel(pv2[['0_fsbtn']].to_numpy().flatten(),ft2,pv2)
+
+
+
+
+fc = fci_regmodel(cxt.pv2[['0_fsbtn']].to_numpy().flatten(),cxt.ft2,cxt.pv2)
 fc.rebaseline(span=500,plotfig=True)
 #%%
 y = fc.ca
@@ -73,34 +77,98 @@ plt.plot(ft2['instrip'],color='k')
 fc = fci_regmodel(y,ft2,pv2)
 fc.example_trajectory(cmin=-0.2,cmax=0.2)
 #%%
+plt.close('all')
+
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',
-                                'angular velocity pos','translational vel','ramp down since exit','ramp to entry']
-fc.run(regchoice)
-fc.run_dR2(20,fc.xft)
+                                'angular velocity pos',
+                                #'translational vel dirs',
+                                'translational vel',
+                                'ramp down since exit','ramp to entry']
+datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61645_FB4R\\240911\\f1\\Trial3" # Only 2 jumps
+            
+            ]
+for d in datadirs:
+    cxt = CX_tan(d) 
+    fc = cxt.fc
+    fc.run(regchoice)
+    fc.run_dR2(20,fc.xft)
+    
+    
+    plt.figure(1)
+    plt.plot(fc.dR2_mean)
+    plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(2)
+    plt.plot(fc.coeff_cv[:-1])
+    plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('Coefficient weight')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(3)
+    plt.plot([0,len(regchoice)],[0, 0],color='k',linestyle='--') 
+    plt.plot(-fc.dR2_mean*np.sign(fc.coeff_cv[:-1]),color='k')
+    plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2 * sign(coeffs)')
+    fc.plot_example_flur()
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    
+#%%
+plt.close('all')
 
+regchoice = ['odour onset', 'odour offset', 'in odour', 
+                                'translational vel dirs',
+                                ]
+reglabels =['odour onset', 'odour offset', 'in odour', 
+                                'tv -157.5','tv -112.5', 'tv -67.5', 
+                                'tv -22.5', 'tv  22.5',   'tv 67.5',  
+                                'tv 112.5', 'tv 157.5'
+                                ]
 
-plt.figure()
-plt.plot(fc.dR2_mean)
-plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
-plt.subplots_adjust(bottom=0.4)
-plt.ylabel('delta R2')
-plt.xlabel('Regressor name')
-plt.show()
-
-plt.figure()
-plt.plot(fc.coeff_cv[:-1])
-plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
-plt.subplots_adjust(bottom=0.4)
-plt.ylabel('Coefficient weight')
-plt.xlabel('Regressor name')
-plt.show()
-
-plt.figure()
-plt.plot([0,len(regchoice)],[0, 0],color='k',linestyle='--') 
-plt.plot(-fc.dR2_mean*np.sign(fc.coeff_cv[:-1]),color='k')
-plt.xticks(np.arange(0,len(regchoice)),labels=regchoice,rotation=90)
-plt.subplots_adjust(bottom=0.4)
-plt.ylabel('delta R2 * sign(coeffs)')
-plt.xlabel('Regressor name')
-plt.show()
+datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61645_FB4R\\240911\\f1\\Trial3" # Only 2 jumps
+            
+            ]
+for d in datadirs:
+    cxt = CX_tan(d) 
+    fc = cxt.fc
+    fc.run(regchoice)
+    fc.run_dR2(20,fc.xft)
+    
+    plt.figure(1)
+    plt.plot(fc.dR2_mean)
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(2)
+    plt.plot(fc.coeff_cv[:-1])
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('Coefficient weight')
+    plt.xlabel('Regressor name')
+    plt.show()
+    
+    plt.figure(3)
+    plt.plot([0,len(regchoice)],[0, 0],color='k',linestyle='--') 
+    plt.plot(-fc.dR2_mean*np.sign(fc.coeff_cv[:-1]),color='k')
+    plt.xticks(np.arange(0,len(reglabels)),labels=reglabels,rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.ylabel('delta R2 * sign(coeffs)')
+    fc.plot_example_flur()
+    plt.xlabel('Regressor name')
+    plt.show()

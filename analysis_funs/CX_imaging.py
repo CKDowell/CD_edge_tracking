@@ -68,8 +68,15 @@ class CX:
         # which they can with the matlab gui
         rois = self.roi_names
         
-        t_slice = self.open_slice(1)
-        num_frames = t_slice.shape[-1]
+        #t_slice = self.open_slice(1)
+        t_slice = self.open_slice2(1)
+        num_frames = t_slice.shape[-2]
+        num_chans = t_slice.shape[-1]
+        if num_chans>1:
+            multichan = True
+        else:
+            multichan = False
+            
         for r in rois:
             print(r)
             # Open mask
@@ -88,53 +95,56 @@ class CX:
             
             tseries = np.zeros((num_frames,r_num))
             tot_pixels = np.zeros((1,r_num))
-            for s in range(slice_num):
-                # Load imaging data
-                
+            for c in range(num_chans):
+                for s in range(slice_num):
+                    # Load imaging data   
+                        
+                    t_mask = mask[:,:,s]
+                    
+                    mrange = np.unique(t_mask[:])
+                    mrange = mrange[mrange>0]
+                    
+                    # This should speed things up
+                    if mrange.shape[0]==0:
+                        continue
+                    
+                    t_slice = self.open_slice2(s+1)[:,:,:,c]
                     
                     
-                t_mask = mask[:,:,s]
-                
-                mrange = np.unique(t_mask[:])
-                mrange = mrange[mrange>0]
-                
-                # This should speed things up
-                if mrange.shape[0]==0:
-                    continue
-                
-                t_slice = self.open_slice(s+1)
-                
-                
-                for i, i_n in enumerate(mrange):
+                    for i, i_n in enumerate(mrange):
+                        
+                        # Process each ROI
+                        mskdx = t_mask ==i_n
+                        projected = t_slice * mskdx[:,:,None]
+                        active_pixels = projected[:,:,0].size-np.count_nonzero(projected[:,:,0]==0)
+                        tot_pixels[0,i_n-1] = active_pixels+tot_pixels[0,i_n-1]
+                        temp = []
+                        for frame in range(num_frames):
+                            temp.append(np.nansum(projected[:,:,frame]))
+                        temp = np.array(temp)
+                        
+                        #CD edit: prior was taking average for each plane then taking sum. This means planes
+                        # with v few pixels have undue weight on the signal
+                        tseries[:,i_n-1] = tseries[:,i_n-1]+temp
                     
-                    # Process each ROI
-                    mskdx = t_mask ==i_n
-                    projected = t_slice * mskdx[:,:,None]
-                    active_pixels = projected[:,:,0].size-np.count_nonzero(projected[:,:,0]==0)
-                    tot_pixels[0,i_n-1] = active_pixels+tot_pixels[0,i_n-1]
-                    temp = []
-                    for frame in range(num_frames):
-                        temp.append(np.nansum(projected[:,:,frame]))
-                    temp = np.array(temp)
+                tseries_condensed = np.divide(tseries,tot_pixels)
+                #tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
+                if saveraw:
+                    print(saveraw)
+                    pd.DataFrame(tseries_condensed).to_csv(os.path.join(self.regfol,'raw_' +r+ '.csv'))
                     
-                    #CD edit: prior was taking average for each plane then taking sum. This means planes
-                    # with v few pixels have undue weight on the signal
-                    tseries[:,i_n-1] = tseries[:,i_n-1]+temp
-                
-            tseries_condensed = np.divide(tseries,tot_pixels)
-            #tseries_condensed = np.nansum(tseries,2) # For now is taking the  sum of means... don't know whether I would change
-            if saveraw:
-                print(saveraw)
-                pd.DataFrame(tseries_condensed).to_csv(os.path.join(self.regfol,'raw_' +r+ '.csv'))
-                
-            tseries_df = pd.DataFrame(tseries_condensed)
-            if dynamicbaseline:
-                # Dynamic baselining - useful to correct for drift, though use with caution
-                tseries_df = tseries_df.apply(fn.lnorm_dynamic).to_numpy()
-            else:
-                tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
-            # May want to add another function that interpolates a dynamic baseline as was done for my PhD
-            pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
+                tseries_df = pd.DataFrame(tseries_condensed)
+                if dynamicbaseline:
+                    # Dynamic baselining - useful to correct for drift, though use with caution
+                    tseries_df = tseries_df.apply(fn.lnorm_dynamic).to_numpy()
+                else:
+                    tseries_df = tseries_df.apply(fn.lnorm).to_numpy()
+                    
+                # May want to add another function that interpolates a dynamic baseline as was done for my PhD
+                if multichan:
+                    pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r + '_Ch' + str(c+1) +'.csv'))
+                else:
+                    pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
                 
            
                 
@@ -581,7 +591,31 @@ class CX:
         slice = np.moveaxis(slice, [0,1], [-1,-2])
         slice = np.fliplr(slice)
         return slice
-    
+    def open_slice2(self,slice):
+        #similar to above except it loads via channels
+        files = os.listdir(self.regfol)
+        sdx = [i for i,f in enumerate(files) if 'slice'+str(slice) +'.tif' in f]
+        
+        for i,s in enumerate(sdx):
+            tfile = os.path.join(self.regfol,files[s])
+            tslice = io.imread(tfile)
+            
+            #transpose and flip to have (x,y,t) and EB in correct orientation
+            tslice = np.moveaxis(tslice, [0,1], [-1,-2])
+            tslice = np.fliplr(tslice)
+            
+            if i==0:
+                slices = np.zeros(np.append(tslice.shape,len(sdx)))
+                
+            if 'Ch1' in files[s]:
+                ids = 0
+            elif 'Ch2' in files[s]:
+                ids = 1
+            else:
+                ids = i
+            slices[:,:,:,ids] = tslice
+        return slices
+        
     def open_mask(self,maskname):
         fb_mask = io.imread(maskname)
         # little hacky, sometimes axis are read in differently my io.imread, correct is number of frames is axis 0

@@ -32,12 +32,94 @@ class opto:
         ls = np.where(led==0)[0][0]
         tt = ug.get_ft_time(df)
         tt = tt-tt[ls]
-        plt.fill_between(tt,pon*0+offset,pon*0+offset+1,color=[0.7,0.7,0.7])
-        plt.fill_between(tt,pon+offset,pon*0+offset,color='r',linewidth=0)
+        plt.fill([tt[0],tt[-1],tt[-1],tt[0]],[offset,offset,offset+1,offset+1],color=[0.7,0.7,0.7],linewidth=0)
+        
+        #plt.fill_between(tt,pon*0+offset,pon*0+offset+1,color=[0.7,0.7,0.7])
+        
+        bstart,bsize = ug.find_blocks(pon)
+        for ib,b in enumerate(bstart):
+            plt.fill([tt[b],tt[b+bsize[ib]-1],tt[b+bsize[ib]-1],tt[b]],[offset,offset,offset+1,offset+1],color='r',linewidth=0)
+        
+        
+        #plt.fill_between(tt,pon+offset,pon*0+offset,color='r',linewidth=0)
         if ym>=distance_thresh:
             plt.text(tt[-1]+50,offset+0.5,str(ym),color='r')
         else:
             plt.text(tt[-1]+50,offset+0.5,str(ym),color='k')
+    def opto_return_raster(self,meta_data,df,offset=0):
+        pon = pd.Series.to_numpy(df['instrip'])
+        lon = df['led1_stpt'].to_numpy()<1
+        lon1 = np.where(lon)[0][0]
+        stimon = np.where(pon>0)[0][0]
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        x,y = self.fictrac_repair(x,y)
+        y = y-y[stimon]
+        dx = np.diff(x)
+        dy = np.diff(y)
+        dd = np.sqrt(dx**2+dy**2)
+        distance = np.cumsum(dd)
+        
+        t = self.get_time(df)
+        dt = np.mean(np.diff(t))
+        ledon = df['led1_stpt'].to_numpy()<1
+        msize = np.round(0.5/dt)
+        
+        bstart,bsize = ug.find_blocks(pon,mergeblocks=True,merg_threshold=msize)
+        tdists = np.zeros(len(bstart)-1)
+        for i,b in enumerate(bstart[:-1]):
+            bdx = np.arange(b+bsize[i],bstart[i+1],dtype='int')
+            tdist = distance[bdx]
+            tdists[i] = tdist[-1]-tdist[0]
+        x =np.arange(0,len(tdists))
+        try:
+            xmid = np.where((bstart[:-1]+bsize[:-1])>lon1)[0][0]
+        except:
+            xmid = len(tdists)
+        print(xmid)
+        plt.plot(x-xmid,tdists+offset,color='k')
+        plt.scatter(x[(bstart[:-1]+bsize[:-1])<lon1]-xmid,tdists[(bstart[:-1]+bsize[:-1])<lon1]+offset,color='k',zorder=2)
+        plt.scatter(x[(bstart[:-1]+bsize[:-1])>lon1]-xmid,tdists[(bstart[:-1]+bsize[:-1])>lon1]+offset,color='r',zorder=2)
+    def plot_first_stim(self,df,xoffset=0):
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        x,y = self.fictrac_repair(x,y)
+        pon = pd.Series.to_numpy(df['instrip']>0)
+        lon = df['led1_stpt'].to_numpy()<1
+        #firstlon = np.where(lon)[0][0]
+        londons,lonsize = ug.find_blocks(lon,mergeblocks=True,merg_threshold=10)
+        firstlon = londons[0]
+        pw = np.where(pon)
+        x = x-x[pw[0][0]]
+        y = y-y[pw[0][0]]
+        x = x+xoffset
+        
+        t = self.get_time(df)
+        dt = np.mean(np.diff(t))
+        msize = np.round(0.5/dt)
+        instrip = df['instrip']
+        bstart,bsize = ug.find_blocks(instrip,mergeblocks=True,merg_threshold=msize)
+        bstart = bstart[bsize>msize]
+        bsize = bsize[bsize>msize]
+        #bstart,bsize = ug.find_blocks(pon)
+        bs1 = np.max(bstart[bstart<firstlon])
+        try:
+            bs2 = np.min(bstart[bstart>firstlon])
+        except:
+            bs2 = len(x)
+        bdx = np.arange(bs1,bs2)
+        ty = y[bdx]
+        tx = x[bdx]
+        tymn = np.min(ty)
+        tymx = np.max(ty)
+        ythresh = y[firstlon]
+        plt.fill(np.array([-25,25,25,-25])+xoffset,[tymn,tymn,tymx,tymx],color=[0.7,0.7,0.7])
+        plt.plot(tx[ty<=ythresh],ty[ty<=ythresh],color='k')
+        plt.plot(tx[ty>=ythresh],ty[ty>=ythresh],color=[1,0.8,0.8])
+        plt.gca().set_aspect('equal')
+        plt.show()
+        
+        
         
     def plot_plume(self,meta_data,df):
         x = pd.Series.to_numpy(df['ft_posx'])
@@ -605,9 +687,112 @@ class opto:
                     'Ratio_dx':ratio_dx
                     }
         return out_dict
+    
+    def extract_stats_threshold(self,df,ythresh,statchoice):
+        output_data = np.array([])
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        x,y = self.fictrac_repair(x,y)
+        dx = np.diff(x)
+        dy = np.diff(y)
+        dd = np.sqrt(dx**2+dy**2)
+        distance = np.cumsum(dd)
+        
+        t = self.get_time(df)
+        dt = np.mean(np.diff(t))
+        ledon = df['led1_stpt'].to_numpy()<1
+        msize = np.round(0.5/dt)
+        instrip = df['instrip']
+        ydx = y>ythresh
+        ydxw = np.where(ydx)[0]
+        
+        bstart,bsize = ug.find_blocks(instrip,mergeblocks=True,merg_threshold=msize)
+        bsdx = np.in1d(bstart,ydxw)
+        
+        bstarty = bstart[bsdx]
+        bsizey  = bsize[bsdx]
         
         
-        
+        for s in statchoice:
+            if s=='mean dist':
+                data = np.zeros(len(bstarty[:-1]))
+                for i,b in enumerate(bstarty[:-1]):
+                    bdx = np.arange(b+bsizey[i],bstarty[i+1],dtype='int')
+                    tdist = distance[bdx]
+                    data[i] = tdist[-1]-tdist[0]
+                
+                output_data = np.append(output_data,np.mean(data))
+                
+            elif s== 'mean ret time':
+                data = np.zeros(len(bstarty[:-1]))
+                for i,b in enumerate(bstarty[:-1]):
+                    bdx = np.arange(b+bsizey[i],bstarty[i+1],dtype='int')
+                    tdist = t[bdx]
+                    data[i] = tdist[-1]-tdist[0]
+                output_data = np.append(output_data,np.mean(data))
+                
+            elif s== 'returns per m':
+                print(len(bstarty))
+                if len(bstarty)<2:
+                    data = np.nan
+                else:
+                    runlen = y[bstarty[-1]] - y[bstarty[0]+bsizey[0]]
+                    data = len(bstarty)/runlen
+                    data = data*1000
+                output_data = np.append(output_data,data)
+                
+            elif s == 'run length':
+                if len(bstarty)<1:
+                    data = 0
+                else:
+                    rmax = 2000-ythresh
+                    runlen = y[bstarty[-1]+bsizey[-1]-1] - ythresh
+                    data = np.min(np.append(runlen,rmax))
+                output_data = np.append(output_data,data)
+            elif s =='first return':
+                lon = np.where(ledon)[0][0]
+                lins = instrip[lon]
+                
+                indices = np.where(bstart > lon)[0]
+                if indices.size == 0:
+                    print('did not make back')
+                    if lins==1:
+                        retdx = np.arange(bstart[-1]+bsize[-1],len(x)-1,dtype='int')
+                    else:
+                        retdx = np.arange(lon,len(x)-1,dtype='int')
+                        
+                    tdist = distance[retdx]
+                    
+                    data = tdist[-1]-tdist[0]
+                else:
+                    next_bstart = np.min(indices)
+                    if lins==1:
+   
+                        retdx = np.arange(bstart[next_bstart-1]+bsize[next_bstart-1],bstart[next_bstart],dtype='int')
+                    else:
+                        retdx = np.arange(lon,bstart[next_bstart],dtype='int')
+                    
+                    tdist = distance[retdx]
+                    
+                    data = tdist[-1]-tdist[0]
+                output_data = np.append(output_data,data)
+            elif s == 'return status':
+                lon = np.where(ledon)[0][0]
+                lins = instrip[lon]
+                next_bstart = np.where(bstart>lon)[0]
+                data = 0
+                if lins==1:
+                    data = data+1
+                    
+                if len(next_bstart)<1:
+                    data = data+0.1
+                    
+                #Code: 0.0 stim on outside plume returned after stim, 
+                # 1.0 stim on in plume returned after stim
+                # 0.1 stim on outside plume left after stim
+                # 1.1 stim on inside plume left after stim
+                output_data = np.append(output_data,data)
+        return output_data
         
         
         

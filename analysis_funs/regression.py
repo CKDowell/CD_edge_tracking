@@ -18,6 +18,7 @@ import matplotlib as mpl
 import statsmodels.api as sm
 from src.utilities import funcs as fn
 from scipy import signal
+from Utilities.utils_general import utils_general as ug
 #%%
 class fci_regmodel:
     def __init__(self,y,ft2,pv2):
@@ -50,7 +51,7 @@ class fci_regmodel:
         regmatrix = np.ones([xs[0],len(regchoice)+1],dtype = float)
         # define regressors
         for i,r in enumerate(regchoice):
-            
+            use_x = True
             
             if r=='odour onset':
                 x = self.ft2['instrip'].copy()
@@ -61,7 +62,7 @@ class fci_regmodel:
                 ins = self.ft2['instrip'].to_numpy()
                 insd = np.diff(ins)
                 iw = np.where(insd>0)[0]
-                
+                use_x = False
                 for o in range(odour_num):
                     
                     x = np.zeros(xs[0])
@@ -209,7 +210,32 @@ class fci_regmodel:
                 xp = np.percentile(np.abs(x),99)
                 x[x>xp] = xp
                 x[x<-xp] = -xp
-            
+            elif r=='translational vel dirs':
+                use_x = False
+                dirs = np.linspace(-np.pi,np.pi,9)
+                regmatrix = np.append(regmatrix,np.ones((xs[0],len(dirs)-2)),axis=1)
+                
+                x1 = self.ft2['ft_posx'].copy()
+                y1 = self.ft2['ft_posy'].copy()
+                heading = self.ft2['ft_heading'].copy().to_numpy()
+                heading = ug.savgol_circ(heading,30,5)
+                dx = np.diff(x1)
+                dy = np.diff(y1)
+                trans_diff = np.sqrt(dx**2+dy**2)
+                x = np.append([0],trans_diff)
+                xp = np.percentile(np.abs(x),99)
+                x[x>xp] = xp
+                x[x<-xp] = -xp
+                
+                for d in range(len(dirs)-1):
+                    xr = np.zeros_like(x)
+                    d1 = dirs[d]
+                    d2 = dirs[d+1]
+                    ddx = np.logical_and(heading>d1,heading<d2)
+                    xr[ddx] = x[ddx]
+                    
+                    regmatrix[:,i+d] = xr
+                
             elif r == 'stationary':
                 # x1 = pd.Series.to_numpy(self.ft2['x_velocity'].copy())
                 # x2 = pd.Series.to_numpy(self.ft2['y_velocity'].copy()) 
@@ -280,7 +306,7 @@ class fci_regmodel:
                 
                 
             x[np.isnan(x)] = 0
-            if r!='each odour sparse':
+            if use_x:
                 regmatrix[:,i] = x
              
         #plt.plot(regmatrix[:,0]) 
@@ -949,7 +975,7 @@ class fci_regmodel:
         if output:
             return plt_mn,t
         
-    def mean_traj_nF_jump(self,ca,plotjumps=False,cmx=False,offsets=20):
+    def mean_traj_nF_jump(self,ca,plotjumps=False,cmx=False,offsets=20,colormap='coolwarm'):
         ft2 = self.ft2
         pv2 = self.pv2
         
@@ -1032,7 +1058,7 @@ class fci_regmodel:
             if plotjumps:
                 tj = np.append(inplume_traj[:,i,:],outplume_traj[:,i,:],axis=0)
                 tjca = np.append(inplume_amp[:,i],outplume_amp[:,i],axis=0)
-                self.jump_heat(tj,tjca,xoffset=off,set_cmx=cmx)
+                self.jump_heat(tj,tjca,xoffset=off,set_cmx=cmx,colormap=colormap)
             off = off+offsets
             
             

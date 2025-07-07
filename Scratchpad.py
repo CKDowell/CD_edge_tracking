@@ -24,6 +24,130 @@ from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
 
 plt.rcParams['pdf.fonttype'] = 42 
+#%% Ring attractor playground
+plt.close('all')
+fc2 = np.zeros(8)
+hdeltaC = np.zeros(8)
+heading = np.zeros(8)
+randgoal = np.zeros(8)
+goaldir = -np.pi/2
+heading = 0 
+rg = np.linspace(-np.pi,np.pi,16)
+initarray = np.linspace(-np.pi,np.pi,16)
+hdeltaC = np.cos(initarray-goaldir)+1
+heading = np.cos(initarray-heading)+1
+hdeltaJ = np.cos(initarray-np.pi)+1
+for i, r in enumerate(rg):
+    randgoal = np.cos(initarray-r)+1
+    
+    #ff_inhib = np.mean(randgoal+hdeltaC+heading)
+    fc2 = np.exp(randgoal+heading)/10
+    
+    plt.subplot(4,4,i+1)
+    plt.plot(initarray,fc2,color='r')
+    plt.plot(initarray,hdeltaC,color='b')
+    plt.plot(initarray,heading,color='k')
+    plt.plot(initarray,randgoal,color='m')
+    plt.ylim([0,25])
+
+hdjw = np.linspace(0,1,5)
+for ij ,j in enumerate(hdjw):
+    for i, r in enumerate(rg):
+        randgoal = np.cos(initarray-r)+1
+        fc2 = np.exp(randgoal+heading+hdeltaJ*j)
+        plt.figure(ij+2)
+        plt.plot(initarray,fc2,color=[i/16,0.5,0.5])
+        # plt.figure(ij*10)
+        # plt.plot(initarray,randgoal,color=[i/16,0.5,0.5])
+        
+hdjw = np.linspace(0,1,5)
+
+for ij ,j in enumerate(hdjw):
+    plt.figure(100+ij)
+    for i, r in enumerate(rg):
+        randgoal = np.cos(initarray-r)+1
+        fc2 = np.exp(randgoal+heading+hdeltaJ*j)
+        am = np.argmax(fc2)
+        amin = np.argmin(fc2)
+        plt.scatter(initarray[am],fc2[am],color=[i/16,0.5,0.5])
+        plt.scatter(initarray[amin],fc2[amin],color=[i/16,0.5,0.5])
+        #plt.plot(initarray,fc2,color=[i/16,0.5,0.5])
+        
+        
+plt.figure(1000)
+r = -3*np.pi/4
+for ij ,j in enumerate(hdjw):
+    
+    randgoal = np.cos(initarray-r)+1
+    fc2 = np.exp(randgoal+heading+hdeltaJ*j)
+   
+    plt.plot(initarray,fc2,color=[ij/len(hdjw),0.5,0.5])
+#%%
+labmeetingdir = r'Y:\Presentations\2025\06_LabMeeting\FC2'
+plt.close('all')
+goaldir = -np.pi/2
+heading = 0
+hdjdir = -3*np.pi/4
+w_hdc = 1.5
+w_hdj = 1.5
+initarray = np.linspace(-np.pi,np.pi,16)
+hdeltaC = np.cos(initarray-goaldir)+1
+heading = np.cos(initarray-heading)+1
+hdeltaJ = np.cos(initarray-hdjdir)+1
+
+FC2_1 = np.exp(heading)
+FC2_2 = np.exp((heading+hdeltaC)/2)
+FC2_3 = np.exp((heading+hdeltaJ+hdeltaC)/3)
+# FC2_1 = FC2_1/np.mean(FC2_1)
+# FC2_2 = FC2_2/np.mean(FC2_2)
+# FC2_3 = FC2_3/np.mean(FC2_3)
+
+plt.figure()
+plt.plot(initarray,heading,color=[0.5,0.8,0.5])
+plt.xlim([-np.pi,np.pi])
+plt.xticks(np.linspace(-np.pi,np.pi,5),labels=[-180,-90,0,90,180])
+plt.plot([-np.pi/2,-np.pi/2],[0,2],color='r',linestyle='--')
+plt.ylabel('activity')
+plt.xlabel('phase (deg)')
+plt.savefig(os.path.join(labmeetingdir,'hDeltaIn_heading.png'))
+plt.plot(initarray,hdeltaC,color=[0.5,0.5,1])
+plt.savefig(os.path.join(labmeetingdir,'hDeltahDeltaC.png'))
+plt.plot(initarray,hdeltaJ,color=[0.8,0.2,1])
+
+plt.savefig(os.path.join(labmeetingdir,'hDeltaIn.png'))
+
+
+plt.figure()
+plt.plot(initarray,FC2_1,color=[0.5,0.8,0.5])
+plt.plot([-np.pi/2,-np.pi/2],[0,7],color='r',linestyle='--')
+plt.xticks(np.linspace(-np.pi,np.pi,5),labels=[-180,-90,0,90,180])
+plt.plot([-np.pi/2,-np.pi/2],[0,2],color='r',linestyle='--')
+plt.ylabel('activity')
+plt.xlabel('phase (deg)')
+plt.savefig(os.path.join(labmeetingdir,'FC2out_heading.png'))
+plt.plot(initarray,FC2_2,color=[0.5,0.5,1])
+plt.savefig(os.path.join(labmeetingdir,'FC2out_hdc.png'))
+plt.plot(initarray,FC2_3,color=[0.8,0.2,1])
+plt.savefig(os.path.join(labmeetingdir,'FC2out_hdc_hdj.png'))
+
+plt.figure()
+hdirs = np.linspace(-np.pi,np.pi,17)
+lnorm = len(hdirs)
+for ih,h in enumerate(hdirs):
+    heading = np.cos(initarray-h)+1
+    FC2_3 = np.exp((heading+hdeltaJ+hdeltaC)/3)
+    #plt.plot(initarray,FC2_3,color=[1-ih/4,0,ih/4])
+    
+    psin = np.mean(FC2_3*np.sin(initarray))
+    pcos = np.mean(FC2_3*np.cos(initarray))
+    plt.plot([0,psin],[0,pcos],color=[1-ih/lnorm,0,ih/lnorm])
+    
+    xs =np.array([0, np.sin(h)])+2
+    xc = np.array([0,np.cos(h)])
+    plt.plot(xs,xc,color =[1-ih/lnorm,0,ih/lnorm])
+gca = plt.gca()
+gca.set_aspect('equal')
+#plt.plot([-np.pi/2,-np.pi/2],[0,7],color='r',linestyle='--')
 #%% Image registraion
 
 
