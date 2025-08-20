@@ -23,6 +23,7 @@ from analysis_funs.utilities import funcs as fn
 from analysis_funs.CX_behaviour_pred_col import CX_b
 from Utilities.utils_general import utils_general as ug
 from Utilities.utils_plotting import uplt as up
+from sklearn.decomposition import PCA
 u = ug()
 plt.rcParams['pdf.fonttype'] = 42 
 
@@ -43,10 +44,15 @@ for i,datadir in enumerate(datadirs):
     all_flies.update({str(i):cxa})
 
 #%% Stopping and starting analysis
+from matplotlib.collections import PolyCollection
 mvthresh = 1 #1mm/s
 minsize = 5
 plt.close('all')
 # Assess phase during returns to jumped plume, look at FC2- EPG phase lag/lead
+cmap = plt.get_cmap('coolwarm')
+colours = cmap(np.linspace(0, 1, 50))[:,:3]
+lscale = np.linspace(-2,2,49)
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_maimon2\BumpAndPhase'
 for i in range(len(datadirs)):
     cxa = all_flies[str(i)]
     jumps = cxa.get_jumps()
@@ -56,22 +62,27 @@ for i in range(len(datadirs)):
     bst,bsz = ug.find_blocks(stills)
     still_start = bst[bsz>=minsize]+1 # add one because the velocity signal is one shorter
     still_size = bsz[bsz>=minsize]
-    # plt.figure()
+    fsb = cxa.pdat['phase_fsb_upper'] *-cxa.side
+    eb = cxa.pdat['phase_eb'] *-cxa.side
+    fsb2 = cxa.pdat['phase_fsb_upper']*cxa.side
+    fsb_o = cxa.pdat['offset_fsb_upper_phase'].to_numpy() *-cxa.side
+    eb_o = cxa.pdat['offset_eb_phase'].to_numpy()*-cxa.side
+    eb2 = cxa.pdat['phase_eb'] *cxa.side
+    heading = cxa.ft2['ft_heading'].to_numpy()*-cxa.side
     
-    # plt.subplot(2,2,1)
-    # plt.plot(dd_dt)
-    # plt.plot(stills*10)
+    ebuw = np.unwrap(eb2)
+    huw = np.unwrap(heading)
     
-    # plt.subplot(2,2,2)
-    # plt.hist(dd_dt,bins=100)
     
-    # plt.subplot(2,2,3)
-    # plt.plot(stills)
-    # plt.plot(cxa.ft2['instrip']/2)
-    fsb = cxa.pdat['phase_fsb_upper']
-    eb = cxa.pdat['phase_eb']
-    heading = cxa.ft2['ft_heading'].to_numpy()
+    
+    stimon = np.where(cxa.ft2['instrip'])[0][0]
+    
+    
     w_fsb = cxa.pdat['wedges_fsb_upper']
+    if cxa.side==-1:
+        w_fsb = np.fliplr(w_fsb)
+    
+    
     wmean = np.mean(w_fsb,axis=1)
     wmeanz = (wmean-np.mean(wmean))/np.std(wmean)
     pdiff = ug.circ_subtract(fsb,eb)
@@ -81,153 +92,409 @@ for i in range(len(datadirs)):
     fc2_vel = ug.circ_vel(fsb,cxa.pv2['relative_time'],smooth=True,winlength=10)
     #pdiff_vel = ug.circ_vel(pdiff,cxa.pv2['relative_time'],smooth=False)
     pvcorr = ug.time_varying_correlation(pvaz,wmeanz,20)
-    for j in jumps:
+    for ij,j in enumerate(jumps):
         t_stills = still_start[np.logical_and(still_start>j[1],still_start<j[2])]
-        if len(t_stills)==0:
-            plt.figure()
+        #if len(t_stills)==0:
+        fig, ax = plt.subplots(3,1,figsize=(12,9))
+        
+        
+        
+        dx = np.arange(j[0],j[2])
+        od_off= j[1]-j[0]
+        t_fsb = fsb[dx]
+        t_h = heading[dx]
+        
+        
+        
+        #t_fsb = ug.circ_subtract(t_fsb,t_fsb[od_off])
+        t_eb = eb[dx]
+        
+        h_eb_offset = stats.circmean(ug.circ_subtract(t_h,t_eb))
+        t_eb = ug.circ_subtract(t_eb,-h_eb_offset)
+        t_fsb = ug.circ_subtract(t_fsb,-h_eb_offset)
+        
+        #t_eb = ug.circ_subtract(t_eb,t_eb[od_off])
+        #t_h = ug.circ_subtract(t_h,t_h[od_off])
+        t_vel = dd_dt[dx]
+        t_meanz = wmeanz[dx]
+        
+        
+        # headin eb offset
+        #c = sg.correlate(t_h,t_eb)
+        
+        
+        
+        
+        
+        verts = []
+        x = np.arange(0,len(t_eb),dtype=float)/10
+        for ie in range(len(t_eb)-1):
+            verts.append([
+                (x[ie], t_eb[ie]),
+                (x[ie], t_fsb[ie]),
+                (x[ie+1], t_fsb[ie+1]),
+                (x[ie+1], t_eb[ie+1])
+            ]) 
+        
+        
+        for a in range(2):
+            if a==0:
+                ltmeanz = ug.find_nearest_block(t_meanz,lscale)
+                ax[a].set_title('Fly: ' + str(i) + ' Jump: ' +str(ij))
+                ax[a].set_ylabel('Phase (deg) / velocity (au)')
+            else:
+                ltmeanz = ug.find_nearest_block(pvaz[dx],lscale)
+                ax[a].set_xlabel('Time (s)')
+            poly = PolyCollection(verts ,facecolors=colours[ltmeanz[:-1],:],edgecolors='none') 
             
-            plt.subplot(2,1,1)
-            plt.title('Fly: ' + str(i))
-            dx = np.arange(j[0],j[2])
-            od_off= j[1]-j[0]
-            t_fsb = fsb[dx]
-            t_h = heading[dx]
-            t_fsb = ug.circ_subtract(t_fsb,t_fsb[od_off])
-            t_eb = eb[dx]
-            t_eb = ug.circ_subtract(t_eb,t_eb[od_off])
-            t_h = ug.circ_subtract(t_h,t_h[od_off])
-            t_vel = dd_dt[dx]
-            plt.plot(t_fsb,color='b')
-            plt.plot(t_eb,color='k')
-            plt.plot(t_h,color=[0.5,0.5,0.5])
-            plt.plot(-5+t_vel/10,color='k')
+            ax[a].add_collection(poly)
+            ax[a].set_xlim(x.min(), x.max())
+            ax[a].set_ylim(min(t_eb.min(), t_fsb.min()), max(t_eb.max(), t_fsb.max()))
+            
+            ax[a].plot(x,t_fsb,color=[0.2,0.2,1],linestyle='-',linewidth=1)
+            ax[a].plot(x,t_eb,color='k',linestyle='-',linewidth=0.5)
+            
+            
+            
+            ax[a].plot(x,t_h,color='k',linewidth=2)
+            ax[a].plot(x,-5+t_vel/10,color='k')
             
             #plt.plot(pdiff[dx],color='b')
             #plt.plot(pdiff_vel[dx]/2,color='m')
-           # plt.plot(fc2_vel[dx]/2,color='m')
-            plt.plot([0,j[2]-j[0]],[0,0],color='k',linestyle='--')
-            plt.ylim([-5,np.pi])
-            plt.scatter(od_off,1,color='r')
-            plt.subplot(2,1,2)
-            plt.plot(t_vel,color='k')
-            plt.scatter(od_off,5,color='r')
-            plt.plot(wmeanz[dx]*10,color='g')
-            plt.plot(pvaz[dx]*10,color='b')
-       # plt.plot(pvcorr[dx]*20,color='m')
-            # plt.scatter(j[1:],[1,1],color='r')
-            # plt.scatter(t_stills,np.ones(len(t_stills)),color='k',zorder=2)
-
-# Assess amplitude of bump during these epochs
-#%% Phase nulled data
-x = np.arange(0,16)
+            #plt.plot(fc2_vel[dx]/2,color='m')
+            ax[a].plot([x[0],x[-1]],[0,0],color='k',linestyle='--')
+            ax[a].plot([x[od_off],x[-1]],[-np.pi/2,-np.pi/2],color='r',linestyle='--')
+            ax[a].plot([x[0],x[od_off]],[+np.pi/2,+np.pi/2],color='r',linestyle='--')
+            ax[a].set_ylim([-5,np.pi])
+            ax[a].fill([x[0],x[od_off],x[od_off],x[0]],[-5,-5,np.pi,np.pi],color=[0.8,0.8,0.8],zorder=-1)
+            
+            #ax[a].scatter(od_off,1,color='r')
+            ax[a].set_yticks([-np.pi,0,np.pi],labels=[-180,0,180])
+            
+            plt.show()
+        tfsb = 7.5*(fsb2[dx]+np.pi)/np.pi
+        teb = 7.5*(eb2[dx]+np.pi)/np.pi
+        ax[2].imshow(w_fsb[dx,:].T,vmin=0,vmax=1,interpolation='None',aspect='auto')
+        ax[2].scatter(x*10,tfsb,color='r')
+        ax[2].scatter(x*10,teb,color='k')
+        plt.savefig(os.path.join(savedir,'PhaseMeanTopPVAbottom_fly_'+str(i) +'_jump_'+str(ij)+'.png'))
+        
+#%% better offset determination
 plt.close('all')
-plotdata = np.zeros((16,len(datadirs),2,3))
+for i in range(len(datadirs)):
+    cxa = all_flies[str(i)]
+    eb2 = cxa.pdat['phase_eb'] *-cxa.side
+    heading = cxa.ft2['ft_heading'].to_numpy()*-cxa.side
+    ebuw = np.unwrap(eb2)
+    huw = np.unwrap(heading)
+    for ij,j in enumerate(jumps):
+        dx = np.arange(j[0],j[2])
+    
+    
+        plt.figure()
+        plt.subplot(1,2,1)
+        stimon = np.where(cxa.ft2['instrip'])[0][0]
+        
+        
+        plt.plot(ebuw[dx],color='r')
+        plt.plot(huw[dx],color='k')
+       # cc = sg.correlate(ebuw,huw)
+        #ccmx = np.argmax(cc)
+        plt.subplot(1,2,2)
+        #plt.plot(cc)
+        #plt.title(str(len(huw)-ccmx))
+        
+        x= np.arange(0,len(eb2))
+        d = ug.circ_subtract(eb2[dx],heading[dx])
+        plt.scatter(x[dx],d,s=5)
+        plt.ylim([-np.pi,np.pi])
+        #sfilt = ug.savgol_circ(d[dx],winlength=100,polyorder=3)
+        #plt.plot(x[1:],sfilt,color='k')
+    
+    
+#%% Phase first 3 seconds after odour offset
+plt.close('all')
+
+offset = 0
+regions = ['eb','fsb_upper']
+for reg in regions:
+    plt.figure()
+    for i in range(len(datadirs)):
+        
+        
+        cxa = all_flies[str(i)]
+        jumps = cxa.get_jumps()
+        fsb_o = ug.circ_subtract(cxa.pdat['phase_fsb_upper'],cxa.pdat['phase_eb'])*-cxa.side
+        
+        fsb_o = cxa.pdat['offset_' +reg+'_phase'].to_numpy()*-cxa.side 
+        fsb_o = ug.circ_vel(fsb_o,cxa.pv2['relative_time'].to_numpy())
+        pcount = 0
+        for j in jumps:
+            dx = np.arange(j[0],j[2])
+            od_off= j[1]-j[0]
+            three = od_off+30
+            if three<(j[2]-j[0]):
+                pcount+=1
+                #plt.plot(dx-j[1],eb_o[dx],color='k',alpha=0.3)
+                #plt.plot(dx-j[1],fsb_o[dx],color='b',alpha=0.3)
+                if pcount==1:
+                    pc_array = fsb_o[np.arange(j[1],j[2])]
+                    pc_array = pc_array[:30,np.newaxis]
+                else:
+                    pc_array = np.append(pc_array,fsb_o[np.arange(j[1],j[2])][:30,np.newaxis],axis=1)
+                    
+        #plt.plot([0,0],[-np.pi,np.pi],color='r')
+        #plt.xlim([-50,50])
+        pc_array_im = np.cos(pc_array) + 1j*np.sin(pc_array)
+        e,ev,xprj = ug.complex_pca(pc_array_im)
+        expl = e/np.sum(e)
+        scores = np.angle(xprj)
+        pcs = np.cumsum(expl)
+        top_pcs = np.where(pcs<.95)[0]
+        for t in top_pcs:
+            x = np.arange(0,30)+offset
+            y = fc.unwrap(scores[:,t])
+            plt.plot(x,y-10*t,color='b')
+            te = np.round(expl[t]*100)
+            plt.text(x[0],-10*t,str(te),color='r')
+        offset = offset+32
+        if i==0:
+            grand_pc = pc_array.copy()
+        else: 
+            grand_pc =np.append(grand_pc,pc_array,axis=1)
+    
+    grand_pc_im = np.cos(grand_pc) + 1j*np.sin(grand_pc)
+    e,ev,xprj = ug.complex_pca(grand_pc_im)
+    expl = e/np.sum(e)
+    scores = np.angle(xprj)
+    pcs = np.cumsum(expl)
+    top_pcs = np.where(pcs<.95)[0]
+    for t in top_pcs:
+        x = np.arange(0,30)+offset
+        y = fc.unwrap(scores[:,t])
+        plt.plot(x,y-10*t,color='k')
+        te = np.round(expl[t]*100)
+        plt.text(x[0],-10*t,str(te),color='r')
+#%% Covariance matrix in angular velocity space
+plt.close('all')
+from sklearn.cluster import AgglomerativeClustering 
+from scipy.cluster.hierarchy import leaves_list
+regions = ['eb','fsb_upper']
+pcount = 0
 for i in range(len(datadirs)):
     cxa = all_flies[str(i)]
     jumps = cxa.get_jumps()
-    fsb = cxa.pdat['phase_fsb_upper']*-cxa.side
-    eb = cxa.pdat['phase_eb']*-cxa.side
     
-    w_fsb = cxa.pdat['wedges_fsb_upper']
-    w_eb = cxa.pdat['wedges_eb']
-    
-    if cxa.side==1:
-        w_fsb = np.fliplr(w_fsb)
-        w_eb = np.fliplr(w_eb)
-    
-    fsb_null = ug.phase_nulling(w_fsb,fsb)
-    eb_null = ug.phase_nulling(w_eb,eb)
-    
-    ipdx = np.array([],dtype='int')
+    for ir,reg in enumerate(regions):
+        if ir ==0:
+            phase = cxa.pdat['phase_'+reg]*-cxa.side 
+        else:
+            phase = phase[:,np.newaxis]
+            phase = np.append(phase,cxa.pdat['phase_'+reg][:,np.newaxis]*-cxa.side,axis=1 )
+            
+    #phase = ug.circ_vel(phase,cxa.pv2['relative_time'])
+    phasev = np.zeros((len(phase)-1,2))
+    for v in range(2):
+        phasev[:,v] = ug.circ_vel(phase[:,v],cxa.pv2['relative_time'].to_numpy(),smooth=True,winlength=20)
+    phasev = phasev[:,np.newaxis,:]
+    phase = phase[:,np.newaxis,:]
+    #phase = phasev[:,np.newaxis,:]
     for j in jumps:
-        dx = np.arange(j[0],j[1])
-        ipdx = np.append(ipdx,dx)
-    teb = np.mean(eb_null[ipdx,:],axis=0)
-    tfsb = np.mean(fsb_null[ipdx,:],axis=0)
-    plotdata[:,i,0,0] = teb
-    plotdata[:,i,1,0] = tfsb
-    
-    plt.figure(1)
-    plt.plot(x,teb,color='k')
-    plt.plot(x+16,tfsb,color='b')
-    plt.plot([7.5,7.5],[0,1],color='k',linestyle='--')
-    plt.plot([23.5,23.5],[0,1],color='k',linestyle='--')
-    
-    ipdx = np.array([],dtype ='int')
-    for j in jumps:
-        dx = np.arange(j[1],j[2])
-        if len(dx)>20:
-            dx = dx[10:20]
-        ipdx = np.append(ipdx,dx)
-    teb = np.mean(eb_null[ipdx,:],axis=0)
-    tfsb = np.mean(fsb_null[ipdx,:],axis=0)
-    
-    plotdata[:,i,0,1] = teb
-    plotdata[:,i,1,1] = tfsb
-    
-    
-    plt.plot(x+32,teb,color='k')
-    plt.plot(x+16+32,tfsb,color='b')
-    plt.plot([7.5,7.5],[0,1],color='k',linestyle='--')
-    plt.plot([23.5,23.5],[0,1],color='k',linestyle='--')
+            dx = np.arange(j[1],j[2])
+            od_off= j[2]-j[1]
+            
+            if od_off>30:
+                pcount+=1
 
-    ipdx = np.array([],dtype ='int')
-    for j in jumps:
-        dx = np.arange(j[1],j[2])
-        if len(dx)>20:
-            dx = dx[5:]
-        ipdx = np.append(ipdx,dx)
-    teb = np.mean(eb_null[ipdx,:],axis=0)
-    tfsb = np.mean(fsb_null[ipdx,:],axis=0)
-    plt.figure(3)
-    plt.plot(x,teb,color='k')
-    plt.plot(x+16,tfsb,color='b')
-    plt.plot([7.5,7.5],[0,1],color='k',linestyle='--')
-    plt.plot([23.5,23.5],[0,1],color='k',linestyle='--')
+                if pcount==1:
+                    grand_pc_an = phase[dx[:30],:,:]
+                    
+                else:
+                    grand_pc_an = np.append(grand_pc_an,phase[dx[:30],:,:],axis=1)
+                    
+                    
+                
+                cc = sg.correlate(np.unwrap(phase[dx[:],0,0]),np.unwrap(phase[dx[:],0,1])) # second variable leading first is positive
+    #            cc =sg.correlate(phasev[dx[:],0,0],phasev[dx[:],0,1])
+                mid = np.argmax(cc)
+                print(mid)
+                plt.figure()
+                plt.subplot(1,2,1)
+                plt.plot(cc)
+                plt.plot([len(cc)/2,len(cc)/2],[np.min(cc),np.max(cc)],color='r')
+                plt.subplot(1,2,2)
+                plt.plot(phase[dx[:],0,0],color='k')
+                plt.plot(phase[dx[:],0,1],color='b')
+                plt.ylim([-np.pi,np.pi])
+#%%                
+grand_pc_uw = np.unwrap(grand_pc_an[:,:,0],axis=0)        
+
+c = np.corrcoef(grand_pc_uw.T)
+# Hierarchical cluster
+
+cluster = AgglomerativeClustering(linkage='single', 
+                                compute_distances = True)
+cluster.fit(c)
+counts = np.zeros(cluster.children_.shape[0])
+n_samples = len(cluster.labels_)
+for i, merge in enumerate(cluster.children_):
+    current_count = 0
+    for child_idx in merge:
+        if child_idx < n_samples:
+            current_count += 1  # leaf node
+        else:
+            current_count += counts[child_idx - n_samples]
+    counts[i] = current_count
+
+linkage_matrix = np.column_stack(
+    [cluster.children_, cluster.distances_, counts]
+).astype(float)
+z = leaves_list(linkage_matrix)
+plt.figure()
+crank = c[z,:]
+crank = crank[:,z]
+plt.imshow(crank,vmin=0,vmax=1,interpolation='None')
+plt.figure()
+x = np.arange(0,30)
+for i,iz in  enumerate(z):
+    plt.plot(x+i*32,grand_pc_an[:,iz,0],color='k')
+    plt.plot(x+i*32,grand_pc_an[:,iz,1],color='b')
+        
+#%%
 
 
-    plotdata[:,i,0,2] = teb
-    plotdata[:,i,1,2] = tfsb
-pmean = np.mean(plotdata,axis=1)
-for i in range(2):
-    plt.figure()
-    for j in range(3):
-        y = pmean[:,i,j]
-        plt.plot(x,y)
+
+
+
+
+
+for ir,reg in enumerate(regions):
+    for i in range(len(datadirs)):
+        
+        
+        cxa = all_flies[str(i)]
+        jumps = cxa.get_jumps()
+        fsb_o = ug.circ_subtract(cxa.pdat['phase_fsb_upper'],cxa.pdat['phase_eb'])*-cxa.side
+        
+        fsb_o = cxa.pdat['offset_' +reg+'_phase'].to_numpy()*-cxa.side 
+        fsb_o_vel = ug.circ_vel(fsb_o,cxa.pv2['relative_time'].to_numpy(),smooth=True)
+        pcount = 0
+        for j in jumps:
+            dx = np.arange(j[0],j[2])
+            od_off= j[1]-j[0]
+            three = od_off+30
+            if three<(j[2]-j[0]):
+                pcount+=1
+
+                if pcount==1:
+                    pc_array = fsb_o_vel[np.arange(j[1],j[2])]
+                    pc_array = pc_array[:30,np.newaxis]
+                    
+                    pc_array_an = fsb_o[np.arange(j[1],j[2])]
+                    pc_array_an = pc_array_an[:30,np.newaxis]
+                else:
+                    pc_array = np.append(pc_array,fsb_o_vel[np.arange(j[1],j[2])][:30,np.newaxis],axis=1)
+                    pc_array_an = np.append(pc_array_an,fsb_o[np.arange(j[1],j[2])][:30,np.newaxis],axis=1)
+                    
+        if i==0:
+            grand_pc = pc_array.copy()
+            grand_pc_an = pc_array_an.copy()
+        else: 
+            grand_pc =np.append(grand_pc,pc_array,axis=1)
+            grand_pc_an = np.append(grand_pc_an,pc_array_an,axis=1)
+            
+grand_pc_uw = np.unwrap(grand_pc_an,axis=0)
+c = np.corrcoef(grand_pc_uw.T)
+# Hierarchical cluster
+
+cluster = AgglomerativeClustering(linkage='single', 
+                                compute_distances = True)
+cluster.fit(c)
+counts = np.zeros(cluster.children_.shape[0])
+n_samples = len(cluster.labels_)
+for i, merge in enumerate(cluster.children_):
+    current_count = 0
+    for child_idx in merge:
+        if child_idx < n_samples:
+            current_count += 1  # leaf node
+        else:
+            current_count += counts[child_idx - n_samples]
+    counts[i] = current_count
+
+linkage_matrix = np.column_stack(
+    [cluster.children_, cluster.distances_, counts]
+).astype(float)
+z = leaves_list(linkage_matrix)
+plt.figure()
+crank = c[z,:]
+crank = crank[:,z]
+plt.imshow(crank,vmin=0,vmax=1,interpolation='None')
+plt.figure()
+x = np.arange(0,30)
+for i,iz in  enumerate(z):
+    plt.plot(x+i*32,grand_pc_an[:,iz],color='k')
 #%% Phase nulled bump progression for jump returns for individuals
+x =  np.arange(0,16)
 from mpl_toolkits.mplot3d import Axes3D
 plt.close('all')
-plt.close('all')
-bins = 5
-fig = plt.figure()
-ax = fig.add_subplot(111)
-plotdata = np.zeros((16,bins*2,2,len(datadirs)))
-for i in range(len(datadirs)):
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_maimon2'
+
+bins =5
+conds = ['All','walking','still','mid walk']
+for c in conds:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plotdata = np.zeros((16,bins*2,2,len(datadirs)))
+    for i in range(len(datadirs)):
+        
+        offset = 0
+        cxa = all_flies[str(i)]
+        plotdata[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk=c)
+        
+        
+    pltmean = np.nanmean(plotdata,axis=3)
     
-    offset = 0
-    cxa = all_flies[str(i)]
-    plotdata[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'])
+    cmap = plt.get_cmap('cividis')
+    colours = cmap(np.linspace(0,1,bins*2))
+    
+    asymmetry = np.sum(plotdata[:8,:,:,:]-np.flipud(plotdata[8:,:,:,:]),axis=0)
+    
+    for i in range(pltmean.shape[1]):
+        ax.plot(x+offset,pltmean[:,i,0],color ='k')
+        ax.plot(x+offset,plotdata[:,i,0,:],color ='k',alpha=0.2)
+        ax.plot(x+offset,pltmean[:,i,1]+1,color ='b')
+        ax.plot(x+offset,plotdata[:,i,1,:]+1,color ='b',alpha=0.2)
+        if i==bins:
+            #plt.plot([offset-0.5,offset-0.5],[0,2],color='r',linestyle='--')
+            plt.plot([0,offset-0.5],[0,0],color='r',linewidth=5)
+        
+        offset = offset+16
+    ax.plot(x+offset,pltmean[:,bins-1,1]+1,color =[0.7,0.2,0.7])
+    ax.plot(x+offset,plotdata[:,bins-1,1,:]+1,color=[0.7,0.2,0.7],alpha=0.2)
+    ax.plot(x+offset,pltmean[:,-1,1]+1,color =[0.0,0.0,1])
+    ax.plot(x+offset,plotdata[:,-1,1,:]+1,color=[0.0,0.0,1],alpha=0.2)
+    
+    ax.plot(x+offset,pltmean[:,bins-1,0],color =[0.7,0.2,0.2])
+    ax.plot(x+offset,plotdata[:,bins-1,0,:],color=[0.7,0.2,0.2],alpha=0.2)
+    ax.plot(x+offset,pltmean[:,-1,0],color =[0.0,0.0,0])
+    ax.plot(x+offset,plotdata[:,-1,0,:],color=[0.0,0.0,0],alpha=0.2)
+    
+    fig.set_figwidth(14.39)
+    plt.title('Phase Nulled bumps: ' + c) 
+    plt.ylabel('dF/F0')
+    plt.savefig(os.path.join(savedir,'PhaseNulled_'+c+'.pdf'))
+    plt.savefig(os.path.join(savedir,'PhaseNulled_'+c+'.png'))
     
     
-pltmean = np.mean(plotdata,axis=3)
-
-cmap = plt.get_cmap('cividis')
-colours = cmap(np.linspace(0,1,bins*2))
-
-asymmetry = np.sum(np.abs(plotdata-np.flipud(plotdata)),axis=0)
-
-for i in range(pltmean.shape[1]):
-    #plt.plot(x,tdata[:,i,0],color =colours[i,:])
-    #ax.plot3D(x+offset,x*0+i,tdata[:,i,0],color =colours[i,:])
-    ax.plot(x+offset,pltmean[:,i,0],color ='k')
-    ax.plot(x+offset,plotdata[:,i,0,:],color ='k',alpha=0.3)
-    ax.plot(x+offset,pltmean[:,i,1],color ='b')
-    ax.plot(x+offset,plotdata[:,i,1,:],color ='b',alpha=0.3)
-    offset = offset+16
-
-plt.figure() # more work on this
-plt.plot(asymmetry[:,0,:],color='k')
-plt.plot(asymmetry[:,1,:],color='b')
+    plt.figure() # more work on this
+    plt.plot([0,bins-1+0.5],[0,0],color='r',linestyle='--')
+    plt.plot([bins-1+0.5,bins*2-0.5],[0,0],color='k',linestyle='--')
+    for i in range(len(datadirs)):
+        plt.scatter(np.arange(0,bins*2),asymmetry[:,0,i],color='k',s=10)
+        plt.scatter(np.arange(0,bins*2)+0.25,asymmetry[:,1,i],color='b',s=10)
+    plt.ylabel('Bump asymmetry (delta dF/F0)')
+    plt.savefig(os.path.join(savedir,'BumpAsymmetry_'+c+'.pdf'))
+    plt.savefig(os.path.join(savedir,'BumpAsymmetry_'+c+'.png'))
 
 #%% Ca across wedges for returns
 plt.close('all')

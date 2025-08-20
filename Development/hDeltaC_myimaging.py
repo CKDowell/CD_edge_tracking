@@ -25,8 +25,8 @@ from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial"+str(i))
+for i in [1,2,3,4,5,6]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -65,16 +65,47 @@ experiment_dirs = [
                    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial3",
                    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial4",
                    
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7",
                    
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1",
-                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2",
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial6",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial7"
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial4",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial5",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial6"
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1",#lots of jumps
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial2",# no jumps
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial3",# Plough through plumes
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial4",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial5",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial7",
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial1",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial2",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial4",
+                   
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial1",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial3",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial4",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial5",
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial6",
                    
                    ]
 regions = ['eb','fsb_upper','fsb_lower']
@@ -139,6 +170,38 @@ experiment_dirs = [
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1", # one odour pulse
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2" # Three jumps, but very good goal encoding for entire experiment, interesting dynamics with locomotion
                   
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial1", # A few jumps
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2", # Several jumps: good data, though anisotropy in hDeltaC
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial6", # ACV pulses
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial7" # Octanol pulses
+                  
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial1", # Lots of plume cross overs
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial2", # Lots of walking not much edge tracking
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial3", # Little edge tracking, lots of walking
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial4", # Traversing across plumes
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial5", #  oct pulses, imaging artefact in pre air period
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial6", # ACV pulses
+                  
+                  
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1",#lots of jumps
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial2",# v strip 1.5 plumes
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial3",# Plough through plumes
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial4", #new bump jump, no jumps
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial5",#ACV pulses
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial7",#OCT pulses
+                  
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial1",# No jumps
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial2",# No jumps and plume crosses
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial3",# Beautiful tracker
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial4",# v strip. unsuccessful
+                  
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial1",#4 jumps and plume cross
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2", # 13 jumps, beautiful tracker
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial3", # v strip, does two strips
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial4", # failed v strip. crosses over plume
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial5", # Oct pulses
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial6", # ACV pulses
+                  
                     ]
 plt.close('all')
 for e in experiment_dirs:
@@ -161,21 +224,285 @@ for e in experiment_dirs:
         print('no jumps')
 #%% Single data check
 
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1"  
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial4"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'],yk='eb')
+cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+if set(['train_heading']).issubset(self.ft2):
+plt.figure()
 cxa.mean_jump_arrows(fsb_names=['fsb_upper'],ascale=100,jsize=5)
-plt.ylim([-40,40])
+#plt.ylim([-40,40])
+
+
+    
+#%% Load all data up
+datadirs = [
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",# Phase recording is not the best - strong pointer
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",# Not many jumps, weak pointer
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2", # Strong pointer
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2",# Strong pointer, just like FC2
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1", # Points away ******
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial3", # Strong pointer
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2",# Strong pointer
+                ]
+
+all_flies = {}
+for i,datadir in enumerate(datadirs):
+    print(datadir)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    all_flies.update({str(i):cxa})
+    cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
 #%% Tally of good flies
 plt.close('all')
-datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",
-            r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
-            r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"]
-for d in datadirs:
-    cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
-    plt.figure()
-    cxa.mean_jump_arrows()
-    cxa.mean_jump_lines(time_threshold=120)
+jumpsizes = [5,3,3,3,3,3,3,3,3,3]
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+for di,f in enumerate(all_flies):
+    cxa = all_flies[f]
+    #plt.figure()
+    #cxa.mean_jump_arrows(x_offset=di*40,fsb_names=['fsb_upper'],jsize =jumpsizes[di],ascale=100)
+    
+    plt.figure(1)
+    cxa.mean_jump_arrows_cond(xoffset=di*30,asep=10,colourplot='wmean',cond='None',fsb_names=['fsb_upper'])
+    plt.title('All phase')
+    plt.figure(2)
+    cxa.mean_jump_arrows_cond(xoffset=di*30,asep=10,colourplot='wmean',cond='FSB_uppermean')
+    plt.title('High mean activity phase')
+plt.figure(1)
+plt.savefig(os.path.join(savedir,'AllJumpArrows.pdf'))
+
+#%% Odour inhibition timescale
+plt.close('all')
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+odour_delays = np.zeros((len(all_flies),2))
+for di,f in enumerate(all_flies):
+    cxa = all_flies[f]
+    y = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    fci = fci_regmodel(y,cxa.ft2,cxa.pv2)
+    fci.run(['in odour'])
+    odour_delays[di,:] = [fci.delay,fci.r2]
+print(np.mean(odour_delays[:,0])/10)
+#%% Phase nulled bumps
+
+plt.close('all')
+savedir =r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+x = np.arange(0,16)
+bins =5
+conds = ['All','walking','still','mid walk']
+for c in conds:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plotdata = np.zeros((16,bins*2,2,len(datadirs)))
+    for i in range(len(datadirs)):
+        
+        offset = 0
+        cxa = all_flies[str(i)]
+        plotdata[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk=c)
+        
+        
+    pltmean = np.nanmean(plotdata,axis=3)
+    
+    cmap = plt.get_cmap('cividis')
+    colours = cmap(np.linspace(0,1,bins*2))
+    
+    asymmetry = np.sum(plotdata[:8,:,:,:]-np.flipud(plotdata[8:,:,:,:]),axis=0)
+    
+    for i in range(pltmean.shape[1]):
+        ax.plot(x+offset,pltmean[:,i,0],color ='k')
+        ax.plot(x+offset,plotdata[:,i,0,:],color ='k',alpha=0.2)
+        ax.plot(x+offset,pltmean[:,i,1]+1,color ='b')
+        ax.plot(x+offset,plotdata[:,i,1,:]+1,color ='b',alpha=0.2)
+        if i==bins:
+            #plt.plot([offset-0.5,offset-0.5],[0,2],color='r',linestyle='--')
+            plt.plot([0,offset-0.5],[0,0],color='r',linewidth=5)
+        
+        offset = offset+16
+        
+    #ax.plot(x+offset,pltmean[:,bins-1,0],color ='k')
+    #ax.plot(x+offset,plotdata[:,bins-1,0,:],color ='k',alpha=0.2)
+    ax.plot(x+offset,pltmean[:,bins-1,1]+1,color =[0.7,0.2,0.7])
+    ax.plot(x+offset,plotdata[:,bins-1,1,:]+1,color=[0.7,0.2,0.7],alpha=0.2)
+    ax.plot(x+offset,pltmean[:,-1,1]+1,color =[0.0,0.0,1])
+    ax.plot(x+offset,plotdata[:,-1,1,:]+1,color=[0.0,0.0,1],alpha=0.2)
+    
+    ax.plot(x+offset,pltmean[:,bins-1,0],color =[0.7,0.2,0.2])
+    ax.plot(x+offset,plotdata[:,bins-1,0,:],color=[0.7,0.2,0.2],alpha=0.2)
+    ax.plot(x+offset,pltmean[:,-1,0],color =[0.0,0.0,0])
+    ax.plot(x+offset,plotdata[:,-1,0,:],color=[0.0,0.0,0],alpha=0.2)
+        
+        
+    fig.set_figwidth(14.39)
+    plt.title('Phase Nulled bumps: ' + c) 
+    plt.ylabel('dF/F0')
+    plt.savefig(os.path.join(savedir,'PhaseNulled_'+c+'.pdf'))
+    plt.savefig(os.path.join(savedir,'PhaseNulled_'+c+'.png'))
+    
+    
+    plt.figure() # more work on this
+    plt.plot([0,bins-1+0.5],[0,0],color='r',linestyle='--')
+    plt.plot([bins-1+0.5,bins*2-0.5],[0,0],color='k',linestyle='--')
+    for i in range(len(datadirs)):
+        plt.scatter(np.arange(0,bins*2),asymmetry[:,0,i],color='k',s=10)
+        plt.scatter(np.arange(0,bins*2)+0.25,asymmetry[:,1,i],color='b',s=10)
+    plt.ylabel('Bump asymmetry (delta dF/F0)')
+    plt.savefig(os.path.join(savedir,'BumpAsymmetry_'+c+'.pdf'))
+    plt.savefig(os.path.join(savedir,'BumpAsymmetry_'+c+'.png'))
+
+
+#%%
+
+cxa.mean_jump_arrows(x_offset=di*40,fsb_names=['fsb_upper'],jsize =jumpsizes[di],ascale=100)
+
+#%%
+plt.plot(pvanz,color='k')
+plt.plot(wmnz,color='b')
+plt.plot(bstrn,color='m')
+#plt.plot(pvanz,color='g')
+plt.plot(ins,color='r')
+
+plt.figure()
+plt.imshow(wedges.T, interpolation='None',aspect='auto',cmap='Blues',vmin=0,vmax=1)
+plt.plot(-bstrn-2,color='r')
+plt.plot(-wmnz-2,color='k')
+plt.plot(-pvaz-2,color=[0.3,0.3,0.3])
+plt.plot((-ins*5)-2,color='k')
+#%% plot jump returns with detail
+from matplotlib.collections import PolyCollection
+
+plt.close('all')
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC\PhaseModulationWithJumpReturns'
+for i in range(len(datadirs)):
+    cxa = all_flies[str(i)]
+    cxa.jump_return_details(flynum=i)
+    for ij in plt.get_fignums():
+        fig = plt.figure(ij)
+        fig.savefig(os.path.join(savedir,'PhaseMeanTopPVAbottom_fly_'+str(i) +'_jump_'+str(ij)+'.png'))
+    plt.close('all')
+#%% Plume cross overs
+# First pass, plot each trajectory after a plume cross over with a return, then overlay arrows
+plt.close('all')
+scalefactor=20
+angles = np.linspace(-np.pi,np.pi,16)
+pre = np.array([])
+post = np.array([])
+cmap = plt.get_cmap('hsv')
+colours = cmap(np.linspace(0, 1, len(datadirs)))[:,:3]
+for i1 in range((len(datadirs))):
+    cxa = all_flies[str(i1)]
+    x = cxa.ft2['ft_posx'].to_numpy()
+    y = cxa.ft2['ft_posy'].to_numpy()
+    ins = cxa.ft2['instrip'].to_numpy()
+    x,y = cxa.fictrac_repair(x,y)
+    jumps = cxa.get_jumps()
+    entries,exits = cxa.get_entries_exits()
+    
+    edx = entries>0#jumps[0,0]
+    tentries = entries[edx]
+    texits = exits[edx]
+    
+    x_ent = x[tentries]
+    x_ex = x[texits]
+    ee_diff = x_ent-x_ex
+    cross_overs = np.where(np.abs(ee_diff)>5)[0]
+    
+    # Plot cross over phases
+    eb = cxa.pdat['offset_eb_phase'].to_numpy()
+    fsb = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    fsb = cxa.pdat['phase_fsb_upper']
+    amp_eb = cxa.pdat['amp_eb']
+    amp_fsb = cxa.pdat['amp_fsb_lower']
+    
+    
+    # Get peaks in pva
+    wedges = cxa.pdat['wedges_'+'fsb_upper']
+    weds = np.sum(wedges*np.sin(angles),axis=1)
+    wedc = np.sum(wedges*np.cos(angles),axis=1)
+    pva  = np.sqrt(weds**2+wedc**2)
+    p0 = np.mean(pva[pva<np.percentile(pva,10)])
+    pva = (pva-p0)/p0
+    pva = pva/np.max(pva)
+    tt = cxa.pv2['relative_time'].to_numpy()
+    ins = cxa.ft2['instrip'].to_numpy()
+    inson = np.where(np.diff(ins)>0)[0]+1
+    insoff = np.where(np.diff(ins)<0)[0]+1
+    pvsmooth = sg.savgol_filter(pva,30,3)
+    pvstd = np.std(pvsmooth)
+    peaks,meta = sg.find_peaks(pvsmooth,prominence=pvstd)
+    
+    
+    for i,c in enumerate(cross_overs):
+        
+        if c<len(tentries)-1:
+            dx = np.arange(tentries[c],tentries[c+1])
+        else:
+            continue
+            #dx = np.arange(texits[c-1],len(x))
+            
+        tx = x[dx]
+        ty = y[dx]
+        tins = ins[dx]
+        
+        ddx = x[tentries[c+1]]-x[texits[c]]
+        ret_time = (tentries[c+1]-texits[c])/10
+        
+        pre_dx = np.arange(tentries[c]-5,tentries[c])
+        post_dx = np.arange(tentries[c+1]-5,tentries[c+1])
+        pre = np.append(pre,stats.circmean(fsb[pre_dx],high=np.pi,low=-np.pi))
+        post = np.append(post,stats.circmean(fsb[post_dx],high=np.pi,low=-np.pi))
+        
+        
+        
+        if ret_time<60 and np.abs(ddx)<6:
+            plt.figure()
+            teb = eb[dx]
+            tfsb = fsb[dx]
+            tampeb = amp_eb[dx] 
+            tampfsb = amp_fsb[dx]
+            
+            
+            # plt.plot(teb,color='k')
+            # plt.plot(tfsb,color=[0.2,0.2,1])
+            # plt.plot(tins,color='r')
+            plt.plot(tx,ty,color='k')
+            plt.scatter(tx[tins>0],ty[tins>0],color='r')
+            arrowdx = np.arange(0,len(teb),5,dtype=int)
+            arrowdx,_ = sg.find_peaks(pvsmooth[dx],prominence=pvstd)
+            arrowdx = np.arange(0,len(tx),5,dtype=int)
+            for a in arrowdx:
+                tp = teb[a]
+                xa = tx[a]
+                ya = ty[a]
+                xa2 = xa+np.sin(tp)*tampeb[a]*scalefactor
+                ya2 = ya+np.cos(tp)*tampeb[a]*scalefactor
+                #plt.plot([xa,xa2],[ya,ya2],color='k')
+                
+                tp = tfsb[a]
+                xa = tx[a]
+                ya = ty[a]
+                xa2 = xa+np.sin(tp)*tampfsb[a]*scalefactor
+                ya2 = ya+np.cos(tp)*tampfsb[a]*scalefactor
+                plt.plot([xa,xa2],[ya,ya2],color=[0.2,0.2,1])
+            g=plt.gca()
+            g.set_aspect('equal', adjustable='box')
+        # plt.title('Fly '+str(i1) +' Cross Over '+str(i))
+            plt.figure(101)
+            premult = np.sign(pre[-1])
+            plt.scatter(pre[-1]*premult,post[-1]*premult,c=colours[i1,:])
+plt.xlim([0,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],linestyle='--',color='k')
+#plt.plot([-np.pi,np.pi],[np.pi,-np.pi],linestyle='--',color='k')
+plt.plot([-np.pi,0],[0,np.pi],color='r',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='r',linestyle='--')
+
+#%%
+plt.close('all')
+for i1 in range((len(datadirs))):
+    cxa = all_flies[str(i1)]
+    #cxa.jump_return_details(flynum=i1,index_type='cross overs')
+    cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+
+    #cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+#%%
 #%%
 plt.close('all')
 angles = np.linspace(-np.pi,np.pi,16)
@@ -419,10 +746,16 @@ for i, e in enumerate(datadirs):
         
 #%% ACV pulses
 datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial5",
-r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5"]
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial6",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial6",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial5",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial6"
+]
 regions = ['fsb_upper','fsb_lower']
 savedir = r"Y:\Presentations\2025\04_LabMeeting\hDeltaC"
-plt.close('all')
+#plt.close('all')
 for e in datadirs:
 
     cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
@@ -449,7 +782,12 @@ for e in datadirs:
         plt.savefig(os.path.join(savedir,'ACV_pulses_' +cxa.name +'.pdf'))
 #%% Octanol pulses
 datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial4",
-r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial4"]
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial4",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial7",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial5",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial7",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial5"]
 regions = ['fsb_upper','fsb_lower']
 savedir = r"Y:\Presentations\2025\04_LabMeeting\hDeltaC"
 plt.close('all')
@@ -476,8 +814,91 @@ for e in datadirs:
         
         plt.ylim([-3.2,1])
         plt.savefig(os.path.join(savedir,'Oct_pulses_' +cxa.name +'.pdf'))
+#%% Pulse trajectories
+datadirs = [
+    
+   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial5",#Crap eb phases
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",# Crap eb phases
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",#ok eb phases
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial6",#Good eb phases
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial6",# Crap eb phases
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial5",#crap eb phases
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial6" # good eb phases # anticorrelation between phase and heading
+]
+acv_flies = {}
+for i,datadir in enumerate(datadirs):
+    print(datadir)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    acv_flies.update({str(i):cxa})
 
-
+datadirs = [
+    
+    #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial4",
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial4",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7",#Crap eb
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial7",#Left side anisotropy
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial5",
+#r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial7",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial5" # Anticorrelation between phase and heading
+]
+oct_flies = {}
+for i,datadir in enumerate(datadirs):
+    print(datadir)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    oct_flies.update({str(i):cxa})
+#%%
+for f in acv_flies:
+    cxa = acv_flies[f]
+    cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+    plt.title('ACV fly ' + f)
+    cxa = oct_flies[f]
+    cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+    plt.title('Oct fly ' + f)
+#%%
+plt.close('all')
+for f in acv_flies:
+    cxa = acv_flies[f]
+    try:
+        cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+    except:
+        print('nah')
+        
+    plt.title(f)
+    
+    
+    plt.figure()
+    phase = cxa.pdat['phase_fsb_upper']
+    heading = cxa.ft2['ft_heading'].to_numpy()
+    eb = cxa.pdat['phase_eb']
+    ins = cxa.ft2['instrip'].to_numpy()
+    tt  =np.arange(0,len(phase))/10
+    plt.scatter(tt,phase,color='b',s=10)
+    plt.scatter(tt,eb,color=[0.3,0.3,0.3],s=5,alpha=0.5)
+    plt.plot(tt,ins,color='r')
+    plt.plot(tt,heading,color='k')
+    plt.title(f + ' ACV')
+    
+    
+    cxa = oct_flies[f]
+    try:
+        cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+    except:
+        print('nah')
+        
+    plt.title(f + ' OCT')
+    plt.figure()
+    phase = cxa.pdat['phase_fsb_upper']
+    heading = -cxa.ft2['ft_heading'].to_numpy()
+    eb = cxa.pdat['phase_eb']
+    ins = cxa.ft2['mfc3_stpt'].to_numpy()>0
+    tt  =np.arange(0,len(phase))/10
+    plt.scatter(tt,phase,color='b',s=10)
+    plt.scatter(tt,eb,color=[0.3,0.3,0.3],s=5,alpha=0.5)
+    plt.plot(tt,ins,color='r')
+    plt.plot(tt,heading,color='k')
+    plt.title(f + ' Oct')
+    plt.figure()
+    plt.scatter(eb,phase,c=tt,s=5)
 #%% Example data for lab meeting
 plt.close('all')
 cxa = datadict['f2']

@@ -16,8 +16,8 @@ from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
 from Utilities.utils_general import utils_general as ug
 #%%
-for i in [2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial"+str(i))
+for i in [3]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -30,8 +30,8 @@ for i in [2]:
     
 
 #%% ROI processing
-for i in [2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial"+str(i))
+for i in [1,2,3,4,5,6,7]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cx = CX(name,['fsbTN'],datadir)
@@ -76,10 +76,22 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250313\f1\Trial1",# walking in cir
             
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial2" # Made a few jumps, ramps after plume exits
             
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250728\f2\Trial1", # Poor behaviour
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250728\f2\Trial2", # Little modulation, plus what look like artefacts
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250728\f2\Trial4"# Ramping and dropping. Animal looping because of high laser power..
+            
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial1",# Wandering off, high activity sustained
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial2", # High activity sustained, no inhibition
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial3", # Big artefacts in the data
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial4", # More Et like behaviour and ramping
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial5", # artefacts
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial6",
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial7"
+            
             ]
 #%%
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250507\f2\Trial2"
+datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial5"
 
 cxt = CX_tan(datadir)
 ca = cxt.ca.copy().ravel()

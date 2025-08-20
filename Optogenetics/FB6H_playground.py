@@ -94,6 +94,7 @@ flies = [
          ]
 
 meta_data['act_inhib'] = 'inhib'
+
 for i,f in enumerate(flies):
     searchdir = os.path.join(rootdir,f)
     indir = os.listdir(searchdir)

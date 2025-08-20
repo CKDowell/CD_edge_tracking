@@ -22,8 +22,124 @@ from scipy import stats
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
+from Utilities.utils_general import utils_general as ug
 
 plt.rcParams['pdf.fonttype'] = 42 
+
+
+#%%
+datadirs = [
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6",
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7"
+    
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial1", # A few jumps
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2", # Several jumps: good data, though anisotropy in hDeltaC
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial6", # ACV pulses
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial7"
+    # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial1",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial3",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial4",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial5",
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial6"
+]
+
+for d in datadirs:
+    cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    heading = cxa.ft2['ft_heading']
+    phase = cxa.pdat['phase_eb']
+    plt.figure()
+    plt.scatter(heading,phase,s=5)
+
+
+
+
+
+
+
+#%% Sorting out pre air heading in jump suspend
+plt.close('all')
+ft2 = cxa.ft2_original
+ft = cxa.ft
+bumpo = ft['bump'].to_numpy()
+ubumps = bumpo[np.abs(bumpo)>0]
+
+
+x = ft2['ft_posx'].to_numpy()
+y = ft2['ft_posy'].to_numpy()
+
+x,y = cxa.fictrac_repair(x,y)
+th = ft2['train_heading'].to_numpy()
+fh = ft2['fix_heading'].to_numpy()
+bp = ft2['bump'].to_numpy()
+ins = ft2['instrip'].to_numpy()
+heading = ft2['ft_heading'].to_numpy()
+
+add_array = np.zeros(len(th))
+fh[fh>0] = 1
+dfh = np.where(np.diff(fh)>0)[0]
+add_array[dfh] =ubumps
+add_array = np.cumsum(add_array)
+
+new_heading = ug.circ_subtract(heading,-add_array)
+bstart,bsize = ug.find_blocks(add_array>0)
+# rotate heading
+xnew = x.copy()
+ynew = y.copy()
+for i,b in enumerate(bstart):
+    #plt.figure()
+    theta = add_array[b+1]
+    dx = np.arange(b,b+bsize[i],dtype=int)
+    tx = xnew[dx]
+    ty = ynew[dx]
+    tx0 = tx-tx[0]
+    ty0 = ty-ty[0]
+
+    xy = np.append(tx0[:,np.newaxis],ty0[:,np.newaxis],axis=1)
+    #plt.plot(xy[:,0],xy[:,1],color='k')
+    rotmat = np.array([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]])
+    xy = np.matmul(xy,rotmat)
+    #plt.plot(xy[:,0],xy[:,1],color='r')
+    xn = xy[:,0]+tx[0]
+    yn = xy[:,1]+ty[0]
+    xnew[dx] = xn
+    ynew[dx] = yn
+    xnew[dx[-1]+1:] = xnew[dx[-1]+1:]-(xnew[dx[-1]+1]-xnew[dx[-1]])
+    ynew[dx[-1]+1:] = ynew[dx[-1]+1:]-(ynew[dx[-1]+1]-ynew[dx[-1]])
+    
+#xnew,ynew = cxa.fictrac_repair(xnew,ynew)
+
+g = plt.gca()
+g.set_aspect('equal')
+
+inst = np.where(ins>0)[0][0]
+tx = xnew[:inst]
+ty = ynew[:inst]
+tfh = fh[:inst]
+theading = heading[:inst]
+
+plt.figure()
+plt.plot(tx,ty,color='k')
+
+plt.scatter(tx[tfh>0],ty[tfh>0],color='r')
+plt.figure()
+plt.plot(theading+add_array[:inst])
+plt.plot(tfh)
+
+
+
+
+
+
+
+
+
+
 #%% Ring attractor playground
 plt.close('all')
 fc2 = np.zeros(8)
