@@ -14,6 +14,8 @@ from analysis_funs.optogenetics import opto
 import os
 import matplotlib.pyplot as plt 
 from src.utilities import imaging as im
+from scipy.stats import circmean, circstd
+
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
@@ -377,7 +379,7 @@ writer = FFMpegWriter(fps=20)
 savedir = "Y:\Data\FCI\FCI_summaries\FC2_maimon2"
 path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
 path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
-anim.save(os.path.join(savedir,'FC2_eg_phase_pt2_' + name+'.avi'), writer=writer)
+#anim.save(os.path.join(savedir,'FC2_eg_phase_pt2_' + name+'.avi'), writer=writer)
 
 #%% Movie code version 2 _black
 

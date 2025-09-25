@@ -25,8 +25,8 @@ from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2,3,4]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\60D05\250725\f1\Trial"+str(i))
+for i in [1]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\60D05\60D05GluSNFR4.8880\250910\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -39,10 +39,10 @@ for i in [1,2,3,4]:
     
     
 #%% pb
-datadir= r"Y:\Data\FCI\Hedwig\60D05\250725\f1\Trial3"
+datadir= r"Y:\Data\FCI\Hedwig\60D05\60D05GluSNFR4.8880\250910\f2\Trial1"
 
   
-regions = ['pb']
+regions = ['eb']
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
 
@@ -56,7 +56,12 @@ cx.process_rois()
 cx.crop = False
 cx.save_postprocessing()#upsample to 50Hz
 pv2, ft, ft2, ix = cx.load_postprocessing()
+#%% Test of just glu snfr
+datadir= r"Y:\Data\FCI\Hedwig\60D05\60D05GluSNFR4.8880\250910\f2\Trial1"
+regions = ['eb']
+cxa = CX_a(datadir,regions=regions,yoking=False)
 
+cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
 #%%
 datadir= r"Y:\Data\FCI\Hedwig\60D05\250725\f1\Trial3"
 

@@ -5,7 +5,7 @@ Created on Mon Mar 11 11:35:43 2024
 @author: dowel
 """
 #%%
-import src.utilities.funcs as fc
+from analysis_funs.utilities import funcs as fc
 from analysis_funs.CX_imaging import CX
 import os
 import matplotlib.pyplot as plt 
@@ -22,7 +22,7 @@ from matplotlib.collections import PolyCollection
 
 #%%
 class CX_a:
-    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True,stim=False,suspend=False):
+    def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True,stim=False,suspend=False,delta7=False):
         # Will need to edit more if yoking to PB and multiple FSB layers
         self.stab = regions[0]
         if self.stab=='pb':
@@ -147,7 +147,7 @@ class CX_a:
                             self.phase_offset = np.append(self.phase_offset,o,axis =1)
                             self.amp = np.append(self.amp,a,axis = 1)
                     self.phase_eb,self.phase_offset_eb,self.amp_eb = self.cx.unyoked_phase(self.stab)
-                    self.pdat = self.cx.phase_yoke(self.stab,regions[1:],self.ft2,self.pv2)
+                    self.pdat = self.cx.phase_yoke(self.stab,regions[1:],self.ft2,self.pv2,d7=delta7)
                 else:
                     for i, r in enumerate(regions):
                         p,o,a = self.cx.unyoked_phase(r)
@@ -375,7 +375,7 @@ class CX_a:
        # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
         print(np.shape(eb))
         t = np.arange(0,len(eb))
-        plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],99),vmin=np.nanpercentile(eb[:],5))
+        plt.imshow(eb, interpolation='None',aspect='auto',cmap='Blues',vmax=np.nanpercentile(eb[:],99),vmin=np.nanpercentile(eb[eb>0],5))
         if yeseb:
             new_phase = np.interp(phase_eb, (-np.pi, np.pi), (-0.5, 15.5))
             if plotphase:
@@ -475,6 +475,109 @@ class CX_a:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+        
+    def cxa_stop_start_phase_scatter(self,minsize=3,fsb_region='fsb_upper'):
+        plt.close('all')
+        array_len= 2000
+        midpoint = int(array_len/2)
+        u = ug()
+        e_e = self.get_entries_exits_like_jumps()
+        phase_eb = self.pdat['phase_eb']
+        phase_fsb = self.pdat['phase_'+fsb_region]
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+
+        tt = self.pv2['relative_time'].to_numpy()
+        dx,dy,dd = u.get_velocity(x,y,tt)
+        stat = dd<1
+        blockstart,blocksize = ug.find_blocks(stat,mergeblocks=True,merg_threshold=2)
+        blockstart = blockstart[blocksize>minsize]
+        blocksize = blocksize[blocksize>minsize]
+
+        stat2 = np.zeros(len(stat),dtype='int')
+        for i,b in enumerate(blockstart):
+            bdx = np.arange(b,blocksize[i]+b)
+            stat2[bdx ] = 1*i
+            if i<len(blockstart)-1:
+                bdx2 = np.arange(blocksize[i]+b,blockstart[i+1])
+                stat2[bdx2 ] = -1*i        
+        mean_array = np.empty((len(e_e),array_len,100))
+        mean_array[:] = np.nan
+        for i,e in enumerate(e_e):
+            edx = np.arange(e[1],e[2])
+            tstat  = stat2[edx]
+            tphase_fsb = phase_fsb[edx]
+            tphase_eb = phase_eb[edx]
+            stops = np.unique(tstat[tstat>0])
+            for i2,s in enumerate(stops):
+                plt.figure(i2)
+                r = np.random.randn(1)*.05
+                x = tphase_eb[tstat==-(s-1)]
+                y = tphase_fsb[tstat==-(s-1)]
+                
+                t = np.arange(-len(x),0)/10
+                
+                plt.scatter(t,ug.circ_subtract(y,x),color=[0,0,1],s=5)
+                
+                mean_array[i,midpoint-len(x):midpoint,i2] = ug.circ_subtract(y,x)
+                
+                
+                try:
+                    x = tphase_eb[tstat==s]
+                    y = tphase_fsb[tstat==s]
+                    t = np.arange(0,len(x))/10+np.max(t)
+                    plt.scatter(t,ug.circ_subtract(y,x),color=[0,0,0.5],s=5)
+                    mean_array[i,midpoint:midpoint+len(x),i2] = ug.circ_subtract(y,x)
+                except:
+                    print('Check error')
+              
+                
+              
+        for i in range(3):
+            plt.figure(i)
+            x = np.arange(-midpoint,midpoint)/10
+            pmn = circmean(mean_array,axis=0,nan_policy='omit',high=np.pi,low=-np.pi)
+            plt.plot(x[:midpoint],pmn[:midpoint,i],color= [0,0,1])
+            plt.plot(x[midpoint:],pmn[midpoint:,i],color=[0,0,0.5])
+            plt.plot([0,0],[-np.pi,np.pi],color='r',linestyle='--')
+            plt.xlabel('time from movement offset (s)')
+            plt.ylabel('FSB-EB phase (rad)')
+            plt.ylim([-np.pi,np.pi])
+        mean_array = np.empty((len(e_e),array_len,100))
+        mean_array[:] = np.nan
+        for i,e in enumerate(e_e):
+            edx = np.arange(e[1],e[2])
+            tstat  = stat2[edx]
+            tphase_fsb = phase_fsb[edx]
+            tphase_eb = phase_eb[edx]
+            stops = np.unique(tstat[tstat>0])
+            for i2,s in enumerate(stops):
+                plt.figure(i2+100)
+                r = np.random.randn(1)*.05
+                x = tphase_eb[tstat==s]
+                y = tphase_fsb[tstat==s]
+                t = np.arange(-len(x),0)/10
+                plt.scatter(t,ug.circ_subtract(y,x),color=[0,0,0.5],s=2) 
+                mean_array[i,midpoint-len(x):midpoint,i2] = ug.circ_subtract(y,x)
+                t = np.arange(-len(x),0)
+                
+                x = tphase_eb[tstat==-(s+1)]
+                y = tphase_fsb[tstat==-(s+1)]
+                t = np.arange(0,len(x))/10+np.max(t)+1
+                plt.scatter(t,ug.circ_subtract(y,x),color=[0,0,1],s=2)    
+                mean_array[i,midpoint:midpoint+len(x),i2] = ug.circ_subtract(y,x)
+                       
+                
+        for i in range(3):
+            plt.figure(100+i)
+            x = np.arange(-midpoint,midpoint)/10
+            pmn = circmean(mean_array,axis=0,nan_policy='omit',high=np.pi,low=-np.pi)
+            plt.plot(x[:midpoint],pmn[:midpoint,i],color=[0,0,0.5] )
+            plt.plot(x[midpoint:],pmn[midpoint:,i],color=[0,0,1])
+            plt.plot([0,0],[-np.pi,np.pi],color='r',linestyle='--')
+            plt.xlabel('time from movement onset (s)')
+            plt.ylabel('FSB-EB phase (rad)')
+            plt.ylim([-np.pi,np.pi])
     def mean_phase_trans(self,tbef=5,taf=5,give_data=False,phase=[False]):
         if phase[0]==False:
             
@@ -818,7 +921,96 @@ class CX_a:
             output[:,:bins,iw] = np.nanmean(befdata,axis=2)
             output[:,bins:,iw] = np.nanmean(afdata,axis=2)
         return output
-    
+    def phase_null_in_out_jump(self,tbins=[0.5,0.5],fsb_names = ['fsb_upper'],return_full=False):
+        jumps = self.get_jumps()
+        output = np.zeros((16,2,len(fsb_names)))
+        tbins_in = np.round(tbins[0]*10).astype(int)
+        tbins_out = np.round(tbins[1]*10).astype(int)
+        if return_full:
+            output2 = np.zeros((16,2,len(jumps),len(fsb_names)))
+        print(tbins_in)
+        for iw,w in enumerate(fsb_names):
+            twedge = self.pdat['wedges_'+w]
+            tphase = self.pdat['phase_'+w]
+            tphase = tphase*-self.side
+            if self.side==1:
+                twedge = np.fliplr(twedge)
+            wedgenull = ug.phase_nulling(twedge,tphase)
+            indata = np.empty((16,len(jumps)))
+            outdata = np.empty((16,len(jumps)))
+            for ij,j in enumerate(jumps):
+                dxb = np.arange(j[0],j[1],dtype='int')
+                dxa = np.arange(j[1],j[2],dtype='int')
+                #print(len(dxb))
+            
+                if len(dxb)>tbins_in:
+                   
+                    dxb =  dxb[-tbins_in:]
+                   
+                if len(dxa)>tbins_out:
+                    dxa = dxa[-tbins_out:]
+                    
+                indata[:,ij] = np.nanmean(wedgenull[dxb,:],axis=0)
+                outdata[:,ij] = np.nanmean(wedgenull[dxa,:],axis=0)
+            if return_full:
+                output2[:,0,:,iw] = indata
+                output2[:,1,:,iw] = outdata
+            output[:,0,iw] = np.nanmean(indata,axis=1)
+            output[:,1,iw] = np.nanmean(outdata,axis=1)
+        if return_full:
+            
+            return output,output2
+        else :
+            return output
+    def pva_comparison(self,tbins=[0.5,0.5],fsb_names = ['fsb_upper']):
+        jumps = self.get_jumps()
+        output = np.zeros((len(jumps),2,len(fsb_names)))
+        tbins_in = np.round(tbins[0]*10).astype(int)
+        tbins_out = np.round(tbins[1]*10).astype(int)
+        print(tbins_in)
+        for iw,w in enumerate(fsb_names):
+            twedge = self.pdat['wedges_'+w]
+            pva = ug.get_pvas(twedge)
+            for ij,j in enumerate(jumps):
+                dxb = np.arange(j[0],j[1],dtype='int')
+                dxa = np.arange(j[1],j[2],dtype='int')
+            
+                if len(dxb)>tbins_in:
+                   
+                    dxb =  dxb[-tbins_in:]
+                   
+                if len(dxa)>tbins_out:
+                    dxa = dxa[-tbins_out:]
+                    
+                output[ij,0,iw] = np.mean(pva[dxb])
+                output[ij,1,iw] = np.mean(pva[dxa])
+                
+        return output
+                
+    def mean_flur_comparison(self,tbins=[0.5,0.5,0.5],fsb_names = ['fsb_upper']):
+        jumps = self.get_jumps()
+        output = np.zeros((len(jumps),2,len(fsb_names)))
+        tbins_in = np.round(tbins[0]*10).astype(int)
+        tbins_out = np.round(tbins[1]*10).astype(int)
+        print(tbins_in)
+        for iw,w in enumerate(fsb_names):
+            twedge = self.pdat['wedges_'+w]
+            fm = np.mean(twedge,axis=1)
+            for ij,j in enumerate(jumps):
+                dxb = np.arange(j[0],j[1],dtype='int')
+                dxa = np.arange(j[1],j[2],dtype='int')
+            
+                if len(dxb)>tbins_in:
+                   
+                    dxb =  dxb[-tbins_in:]
+                   
+                if len(dxa)>tbins_out:
+                    dxa = dxa[-tbins_out:]
+                    
+                output[ij,0,iw] = np.mean(fm[dxb])
+                output[ij,1,iw] = np.mean(fm[dxa])
+                
+        return output
     def random_jump_wedge(self,fsb_names=['fsb_upper','fsb_lower']):
         jumps = self.get_jumps()
         jl = jumps.shape[0]
@@ -860,11 +1052,121 @@ class CX_a:
             output_array[:,:,inm] = tw
             plumeoff = jump[1]-jump[0]
         return output_array,plumeoff,out_phase,traj
+    
+    def stop_start_jumps(self,regions=['eb','fsb_upper'],minsize=5,condition='all'):
+        jumps = self.get_jumps()
+        data_out = np.zeros((len(jumps),2,len(regions)))
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        dx = np.diff(x)
+        dy = np.diff(y)
+        d_dist = np.sqrt(dx**2+dy**2)/0.1
+        stat = d_dist<1
+        
+        # Only look at blocks of stat in right size 
+        blockstart,blocksize = ug.find_blocks(stat)
+        blockstart = blockstart[blocksize>=minsize]
+        blocksize = blocksize[blocksize>=minsize]
+        stat2 = np.zeros_like(stat)
+        for i,b in enumerate(blockstart):
+            if condition=='all':
+                stat2[b:b+blocksize[i]] = 1
+            elif condition =='last':
+                stat2[b+blocksize[i]-minsize:b+blocksize[i]] = 1
+            
+        blockstart,blocksize = ug.find_blocks(~stat)
+        blockstart = blockstart[blocksize>=minsize]
+        blocksize = blocksize[blocksize>=minsize]
+        mv = np.zeros_like(stat)
+        for i,b in enumerate(blockstart):
+            if condition=='all':
+                mv[b:b+blocksize[i]] = 1
+            elif condition =='last':
+                mv[b+blocksize[i]-minsize:b+blocksize[i]] = 1
+        
+        
+        for ir, r in enumerate(regions):
+            tphase = self.pdat['offset_'+r+'_phase'].to_numpy()*self.side*-1
+            for i,j in enumerate(jumps):
+                dx = np.arange(j[1],j[2])
+                tp = tphase[dx]
+                tstat = stat2[dx]
+                tmv = mv[dx]
+                data_out[i,0,ir] = circmean(tp[tstat>0],high=np.pi,low=-np.pi)
+                data_out[i,1,ir] = circmean(tp[tmv>0],high=np.pi,low=-np.pi)
+    
+        return data_out
+    def stop_start_transition(self,regions=['fsb_upper'],minsize=5):
+        jumps = self.get_jumps()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        dx = np.diff(x)
+        dy = np.diff(y)
+        d_dist = np.sqrt(dx**2+dy**2)/0.1
+        
+        jumpdx = np.zeros_like(x)
+        for j in jumps:
+            jumpdx[j[1]:j[2]] =1
+        
+        
+        stat = d_dist<1
+        stat[stat<1] = 0
+        # Only look at blocks of stat in right size 
+        blockstart,blocksize = ug.find_blocks(stat)
+        blockstart = blockstart[blocksize>=minsize]
+        blocksize = blocksize[blocksize>=minsize]
+        
+        alldat = np.zeros((20,len(blockstart)))
+        plt.figure()
+        plt.subplot(1,2,1)
+        plt.title('Move to Stop')
+        for r in regions:
+            
+            phase = self.pdat['offset_'+r+'_phase'].to_numpy()*self.side*-1
+            for i,b in enumerate(blockstart):
+                dx = np.arange(b-10,b+10)
+                x = np.arange(0,20)
+                if dx[-1]>len(x):
+                    x  =x[dx<len(y)]
+                    dx  = dx[dx<len(y)]
+                    alldat[:len(dx),i] = phase[dx]
+                else:
+                    alldat[:,i] = phase[dx]
+                plt.scatter(x,phase[dx],s=5,color='k',alpha=0.05)
+            x = np.arange(0,20)    
+            plt.plot([9,9],[-np.pi,np.pi],color='r',linestyle='--')
+            plt.plot(x,circmean(alldat,axis=1,high=np.pi,low=-np.pi),color='b')
+            
+        alldat = np.zeros((20,len(blockstart)))
+        plt.subplot(1,2,2)
+        plt.title('Stop to Move')
+        for r in regions:
+            
+            phase = self.pdat['offset_'+r+'_phase'].to_numpy()*self.side*-1
+            for i,b in enumerate(blockstart):
+                dx = np.arange(b-10+blocksize[i],b+10+blocksize[i])
+                x = np.arange(0,20)
+                if dx[-1]>len(x):
+                    x  =x[dx<len(y)]
+                    dx  = dx[dx<len(y)]
+                    alldat[:len(dx),i] = phase[dx]
+                else:
+                    alldat[:,i] = phase[dx]
+                plt.scatter(x,phase[dx],s=5,color='k',alpha=0.1)
+                
+            x = np.arange(0,20)
+            plt.plot([9,9],[-np.pi,np.pi],color='r',linestyle='--')
+            plt.plot(x,circmean(alldat,axis=1,high=np.pi,low=-np.pi),color='b')
+            
+            
     def jump_return_details(self,fsb_region='fsb_upper',flynum=0,index_type='jumps'):
         if index_type=='jumps':
         
             jumps = self.get_jumps()
-        
+        elif index_type=='all':
+            jumps = self.get_entries_exits_like_jumps()
         elif index_type=='cross overs':
             entries,exits = self.get_entries_exits()
             x = self.ft2['ft_posx'].to_numpy()
@@ -895,10 +1197,10 @@ class CX_a:
         
         u = ug()
         dx_dt,dy_dt,dd_dt =u.get_velocity(self.ft2['ft_posx'].to_numpy(),self.ft2['ft_posy'].to_numpy(),self.pv2['relative_time'])
-        fsb = self.pdat['phase_fsb_upper'] *-self.side
+        fsb = self.pdat['phase_' +fsb_region] *-self.side
         eb = self.pdat['phase_eb'] *-self.side
-        fsb2 = self.pdat['phase_fsb_upper']*self.side
-        fsb_o = self.pdat['offset_fsb_upper_phase'].to_numpy() *-self.side
+        fsb2 = self.pdat['phase_'+fsb_region]*self.side
+        fsb_o = self.pdat['offset_'+fsb_region+'_phase'].to_numpy() *-self.side
         eb_o = self.pdat['offset_eb_phase'].to_numpy()*-self.side
         eb2 = self.pdat['phase_eb'] *self.side
         heading = self.ft2['ft_heading'].to_numpy()*-self.side
@@ -907,7 +1209,7 @@ class CX_a:
         huw = np.unwrap(heading) 
         stimon = np.where(self.ft2['instrip'])[0][0]
 
-        w_fsb = self.pdat['wedges_fsb_upper']
+        w_fsb = self.pdat['wedges_'+fsb_region]
         if self.side==-1:
             w_fsb = np.fliplr(w_fsb)
 
@@ -989,9 +1291,11 @@ class CX_a:
                 plt.show()
             tfsb = 7.5*(fsb2[dx]+np.pi)/np.pi
             teb = 7.5*(eb2[dx]+np.pi)/np.pi
+            teb2 = 7.5*(ug.circ_subtract(eb2[dx],np.pi)+np.pi)/np.pi
             ax[2].imshow(w_fsb[dx,:].T,vmin=0,vmax=1,interpolation='None',aspect='auto')
             ax[2].scatter(x*10,tfsb,color='r')
             ax[2].scatter(x*10,teb,color='k')
+            ax[2].scatter(x*10,teb2,color=[0.5,0.5,0.5])
     
     def return_jump_info(self,inbins=50,outbins=50,fsb_names=['fsb_upper','fsb_lower'],time_threshold=60):
         this_j = self.get_jumps(time_threshold)
@@ -1546,7 +1850,28 @@ class CX_a:
         entries = block[bdx]
         exits = entries+blocksize[bdx]
         return entries, exits
-        
+    def get_entries_exits_like_jumps(self,ent_duration=0.5):
+        ins = self.ft2['instrip'].to_numpy()
+        tt = self.pv2['relative_time'].to_numpy()
+        td = np.mean(np.diff(tt))
+        block,blocksize = ug.find_blocks(ins)
+        block_o = block.copy()
+        thresh = np.round(td/ent_duration).astype(int)
+        bdx = blocksize>=thresh
+        block = block[bdx]
+        blocksize = blocksize[bdx]
+        e_ex = np.zeros((len(block),3),dtype='int')
+        for i,b in enumerate(block):
+            e_ex[i,0] = b
+            e_ex[i,1] = b+blocksize[i]
+            try:
+                next_block = np.min(block_o[block_o>b])
+                e_ex[i,2] = next_block
+            except:
+                e_ex[i,2] = 0
+        if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
+            e_ex = e_ex[:-1,:]
+        return e_ex
         
     def point2point_heat(self,start,stop,regions=['eb','fsb_upper','fsb_lower'],arrowpoint='entry',toffset=-1):
         # Function will plot trajectory with arrows plus heatmaps of regions
@@ -2134,8 +2459,83 @@ class CX_a:
         plt.show()
         
         
+    def plot_traj_arrow_segment(self,phase,amp,idx,a_sep= 20,traindat=False):
+        try:
+            phase_eb = self.pdat['offset_eb_phase'].to_numpy()
+        except:
+            phase_eb = self.pdat['offset_pb_phase'].to_numpy()
+        #phase_eb = self.phase_eb
+        amp_eb = self.amp_eb.copy()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        led = self.ft2['led1_stpt'].to_numpy()
+        
+        x,y = self.fictrac_repair(x,y)
+        instrip = self.ft2['instrip'].to_numpy()
+        if traindat:
+            mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+            it = self.ft2['intrain'].to_numpy()>0
+        
+            
+        dx =np.diff(x)
+        dy = np.diff(y)
+        dist = np.cumsum(np.sqrt(dx**2+dy**2))
+        dist = np.append(0,dist)
+        # dist = np.sqrt(x**2+y**2)
+        # dist = dist-dist[0]
+        plt.figure()
+        
+        x = x[idx]
+        y = y[idx]
+        dist = dist[idx]
+        
+        instrip = instrip[idx]
+        led = led[idx]
+        if traindat:
+            it = it[idx]
+            mfc = mfc[idx]
+        phase = phase[idx]
+        phase_eb = phase_eb[idx]
+        amp = amp[idx]
+        amp_eb = amp_eb[idx]
         
         
+        if traindat:
+            plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
+            ito = np.logical_and(it,mfc)
+            
+        plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
+        #plt.scatter(x[led<1],y[led<1],color='r')
+        try:
+            plt.scatter(x[self.pure_stim[is1:]],y[self.pure_stim[is1:]],color='g')
+            print('success')
+        except:
+            print('not plotting leds')
+           # plt.scatter(x[led<1],y[led<1],color='r')
+        
+        if traindat:
+            plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
+        
+        if set(['train_heading']).issubset(self.ft2):
+            susp = self.ft2['fix_heading'].to_numpy()[idx]
+            plt.scatter(x[susp>0],y[susp>0],color=[0.2,1,0.2])
+        
+        plt.plot(x,y,color='k')
+        t_sep = a_sep
+        for i,d in enumerate(dist):
+            if np.abs(d-t_sep)>a_sep:
+                t_sep = d
+                
+                xa = 50*amp_eb[i]*np.sin(phase_eb[i])
+                ya = 50*amp_eb[i]*np.cos(phase_eb[i])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
+                
+                xa = 50*amp[i]*np.sin(phase[i])
+                ya = 50*amp[i]*np.cos(phase[i])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.3,0.3,1])
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
         
         
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False,fulldat=True):
@@ -2162,8 +2562,12 @@ class CX_a:
             
         if fulldat:
             is1= 0
-        dist = np.sqrt(x**2+y**2)
-        dist = dist-dist[0]
+        dx =np.diff(x)
+        dy = np.diff(y)
+        dist = np.cumsum(np.sqrt(dx**2+dy**2))
+        dist = np.append(0,dist)
+        # dist = np.sqrt(x**2+y**2)
+        # dist = dist-dist[0]
         plt.figure()
         
         x = x[is1:]

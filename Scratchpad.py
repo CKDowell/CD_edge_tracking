@@ -23,8 +23,233 @@ from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
 from Utilities.utils_general import utils_general as ug
+from scipy.stats import circmean, circstd
 
 plt.rcParams['pdf.fonttype'] = 42 
+
+#%%
+pdiff = ug.circ_subtract(cxa.pdat['phase_fsb_upper'],cxa.pdat['phase_eb'])
+plt.hist(pdiff,bins=60)
+w = cxa.pdat['wedges_fsb_upper']
+plt.plot(np.mean(w,axis=0))
+
+w = cxa.pdat['wedges_eb']
+plt.plot(np.mean(w,axis=0))
+#%% 
+plt.close('all')
+jumps = cxa.get_jumps()
+phase = cxa.pdat['phase_fsb_upper']
+phase_eb = cxa.pdat['phase_eb']
+for j in jumps:
+    dx = np.arange(j[1],j[2])
+    plt.figure()
+    plt.hist(phase[dx],bins=30)
+    plt.figure(101)
+    plt.scatter(phase_eb[dx],phase[dx],color='k',s=5)
+plt.figure(201)
+plt.scatter(phase_eb,phase,color='k',s=5,alpha=0.1)
+plt.plot([0,np.pi],[-np.pi,0],color='r')
+plt.plot([-np.pi,0],[0,np.pi],color='r')
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
+
+
+#%% load data
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2"
+cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+savedir = "Y:\Data\FCI\FCI_summaries\hDeltaC"
+#%% Make movie of phase progression over time
+
+
+from matplotlib.animation import ImageMagickFileWriter, ImageMagickWriter,FFMpegWriter
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# Example data (replace with your own)
+
+pe = cxa.pdat['phase_eb']                               # x values
+pf = cxa.pdat['phase_fsb_upper']  
+phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+phase_fsb = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+pva = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+pva = pva/np.max(pva)
+pe = ug.savgol_circ(pe,20,3)
+pf = ug.savgol_circ(pf,20,3)
+xmn = circmean(pe,high=np.pi,low=-np.pi)
+pe = ug.circ_subtract(pe,xmn)         #stubtract circular mean to keep data in centre               # y values
+pf = ug.circ_subtract(pf,xmn)
+
+
+x = cxa.ft2['ft_posx'].to_numpy()
+y = cxa.ft2['ft_posy'].to_numpy()
+x,y = cxa.fictrac_repair(x,y)
+ins = cxa.ft2['instrip'].to_numpy()    # example ins (0 or 1)
+t = np.linspace(0, 20, len(x))      
+
+jumps = cxa.ft2['jump'].to_numpy()
+instrip = cxa.ft2['instrip'].to_numpy()
+stripdiff = np.diff(instrip)
+stripon = np.where(instrip>0)[0][0]
+xs = np.where(instrip==1)[0][0]
+strts = np.where(stripdiff>0)[0]
+stps = np.where(stripdiff<0)[0]
+x = x-x[xs]
+y = y-y[xs]           # time points
+# Set up the figure and axis
+#fig, ax = plt.subplots()
+
+
+fig, axs = plt.subplots(figsize=(15,8))#,ncols=3,width_ratios=[0.4,0.3,0.3])
+axs.set_xticks([])
+axs.set_yticks([])
+axs.get_yaxis().set_visible(False)
+axs.get_xaxis().set_visible(False)
+axs.axis("off")
+
+#Phase
+ax = plt.subplot2grid((1,2), (0, 0), colspan=1)
+
+
+# Trajectory
+ax2 = plt.subplot2grid((1, 2), (0, 1))
+ax2.set_xticks([])
+ax2.set_yticks([])
+ax2.set_aspect('equal')
+
+
+scat = ax.scatter([], [],color="black", s=50 )
+scat2, = ax.plot([],[],color='b')
+scat3, = ax.plot([],[],color='b')
+scat4 = ax.scatter([],[],color=[0.5,0,0],s = 100)
+line, = ax2.plot([],[],lw=2,color='k')
+line2, = ax2.plot([],[],lw=3,color=[0.2,0.2,1])
+line3, = ax2.plot([],[],lw=3,color=[0.2,0.2,0.2])
+
+ax.set_xlim(-np.pi, np.pi)
+ax.set_ylim(-np.pi, np.pi)
+ax.set_xlabel("EB phase")
+ax.set_ylabel("FSB phase")
+ax.set_title("Phase over time")
+ax.plot([0,np.pi],[-np.pi,0],color='r')
+ax.plot([-np.pi,0],[0,np.pi],color='r')
+ax.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
+
+
+ins = cxa.ft2['instrip'].to_numpy()
+jumps = cxa.ft2['jump'].to_numpy()
+tt = cxa.pv2['relative_time'].to_numpy()
+inplume = ins>0
+st  = np.where(ins)[0][0]
+x = x-x[st-1]
+y = y-y[st-1]
+  
+
+
+
+jumps = jumps-np.mod(jumps,3)
+jd = np.diff(jumps)
+jn = np.where(np.abs(jd)>0)[0]+1
+print(jumps[jn])
+jkeep = np.where(np.diff(jn)>1)[0]
+
+xrange = np.max(x)-np.min(x)
+yrange = np.max(y)-np.min(y)
+
+mrange = np.max([xrange,yrange])+100
+y_med = yrange/2
+x_med = xrange/2
+ylims = [y_med-mrange/2, y_med+mrange/2]
+
+xlims = [x_med-mrange/2, x_med+mrange/2]
+yj = y[jn]
+yj = np.append(yj,y[-1])
+tj = 0
+x1 = 0+5+tj
+x2 = 0-5+tj
+y1 = 0
+y2 = yj[0]
+xvec = np.array([x1,x2,x2,x1])
+yvec = [y1,y1,y2,y2]
+
+cents = [-630,-420,-210, 0,210,420,630]
+ax2.fill(xvec,yvec,color=[0.7,0.7,0.7])
+for c in cents:
+    ax2.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
+    
+for i,j in enumerate(jn):
+    
+    tj = jumps[j]
+    x1 = 0+5+tj
+    x2 = 0-5+tj
+    y1 = yj[i]
+    y2 = yj[i+1]
+    xvec = np.array([x1,x2,x2,x1])
+    yvec = [y1,y1,y2,y2]
+    for c in cents:
+        ax2.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
+
+
+xa = 5*np.sin(phase_fsb)+x
+ya = 5*np.cos(phase_fsb)+y
+xa2 = 5*np.sin(phase_eb)+x
+ya2 = 5*np.cos(phase_eb)+y
+# Update function for animation
+lastpoint = np.array([np.nan,np.nan])
+def update(frame):
+    start = max(0, frame - 20)
+    scat2.set_data([-np.pi,np.pi],[pf[frame-1],pf[frame-1]])
+    scat3.set_data([pe[frame-1],pe[frame-1]],[-np.pi,np.pi])
+    scat.set_offsets(np.c_[pe[start:frame], pf[start:frame]])
+    line2.set_data([x[frame-1],xa[frame-1] ], [y[frame-1],ya[frame-1]])
+    line3.set_data([x[frame-1],xa2[frame-1] ], [y[frame-1],ya2[frame-1]])
+    if frame>100:
+        line.set_data(x[frame-100:frame], y[frame-100:frame])
+        colours = np.tile([0,0,0,1], (20, 1))
+        colours[ins[start:frame]>0,0] = 1
+        scat.set_color(colours)
+    else:
+        line.set_data(x[:frame], y[:frame])
+        scat.set_color("black")
+    # Check ins value at the most recent frame
+    
+    if np.sum(np.abs(lastpoint))>0:
+        scat4.set_offsets([lastpoint[0],lastpoint[1]])
+    if frame>1:
+        if ins[frame-1]==1 and ins[frame-2]<1:
+            lastpoint[0] = pe[frame-1]
+            lastpoint[1] = pf[frame-1]
+    
+    
+        
+        
+        
+    alphas = pva[start:frame]
+    
+    if len(alphas) > 0:
+        #alphas = (alphas - np.min(alphas)) / (np.ptp(alphas) + 1e-9)  # normalize 0–1
+        colors = np.tile([1,0,0,1], (len(alphas), 1))
+        colors[:, 3] = 0.99 # replace alpha channel
+    
+        scat.set_sizes((alphas*10)**2)
+    ax2.set_xlim(x[frame]-10,x[frame]+10)
+    ax2.set_ylim(y[frame]-10, y[frame]+10)
+    return scat,scat2,scat3,line,line2,line3,scat4
+    
+    
+# Create animation
+anim = animation.FuncAnimation(fig, update, frames=len(t), interval=100, blit=True)
+#anim = animation.FuncAnimation(fig, update, frames=np.arange(1010,1500), interval=100, blit=True)
+plt.show()
+
+
+writer = FFMpegWriter(fps=20)
+
+path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
+path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
+anim.save(os.path.join(savedir,'Phase_prog2' + cxa.name +'.avi'), writer=writer)
+
+
 
 
 #%%

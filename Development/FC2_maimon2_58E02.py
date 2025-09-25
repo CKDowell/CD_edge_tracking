@@ -24,8 +24,8 @@ from Utilities.utils_general import utils_general as ug
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,4]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial"+str(i))
+for i in [1,2,3]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_PAM\250918\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -49,8 +49,17 @@ experiment_dirs = [
          # r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2",# Great edge tracker!!! FC2 phAW largely in phase with EPG...
         #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial3" # Octanol, not edge tracking. FC2 matches EPG perfectly. Weird...
           
-          r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial1",# ACV pulses with turns, alternating stims
-          r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial4" # Octanol pulses with turns, a bit of a mess behaviourally
+          # r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial1",# ACV pulses with turns, alternating stims
+          # r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial4" # Octanol pulses with turns, a bit of a mess behaviourally
+          
+       #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250903\f1\Trial1", try again
+         #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250903\f1\Trial2",# Tracked ACV plume for a long distance
+         #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250903\f1\Trial3",
+          
+         # r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial1",
+         #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial2",
+         #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial3",
+          r"Y:\Data\FCI\Hedwig\FC2_PAM\250918\f1\Trial1", # data acquisition error, not great data, some pointing away from plume...
             ]
 regions = ['eb' ,'fsb_upper','fsb_lower']
 for e in experiment_dirs:
@@ -113,15 +122,49 @@ plt.xlabel('Plume entry number')
 
 
 #%%
-datadir = r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"
+datadir = r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial3"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],yoking=True,stim=True,denovo=False)
 #cxa.ft2['instrip'] = cxa.ft2['mfc3_stpt']
 #cxa.ft2['instrip'][cxa.ft2['instrip']<0.02] = 0
 cxa.simple_raw_plot(regions=['fsb_upper','fsb_lower'],plotphase=True)
-cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 5)
 #%%  Phase nulled bumps
 bins=5
 plotdata = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk='led')
 x = np.linspace(0,1,16)
 for i in range(bins):
     plt.plot(x+i,plotdata[:,bins+i,1],color='k')
+    
+    
+#%% EB fsb correlation
+timebefore = 10*60*10
+ledon = np.where(cxa.ft2['led1_stpt']==0)[0][0]
+# phase_eb = cxa.pdat['phase_eb']
+# phase_fsb = cxa.pdat['phase_fsb_upper']
+
+phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+phase_fsb = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+ins = cxa.ft2['instrip'].to_numpy()
+
+
+pre_eb = phase_eb[ledon-timebefore:ledon]
+pre_fsb = phase_fsb[ledon-timebefore:ledon]
+preins = ins[ledon-timebefore:ledon]
+
+post_eb = phase_eb[ledon:]
+post_fsb = phase_fsb[ledon:]
+postins = ins[ledon:]
+
+#plt.subplot(2,1,1)
+plt.scatter(pre_eb[preins<1],pre_fsb[preins<1],s=3,color='k')
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
+plt.plot([0,np.pi],[-np.pi,0],color='r')
+plt.plot([-np.pi,0],[0,np.pi],color='r')
+#plt.subplot(2,1,2)
+plt.scatter(post_eb[postins<1],post_fsb[postins<1],s=3,color='g')
+
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
+plt.plot([0,np.pi],[-np.pi,0],color='r')
+plt.plot([-np.pi,0],[0,np.pi],color='r')
+
+

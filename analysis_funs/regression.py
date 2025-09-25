@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib as mpl
 import statsmodels.api as sm
-from src.utilities import funcs as fn
+from analysis_funs.utilities import funcs as fn
 from scipy import signal
 from Utilities.utils_general import utils_general as ug
 #%%

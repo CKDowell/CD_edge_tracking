@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug  8 08:45:38 2025
+Created on Thu Aug 28 14:30:01 2025
 
 @author: dowel
 """
@@ -21,12 +21,12 @@ from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
 from Utilities.utils_general import utils_general as ug
-
+from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2,3,4]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial"+str(i))
+for i in [1,2,3]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -36,14 +36,14 @@ for i in [1,2,3,4]:
     #%
     ex.mask_slice = {'All': [1,2,3,4]}
     ex.t_projection_mask_slice()
- #%% Basic data processing
-experiment_dirs = [r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial1",
-                   r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial2",
-                   r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial3",
-                   r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial4"
+#%%
+experiment_dirs = [
     
+    #r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250828\f1\Trial2",
+    #r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250828\f1\Trial3", #No ET
+     # r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250828\f1\Trial4",  
+        r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"   
                    ]
-
 regions = ['eb','fsb_upper','fsb_lower']
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -62,47 +62,18 @@ for e in experiment_dirs:
     cx.save_postprocessing()#upsample to 50Hz
     pv2, ft, ft2, ix = cx.load_postprocessing()
     cxa = CX_a(datadir,regions=regions)
+    
+    
+        
+    
     cxa.save_phases()
-#%%
-cxa = CX_a(datadir,regions=regions,denovo=False)
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
-cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
-#%%
-cxa.jump_return_details()
-
-#%% 
-x = np.arange(0,len(cxa.pdat['phase_fsb_upper']))/10
-plt.scatter(x,cxa.pdat['phase_fsb_upper'],color='b',s=5)
-#plt.scatter(x,cxa.pdat['phase_eb'],color='k',s=2)
-eb180 = ug.circ_subtract(cxa.pdat['phase_eb'],np.pi)
-eb180_filt = ug.savgol_circ(eb180,40,3)
-plt.scatter(x,eb180,color=[0,0,0],s=5)
-plt.scatter(x,eb180_filt,color=[0.2,0.2,0.2],s=5)   
     
-
-#%%  Time lag
-eb180_diff = ug.circ_vel(eb180,x,smooth=False,winlength=10)
-fsb_diff = ug.circ_vel(cxa.pdat['phase_fsb_upper'],x,smooth=False,winlength=10)
-c = sg.correlate(eb180_diff,fsb_diff)
-c= c/np.max(c)
-lags = sg.correlation_lags(len(eb180_diff),len(fsb_diff))/10
-plt.plot(lags,c)
-plt.plot([0,0],[0,1],color='k',linestyle='--')
-plt.xlim([-5,5])
-plt.xticks(np.arange(-5,5))
-plt.xlabel('Time lag')
-pk = np.argmax(c[:int(len(c)/2-2.5)])
-plt.scatter(lags[pk],1)
-plt.text(lags[pk]-1,1,str(lags[pk]))
-plt.ylabel('Cross correlation')
-    
-
-#%%
-datadir= r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial4"
-cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 plt.close('all')
-savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaK'
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
+cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+#%%
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_lower_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_lower']/2,axis=1),a_sep= 2)
@@ -124,7 +95,6 @@ plt.figure()
 cxa.mean_jump_arrows(fsb_names=['fsb_upper','fsb_lower'],jsize =3,ascale=100)
 
 #%%
-
 plt.figure()
 plt.plot([-np.pi,np.pi],[-np.pi,np.pi],linestyle='--',color='r')
 plt.plot([-np.pi,0],[0,np.pi],linestyle='--',color='r')
@@ -136,19 +106,6 @@ plt.ylim([-np.pi,np.pi])
 plt.xlabel('EPG phase')
 plt.ylabel('FSB upper phase')
 plt.savefig(os.path.join(savedir,'FSB_EPG_Phase.png'))
-
-plt.figure()
-plt.plot([-np.pi,np.pi],[-np.pi,np.pi],linestyle='--',color='r')
-plt.plot([-np.pi,0],[0,np.pi],linestyle='--',color='r')
-plt.plot([0,np.pi],[-np.pi,0],linestyle='--',color='r')
-
-plt.scatter(cxa.pdat['phase_eb'][:-10],cxa.pdat['phase_fsb_upper'][10:],color='k',s=1,alpha=.2)
-plt.xlim([-np.pi,np.pi])
-plt.ylim([-np.pi,np.pi])
-plt.xlabel('EPG phase')
-plt.ylabel('FSB upper phase')
-plt.savefig(os.path.join(savedir,'FSB_EPG_Phase_lagged.png'))
-
 
 plt.figure()
 plt.plot([-np.pi,np.pi],[-np.pi,np.pi],linestyle='--',color='r')

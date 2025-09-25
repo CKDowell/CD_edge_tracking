@@ -16,8 +16,8 @@ from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
 from Utilities.utils_general import utils_general as ug
 #%%
-for i in [3]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial"+str(i))
+for i in [1,2,4]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649_sytGCaMP7f\250923\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -30,8 +30,8 @@ for i in [3]:
     
 
 #%% ROI processing
-for i in [1,2,3,4,5,6,7]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial"+str(i))
+for i in [1,2,4]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6H_SS95649_sytGCaMP7f\250923\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cx = CX(name,['fsbTN'],datadir)
@@ -86,12 +86,19 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250313\f1\Trial1",# walking in cir
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial4", # More Et like behaviour and ramping
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial5", # artefacts
             r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial6",
-            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial7"
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial7",
+            
+            
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95720\250825\f1\Trial2",#No ET. Incredibly noisy data. Some inhibition and ramping
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95720\250825\f1\Trial3",# Inhibition and ramping. Animal circling.
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95720\250825\f1\Trial4" # Inhibition and ramping. Animal circling.
+            
+            r"Y:\Data\FCI\Hedwig\FB6H_SS95649_sytGCaMP7f\250923\f2\Trial4", # similar dynamics to above, but no ET. Cells easy to see which is a plus.
             
             ]
 #%%
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250729\f1\Trial5"
+datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649_sytGCaMP7f\250923\f2\Trial4"
 
 cxt = CX_tan(datadir)
 ca = cxt.ca.copy().ravel()

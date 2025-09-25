@@ -33,6 +33,7 @@ import pickle
 from scipy import signal as sg
 from scipy import stats
 from skimage import io
+from Utilities.utils_general import utils_general as ug
 #%%
 class CX:
     def __init__(self,name,roi_names,folderloc):
@@ -182,7 +183,7 @@ class CX:
         offset = self.continuous_offset(phase,ft2)
         phase_offset = fn.wrap(phase-offset)
         return phase, phase_offset, amp
-    def phase_yoke(self,yoke_roi,tether_roi,ft2,pv2):
+    def phase_yoke(self,yoke_roi,tether_roi,ft2,pv2,d7=False):
         # Function will output phase and amplitude of columnar regions.
         # Specify a yoke and tether ROI to do the determination
         self.yoke_roi = yoke_roi
@@ -201,9 +202,14 @@ class CX:
             pb_wedges[:,self.pb_logic2anat] = yoke_wedges # Alignement to anatomy from imaging
             pb_wedges = np.fliplr(pb_wedges) # Flip lr
             phase,amp = fn.get_fftphase(pb_wedges)
+            
         else:
             phase,amp = self.get_centroidphase(yoke_wedges)
-        offset = self.continuous_offset(phase,ft2)
+            
+        if d7:
+            offset = self.continuous_offset(ug.circ_subtract(phase,np.pi),ft2)
+        else:
+            offset = self.continuous_offset(phase,ft2)
         phase_yoke_offset = fn.wrap(phase-offset)
         fit_wedges, all_params = self.wedges_to_cos(yoke_wedges,phase_offset = offset)
         rot_wedges = self.rotate_wedges(yoke_wedges,phase_offset =offset)

@@ -24,15 +24,17 @@ from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 plt.rcParams['font.sans-serif'] = 'Arial'
 from EdgeTrackingOriginal.ETpap_plots.ET_paper import ET_paper
+savedir = 'Y:\\Data\\FCI\\FCI_summaries\\FC2_hDeltaC_comparison'
 #%% Load up data
 datadirs_hdc = [
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",# Phase recording is not the best - strong pointer
-                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",# Not many jumps, weak pointer
+                #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3",# Not many jumps, weak pointer
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2", # Strong pointer
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2",# Strong pointer, just like FC2
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1", # Points away ******
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial3", # Strong pointer
                 r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2",# Strong pointer
+                r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250907\f1\Trial2",# Good pointer
                 ]
 
 all_flies_hdc = {}
@@ -65,13 +67,510 @@ datadirs_fc2_pam = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",
                     r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"]
 all_flies_fc2pam = {}
 etp_fc2pam = {}
-for i,datadir in enumerate(datadirs_fc2):
+for i,datadir in enumerate(datadirs_fc2_pam):
     print(datadir)
-    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False,stim=True)
     all_flies_fc2pam.update({str(i):cxa})
     etp = ET_paper(datadir)
     etp_fc2pam.update({str(i):etp})
+    
+datadirs_hdj = [
+                r"Y:\Data\FCI\Hedwig\hDeltaJ\240529\f1\Trial3",#Good pointer
+                ]
 
+all_flies_hdj = {}
+etp_hdj = {}
+for i,datadir in enumerate(datadirs_hdj):
+    print(datadir)
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    all_flies_hdj.update({str(i):cxa})
+    etp = ET_paper(datadir)
+    etp_hdj.update({str(i):etp})
+    
+
+#%% Inferrred goal vs phase
+plt.close('all')
+grand_mean_fc2 = np.zeros((len(all_flies_fc2),2))
+gm_diff_fc2 = np.zeros(len(all_flies_fc2))
+mode ='jumps'
+for i,f in enumerate(all_flies_fc2):
+    cxa= all_flies_fc2[f]
+    if mode=='all':
+        e_e = cxa.get_entries_exits_like_jumps()
+    elif mode=='jumps':
+        e_e = cxa.get_jumps()
+    fsb_phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    heading = cxa.ft2['ft_heading']
+    plt.figure()
+    #plt.plot([0,len(e_e)],[0,0],color='k')
+    data_goal = np.array([])
+    data_inf_goal = np.array([])
+    data_diff = np.array([])
+    for ie,e in enumerate(e_e[1:]):
+        if mode=='all':
+            if (e[0]-e_e[ie,1])<30:
+                continue
+            if (e[2]-e[1])<30:
+                continue
+        strt =np.max([e[0]-5,e_e[ie,1]])
+        dx = np.arange(strt,e[0])
+        inf_goal = stats.circmean(heading[dx],low=-np.pi,high=np.pi)
+        data_inf_goal = np.append(data_inf_goal,inf_goal)
+        strt = np.max([e[2]-5,e[1]])
+        dx = np.arange(strt,e[2])
+        goal = stats.circmean(fsb_phase[dx],low=-np.pi,high=np.pi)
+        data_goal = np.append(data_goal,goal)
+        data_diff = np.append(data_diff,goal-inf_goal)
+        #plt.scatter(ie,goal,color='b')
+        #plt.scatter(ie,inf_goal,color='r')
+    igm = stats.circmean(data_inf_goal,high=np.pi,low=-np.pi)
+    
+    
+    x = np.arange(0,len(data_goal))
+    plt.scatter(x,data_inf_goal,color='r',s=5)
+    plt.scatter(x,data_goal,color='b',s=5)
+    plt.plot([0,x[-1]],[igm,igm],color='r')
+    plt.plot([0,x[-1]],[0,0],color='k')
+    gm = stats.circmean(data_goal,high=np.pi,low=-np.pi)
+    plt.plot([0,x[-1]],[gm,gm],color='b')
+    plt.ylim([-np.pi,np.pi])
+    grand_mean_fc2[i,:] = [igm,gm]
+    gm_diff_fc2[i] = stats.circmean(data_diff,low=-np.pi,high=np.pi)
+grand_mean_hdc = np.zeros((len(all_flies_hdc),2))
+gm_diff_hdc = np.zeros(len(all_flies_fc2))
+for i, f in enumerate(all_flies_hdc):
+    cxa= all_flies_hdc[f]
+    e_e = cxa.get_entries_exits_like_jumps()
+    fsb_phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    heading = cxa.ft2['ft_heading']
+    plt.figure()
+    plt.plot([0,len(e_e)],[0,0],color='k')
+    data_goal = np.array([])
+    data_inf_goal = np.array([])
+    data_diff = np.array([])
+    for ie,e in enumerate(e_e[1:]):
+        if (e[0]-e_e[ie,1])<30:
+            continue
+        if (e[2]-e[1])<30:
+            continue
+        
+        strt =np.max([e[0]-5,e_e[ie,1]])
+        dx = np.arange(strt,e[0])
+        inf_goal = stats.circmean(heading[dx],low=-np.pi,high=np.pi)
+        data_inf_goal = np.append(data_inf_goal,inf_goal)
+        strt = np.max([e[2]-5,e[1]])
+        dx = np.arange(strt,e[2])
+        goal = stats.circmean(fsb_phase[dx],low=-np.pi,high=np.pi)
+        data_goal = np.append(data_goal,goal)
+        plt.scatter(ie,goal,color='b')
+        plt.scatter(ie,inf_goal,color='r')
+        data_diff = np.append(data_diff,goal-inf_goal)
+    igm = stats.circmean(data_inf_goal,high=np.pi,low=-np.pi)
+    plt.plot([0,ie],[igm,igm],color='r')
+    
+    gm = stats.circmean(data_goal,high=np.pi,low=-np.pi)
+    plt.plot([0,ie],[gm,gm],color='b')
+    plt.ylim([-np.pi,np.pi])
+    grand_mean_hdc[i,:] = [igm,gm]
+    gm_diff_hdc[i] = stats.circmean(data_diff,low=-np.pi,high=np.pi)
+plt.figure()
+grand_mean_fc2 = 180*grand_mean_fc2/np.pi
+grand_mean_hdc = 180*grand_mean_hdc/np.pi
+gm_diff_fc2 = gm_diff_fc2*-1*np.sign(grand_mean_fc2[:,0])
+grand_mean_fc2 = -1*grand_mean_fc2*np.sign(grand_mean_fc2[:,0])[:,np.newaxis]
+x = [0,1]
+plt.plot(x,np.transpose(grand_mean_fc2),color='k',alpha=0.5);
+gmn = stats.circmean(grand_mean_fc2,high=180,low=-180,axis=0)
+plt.plot(x,gmn,color='k',linewidth=3)
+
+grand_mean_hdc = -1*grand_mean_hdc*np.sign(grand_mean_hdc[:,0])[:,np.newaxis]
+x = [1.5,2.5]
+plt.plot(x,np.transpose(grand_mean_hdc),color='k',alpha=0.5);
+plt.ylim([-180,180])
+plt.yticks([-180,-90,0,90,180])
+gmn = stats.circmean(grand_mean_hdc,high=180,low=-180,axis=0)
+plt.plot(x,gmn,color='k',linewidth=3)
+plt.xticks([0,1,1.5,2.5],labels=['FC2 inferred goal','FC2 phase','HdC inferred goal','HdC phase'],rotation=45)
+plt.subplots_adjust(bottom=.2)
+
+plt.figure()
+r = 1
+idx = np.argsort(-gm_diff_fc2)
+for i in idx:
+    tig = grand_mean_fc2[i,0]
+    tg = grand_mean_fc2[i,1]
+    thetas = np.linspace(tig,tg,100)
+    xs =r* np.sin(np.pi*thetas/180)
+    ys = r*np.cos(np.pi*thetas/180)
+    plt.plot(xs,ys,color='k',zorder=5)
+    r = r+0.05
+    plt.scatter(xs[0],ys[0],color='r',zorder=10,s=5)
+    plt.plot([0,xs[0]],[0,ys[0]],color='r',alpha=0.5)
+    plt.scatter(xs[-1],ys[-1],color='b',zorder=10,s=5)
+    plt.plot([0,xs[-1]],[0,ys[-1]],color='b',alpha=0.5)
+    
+#plt.xlim([-1.5,1.5])
+#plt.ylim([-1.5,1.5])
+
+r = 1
+idx = np.argsort(-gm_diff_hdc)
+for i in idx:
+    tig = grand_mean_hdc[i,0]
+    tg = grand_mean_hdc[i,1]
+    thetas = np.linspace(tig,tg,100)
+    xs =r* np.sin(np.pi*thetas/180)+2.5
+    ys = r*np.cos(np.pi*thetas/180)
+    plt.plot(xs,ys,color='k',zorder=5)
+    r = r+0.05
+    plt.scatter(xs[0],ys[0],color='r',zorder=10,s=5)
+    plt.plot([2.5,xs[0]],[0,ys[0]],color='r',alpha=0.5)
+    plt.scatter(xs[-1],ys[-1],color='b',zorder=10,s=5)
+    plt.plot([2.5,xs[-1]],[0,ys[-1]],color='b',alpha=0.5)
+    
+#plt.xlim([-2,3])
+#plt.ylim([-2,3])
+g = plt.gca()
+g.set_aspect('equal')
+plt.text(0,1.3,'FC2',horizontalalignment='center')
+plt.text(2.5,1.3,'hDeltaC',horizontalalignment='center')
+plt.xticks([])
+plt.yticks([])
+plt.savefig(os.path.join(savedir,'Inferred_goal_goal_comp.png'))
+#%%
+plt.figure()
+x =np.sin(np.pi*grand_mean_fc2/180)
+y = np.cos(np.pi*grand_mean_fc2/180)
+xplt = np.zeros(x.shape)
+xplt[:,1] =x[:,0]
+yplt = np.zeros(y.shape)
+yplt[:,1] = y[:,0]
+plt.plot(np.transpose(xplt),np.transpose(yplt),color='r')
+
+xplt = np.zeros(x.shape)
+xplt[:,1] =x[:,1]
+yplt = np.zeros(y.shape)
+yplt[:,1] = y[:,1]
+plt.plot(np.transpose(xplt),np.transpose(yplt),color='b')
+
+xplt = np.zeros(x.shape)
+xplt[:,1] = np.sin(gm_diff_fc2)
+yplt = np.zeros(y.shape)
+yplt[:,1] = np.cos(gm_diff_fc2)
+plt.plot(np.transpose(xplt),np.transpose(yplt),color='k')
+
+
+
+x =np.sin(np.pi*grand_mean_hdc/180)+1.5
+y = np.cos(np.pi*grand_mean_hdc/180)
+xplt = np.zeros(x.shape)+1.5
+xplt[:,1] =x[:,0]
+yplt = np.zeros(y.shape)
+yplt[:,1] = y[:,0]
+plt.plot(np.transpose(xplt),np.transpose(yplt),color='r')
+
+xplt = np.zeros(x.shape)+1.5
+xplt[:,1] =x[:,1]
+yplt = np.zeros(y.shape)
+yplt[:,1] = y[:,1]
+plt.plot(np.transpose(xplt),np.transpose(yplt),color='b')
+g = plt.gca()
+g.set_aspect('equal')
+plt.text(0,1.1,'FC2',horizontalalignment='center')
+plt.text(1.5,1.1,'hDeltaC',horizontalalignment='center')
+plt.ylim([-1.2,1.2])
+
+
+
+#%% Phase transition plot
+plt.close('all')
+for i,datadir in enumerate(datadirs_fc2):
+    plt.figure()
+    cxa = all_flies_fc2[str(i)]
+    etp = etp_fc2[str(i)]
+    phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+    phases,traj = etp.trajectory_mean(regions=['eb','fsb_upper'],bins=10)
+    # phases = ug.circ_subtract(phases,phases[10,0,:])
+    phase_fsb = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    jumps = cxa.get_jumps()
+    pmean = stats.circmean(phases,low=-np.pi,high=np.pi,axis=2)
+    plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+    plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+    plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+    
+    # for j in jumps:
+    #     plt.plot(phase_eb[j[0]:j[2]],phase_fsb[j[0]:j[2]],color='k',alpha=0.25)
+    plt.plot(pmean[:10,0],pmean[:10,1],color='r')
+    plt.plot(pmean[9:,0],pmean[9:,1],color=[0.3,0.3,1])
+    plt.xlim([-np.pi,np.pi])
+    plt.ylim([-np.pi,np.pi])
+    plt.xlabel('EPG phase')
+    plt.ylabel('FC2 phase')
+    
+for i,datadir in enumerate(datadirs_hdc):
+    plt.figure()
+    cxa = all_flies_hdc[str(i)]
+    etp = etp_hdc[str(i)]
+    phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+    phases,traj = etp.trajectory_mean(regions=['eb','fsb_upper'],bins=10)
+    phase_fsb = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    jumps = cxa.get_jumps()
+    pmean = stats.circmean(phases,low=-np.pi,high=np.pi,axis=2)
+    plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+    plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+    plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+    
+    # for j in jumps:
+    #     plt.plot(phase_eb[j[0]:j[2]],phase_fsb[j[0]:j[2]],color='k',alpha=0.25)
+    plt.plot(pmean[:10,0],pmean[:10,1],color='r')
+    plt.plot(pmean[9:,0],pmean[9:,1],color=[0.3,0.3,1])
+    plt.xlim([-np.pi,np.pi])
+    plt.ylim([-np.pi,np.pi])
+    plt.xlabel('EPG phase')
+    plt.ylabel('hDeltaC phase')
+
+#%% Stop start phase scatter
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+for i,datadir in enumerate(all_flies_hdc):
+    cxa = all_flies_hdc[str(i)]
+    cxa.cxa_stop_start_phase_scatter()
+    for i in range(3):
+        plt.figure(i)
+        plt.savefig(os.path.join(savedir,str(i) + 'Mv_Stp_' +cxa.name+'.png'))
+        plt.figure(i+100)
+        plt.savefig(os.path.join(savedir,str(i) + 'Stp_Mv_' +cxa.name+'.png'))
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_maimon2'
+for i,datadir in enumerate(datadirs_fc2):
+    cxa = all_flies_fc2[str(i)]
+    cxa.cxa_stop_start_phase_scatter()
+    for i in range(3):
+        plt.figure(i)
+        plt.savefig(os.path.join(savedir,str(i) + 'Mv_Stp_' +cxa.name+'.png'))
+        plt.figure(i+100)
+        plt.savefig(os.path.join(savedir,str(i) + 'Stp_Mv_' +cxa.name+'.png'))
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaJ'
+for i,datadir in enumerate(all_flies_hdj):
+    cxa = all_flies_hdj[str(i)]
+    cxa.cxa_stop_start_phase_scatter()
+    for i in range(3):
+        plt.figure(i)
+        plt.savefig(os.path.join(savedir,str(i) + 'Mv_Stp_' +cxa.name+'.png'))
+        plt.figure(i+100)
+        plt.savefig(os.path.join(savedir,str(i) + 'Stp_Mv_' +cxa.name+'.png'))
+#%%
+plt.figure()
+plt.subplot(2,2,1)
+ss_mean = np.zeros((len(all_flies_fc2),2,2))
+minsize = 20
+condition = 'last'
+for i,datadir in enumerate(datadirs_fc2):
+    cxa = all_flies_fc2[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+    
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+plt.plot([-np.pi/2,-np.pi/2],[-np.pi,np.pi],color='r',linestyle='--')
+plt.plot([-np.pi,np.pi],[-np.pi/2,-np.pi/2],color='r',linestyle='--')
+plt.scatter(ss_mean[:,0,0,],ss_mean[:,0,1],color=[0,0,0.6],s=10,alpha=0.5)
+plt.scatter(ss_mean[:,1,0,],ss_mean[:,1,1],color=[0,0.6,0.9],s=10,alpha=0.5)
+all_mn = stats.circmean(ss_mean,axis=0,high=np.pi,low=-np.pi)
+plt.scatter(all_mn[0,0,],all_mn[0,1],color=[0,0,0.6],s=100)
+plt.scatter(all_mn[1,0,],all_mn[1,1],color=[0,0.6,0.9],s=100)
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.title('FC2')
+plt.subplot(2,2,2)
+ss_mean = np.zeros((len(all_flies_hdc),2,2))
+for i,datadir in enumerate(datadirs_hdc):
+    
+    cxa = all_flies_hdc[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+    
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+plt.plot([-np.pi/2,-np.pi/2],[-np.pi,np.pi],color='r',linestyle='--')
+plt.plot([-np.pi,np.pi],[-np.pi/2,-np.pi/2],color='r',linestyle='--')
+plt.scatter(ss_mean[:,0,0,],ss_mean[:,0,1],color=[0,0,0.6],s=10,alpha=0.5)
+plt.scatter(ss_mean[:,1,0,],ss_mean[:,1,1],color=[0,0.6,0.9],s=10,alpha=0.5)
+all_mn = stats.circmean(ss_mean,axis=0,high=np.pi,low=-np.pi)
+
+plt.scatter(all_mn[0,0,],all_mn[0,1],color=[0,0,0.6],s=100)
+plt.scatter(all_mn[1,0,],all_mn[1,1],color=[0,0.6,0.9],s=100)
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.title('hDeltaC')
+plt.subplot(2,2,3)
+ss_mean = np.zeros((len(all_flies_hdj),2,2))
+for i,datadir in enumerate(datadirs_hdj):
+    
+    cxa = all_flies_hdj[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+    
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+plt.plot([-np.pi/2,-np.pi/2],[-np.pi,np.pi],color='r',linestyle='--')
+plt.plot([-np.pi,np.pi],[-np.pi/2,-np.pi/2],color='r',linestyle='--')
+plt.scatter(ss_mean[:,0,0,],ss_mean[:,0,1],color=[0,0,0.6],s=10,alpha=0.5)
+plt.scatter(ss_mean[:,1,0,],ss_mean[:,1,1],color=[0,0.6,0.9],s=10,alpha=0.5)
+all_mn = stats.circmean(ss_mean,axis=0,high=np.pi,low=-np.pi)
+
+plt.scatter(all_mn[0,0,],all_mn[0,1],color=[0,0,0.6],s=100)
+plt.scatter(all_mn[1,0,],all_mn[1,1],color=[0,0.6,0.9],s=100)
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.title('hDeltaJ')
+plt.ylabel('Phase fsb')
+plt.xlabel('Phase eb')
+#%%
+plt.close('all')
+for i,datadir in enumerate(datadirs_fc2):
+    cxa = all_flies_fc2[str(i)]
+    cxa.stop_start_transition(minsize=20)
+#%% Stop start phase pinwheel
+plt.figure()
+plt.subplot(2,2,1)
+ss_mean = np.zeros((len(all_flies_fc2),2,2))
+minsize = 20
+condition = 'last'
+for i,datadir in enumerate(datadirs_fc2):
+    cxa = all_flies_fc2[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+
+plt.plot([-1,1],[0,0],color='k',linestyle='--')
+plt.plot([0,0],[-1,1],color='k',linestyle='--')
+x = np.zeros((2,len(all_flies_fc2)))    
+x[0,:] = np.sin(ss_mean[:,0,1])
+y = np.zeros((2,len(all_flies_fc2)))    
+y[0,:] = np.cos(ss_mean[:,0,1])
+
+plt.plot(x,y,color=[0,0,0.6],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0,0.6],linewidth=3)
+x = np.zeros((2,len(all_flies_fc2)))    
+x[0,:] = np.sin(ss_mean[:,1,1])
+y = np.zeros((2,len(all_flies_fc2)))    
+y[0,:] = np.cos(ss_mean[:,1,1])
+
+plt.plot(x,y,color=[0,0.6,0.9],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0.5,0.8],linewidth=3)
+ss_mean = np.zeros((len(all_flies_hdc),2,2))
+
+plt.title('FC2')
+plt.xlim([-1,1])
+plt.ylim([-1,1])
+plt.xticks([])
+plt.yticks([])
+plt.subplot(2,2,2)
+for i,datadir in enumerate(datadirs_hdc):
+    
+    cxa = all_flies_hdc[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+plt.plot([-1,1],[0,0],color='k',linestyle='--')
+plt.plot([0,0],[-1,1],color='k',linestyle='--')
+x = np.zeros((2,len(all_flies_hdc)))    
+x[0,:] = np.sin(ss_mean[:,0,1])
+y = np.zeros((2,len(all_flies_fc2)))    
+y[0,:] = np.cos(ss_mean[:,0,1])
+
+plt.plot(x,y,color=[0,0,0.6],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0,0.6],linewidth=3)
+x = np.zeros((2,len(all_flies_hdc)))    
+x[0,:] = np.sin(ss_mean[:,1,1])
+y = np.zeros((2,len(all_flies_hdc)))    
+y[0,:] = np.cos(ss_mean[:,1,1])
+
+plt.plot(x,y,color=[0,0.5,0.8],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0.5,0.8],linewidth=3)
+
+plt.title('hDeltaC')
+plt.xlim([-1,1])
+plt.ylim([-1,1])
+plt.xticks([])
+plt.yticks([])
+plt.subplot(2,2,3)
+ss_mean = np.zeros((len(all_flies_hdj),2,2))
+for i,datadir in enumerate(datadirs_hdj):
+    
+    cxa = all_flies_hdj[str(i)]
+    stop_starts = cxa.stop_start_jumps(minsize=minsize,condition=condition)
+    ss_mean[i,:,:] = stats.circmean(stop_starts,high=np.pi,low=-np.pi,axis=0,nan_policy='omit')
+plt.plot([-1,1],[0,0],color='k',linestyle='--')
+plt.plot([0,0],[-1,1],color='k',linestyle='--')    
+x = np.zeros((2,len(all_flies_hdj)))    
+x[0,:] = np.sin(ss_mean[:,0,1])
+y = np.zeros((2,len(all_flies_fc2)))    
+y[0,:] = np.cos(ss_mean[:,0,1])
+
+plt.plot(x,y,color=[0,0,0.6],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0,0.6],linewidth=3)
+x = np.zeros((2,len(all_flies_hdj)))    
+x[0,:] = np.sin(ss_mean[:,1,1])
+y = np.zeros((2,len(all_flies_fc2)))    
+y[0,:] = np.cos(ss_mean[:,1,1])
+
+plt.plot(x,y,color=[0,0.5,0.8],alpha=0.3)
+plt.plot(np.mean(x,axis=1),np.mean(y,axis=1),color=[0,0.5,0.8],linewidth=3)
+
+plt.title('hDeltaJ')
+plt.xlim([-1,1])
+plt.ylim([-1,1])
+plt.xticks([])
+plt.yticks([])
+#%% Phase excersions
+plt.close('all')
+i =3
+cxa = all_flies_hdc[str(i)]
+etp = etp_hdc[str(i)]
+phase_eb = cxa.pdat['phase_eb']
+phases,traj = etp.trajectory_mean(regions=['eb','fsb_upper'],bins=10)
+phase_fsb = cxa.pdat['phase_fsb_upper']
+phase_fsb = ug.savgol_circ(phase_fsb,20,3)
+phase_eb = ug.savgol_circ(phase_eb,20,3)
+dfsb = ug.circ_subtract(phase_fsb[1:],phase_fsb[:-1])
+deb = ug.circ_subtract(phase_eb[1:],phase_eb[:-1])
+std_fsb = np.percentile(np.abs(dfsb),5)
+std_eb = np.percentile(np.abs(deb),5)
+deb2 =ug.boxcar_sum(deb,5)
+#deb2[np.abs(deb2)<std_eb] = np.nan
+dfsb2 =ug.boxcar_sum(dfsb,5)
+#dfsb2[np.abs(dfsb2)<std_fsb] = np.nan
+plt.plot(dfsb)
+plt.plot(deb)
+jumps = cxa.get_jumps()
+for j in jumps:
+    plt.figure()
+    plt.subplot(2,1,1)
+    x = np.append(deb2[j[0]:j[1],np.newaxis],deb2[j[0]:j[1],np.newaxis],axis=1)
+    y = np.append(dfsb2[j[0]:j[1],np.newaxis],dfsb2[j[0]:j[1],np.newaxis],axis=1)
+    x[:,0] = 0
+    y[:,0] = 0
+    #plt.plot(np.transpose(x),np.transpose(y),color='r',alpha=0.5)
+    
+    x = np.append(deb2[j[1]:j[2],np.newaxis],deb2[j[1]:j[2],np.newaxis],axis=1)
+    y = np.append(dfsb2[j[1]:j[2],np.newaxis],dfsb2[j[1]:j[2],np.newaxis],axis=1)
+    x[:,0] = 0
+    y[:,0] = 0
+    #plt.plot(np.transpose(x),np.transpose(y),color='b',alpha=0.5)
+    #plt.plot(x[:,1],y[:,1],color='r')
+    
+    plt.plot(deb2[j[0]:j[1]],dfsb2[j[0]:j[1]],color='r')
+    plt.plot(deb2[j[1]-1:j[2]],dfsb2[j[1]-1:j[2]],color='b')
+    #plt.xlim([-0.5,0.5])
+    #plt.ylim([-0.5,0.5])
+    g = plt.gca()
+    g.set_aspect('equal')
+    plt.subplot(2,1,2)
+    plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='k',linestyle='--')
+    plt.plot([-np.pi,0],[0,np.pi],color='k',linestyle='--')
+    plt.plot([0,np.pi],[-np.pi,0],color='k',linestyle='--')
+    plt.plot(phase_eb[j[0]:j[1]],phase_fsb[j[0]:j[1]],color='r')
+    plt.plot(phase_eb[j[1]-1:j[2]],phase_fsb[j[1]-1:j[2]],color='b')
 #%% Phase nulled bump comparison
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_hDeltaC_comparison'
 plt.close('all')
@@ -378,6 +877,7 @@ for f in fc2_disappear:
 
 
 #%%
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_hDeltaC_comparison'
 colours2 = np.array([[106,207,246],[237,30,36],[168,170,173],[6,149,207]])/255
 
 timecourse = 15
@@ -487,7 +987,28 @@ plt.savefig(os.path.join(savedir,'FC2_hDC_timecourse_comp.pdf'))
 
 
 
-
+#%% Scrap paper
+plt.close('all')
+for f in all_flies_fc2:
+    cxa = all_flies_fc2[f]
+    plt.figure()
+    pdiff = ug.circ_subtract(cxa.pdat['phase_eb'],cxa.ft2['ft_heading'])
+    x = np.arange(0,len(pdiff))
+    plt.scatter(x,pdiff,s=5,c=cxa.ft2['ft_heading'],cmap='coolwarm')
+    smth = ug.savgol_circ(pdiff,60,3)
+   # plt.plot(x,smth,color='k')
+   # plt.plot(x,cxa.pdat['offset'].to_numpy(),color='r')
+    #plt.scatter(cxa.pdat['phase_eb'][:5000],cxa.ft2['ft_heading'][:5000],color='k',s=3)
+for f in all_flies_hdc:
+    cxa = all_flies_hdc[f]
+    plt.figure()
+    pdiff = ug.circ_subtract(cxa.pdat['phase_eb'],cxa.ft2['ft_heading'])
+    x = np.arange(0,len(pdiff))
+    plt.scatter(x,pdiff,s=5,c=cxa.ft2['ft_heading'],cmap='coolwarm')
+    smth = ug.savgol_circ(pdiff,60,3)
+    #plt.plot(x,smth,color='k')
+    #plt.plot(x,cxa.pdat['offset'].to_numpy(),color='r')
+    #plt.scatter(cxa.pdat['phase_eb'][:5000],cxa.ft2['ft_heading'][:5000],color='k',s=3)
 
 
 
