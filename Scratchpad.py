@@ -52,7 +52,23 @@ plt.plot([0,np.pi],[-np.pi,0],color='r')
 plt.plot([-np.pi,0],[0,np.pi],color='r')
 plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
 
+#%% phase saccades
+plt.close('all')
+tp = ug.savgol_circ(cxa.pdat['phase_fsb_upper'],20,3)
+tp2 = ug.savgol_circ(cxa.pdat['phase_eb'],20,3)
+tpw = np.unwrap(tp)
+step = np.ones(20)
+step[:10] = -1
+pc = np.convolve(tpw,step,mode='same')/20
+plt.plot(pc)
+x = np.arange(0,len(tp))
+peaks,heights = sg.find_peaks(np.abs(pc),height=0.5)
+plt.scatter(x,tp,color='r',s=5)
+plt.scatter(x,tp2,color='k',s=5)
 
+plt.scatter(x,ug.circ_subtract(tp,np.pi),color=[1,0.5,0.5],s=5)
+plt.plot(cxa.ft2['instrip']*3,color='g')
+plt.scatter(x[peaks],pc[peaks],color='b')
 #%% load data
 datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)

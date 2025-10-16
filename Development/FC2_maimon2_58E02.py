@@ -24,8 +24,8 @@ from Utilities.utils_general import utils_general as ug
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [1,2,3]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_PAM\250918\f1\Trial"+str(i))
+for i in [1,2,3,4]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FC2_PAM\250924\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -59,7 +59,11 @@ experiment_dirs = [
          # r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial1",
          #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial2",
          #  r"Y:\Data\FCI\Hedwig\FC2_PAM\250904\f1\Trial3",
-          r"Y:\Data\FCI\Hedwig\FC2_PAM\250918\f1\Trial1", # data acquisition error, not great data, some pointing away from plume...
+         # r"Y:\Data\FCI\Hedwig\FC2_PAM\250918\f1\Trial1", # data acquisition error, not great data, some pointing away from plume...
+          
+          r'Y:\Data\FCI\Hedwig\FC2_PAM\250924\f1\Trial1', # Some pointing towards plume, though imaging data quality is not the best
+          r'Y:\Data\FCI\Hedwig\FC2_PAM\250924\f1\Trial2'
+          
             ]
 regions = ['eb' ,'fsb_upper','fsb_lower']
 for e in experiment_dirs:
@@ -84,8 +88,94 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%%  Plot data from ACV training
-datadir = r"Y:\Data\FCI\Hedwig\FC2_PAM\250807\f1\Trial1"
-cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],yoking=True,stim=True,denovo=False)
+
+
+datadir =r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2"
+datadir=  r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"
+
+#%% Plotting ACV plume pre and post reinforcement
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_PAM'
+datadirs = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",
+ r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"]
+fignames = ['PVA','mean_fluor']
+diff = True
+for d in datadirs:
+    plt.close('all')
+    cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],yoking=True,stim=True,denovo=False)
+    e_e = cxa.get_entries_exits_like_jumps()
+    jumps = cxa.get_jumps(time_threshold=1000000)
+    led = cxa.ft2['led1_stpt'].to_numpy()
+    ledon = np.where(led==0)[0][0]-10
+    if diff:
+        phase = ug.circ_subtract(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['offset_eb_phase'].to_numpy())
+    else:
+        phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    amp = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+    amp2 = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    eon = np.where(e_e[:,2]>ledon)[0][0]-0.5
+    
+    plt.figure(1,figsize=(9,3))
+    plt.plot([0,len(e_e)],[0,0],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[-np.pi/2,-np.pi/2],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[np.pi/2,np.pi/2],color='k',linestyle='--')
+    
+    plt.plot([eon,eon],[-np.pi,np.pi],color='r',linestyle='-')
+    plt.figure(2,figsize=(9,3))
+    plt.plot([0,len(e_e)],[0,0],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[-np.pi/2,-np.pi/2],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[np.pi/2,np.pi/2],color='k',linestyle='--')
+    
+    plt.plot([eon,eon],[-np.pi,np.pi],color='r',linestyle='-')
+    
+    amp = amp-np.min(amp)
+    amp[amp>np.percentile(amp,95)] = np.percentile(amp,95)
+    amp = amp/np.max(amp)
+    amp = np.round(amp*99).astype(int)
+    
+    amp2 = amp2-np.min(amp2)
+    amp2[amp2>np.percentile(amp2,95)] = np.percentile(amp2,95)
+    amp2 = amp2/np.max(amp2)
+    amp2 = np.round(amp2*99).astype(int)
+    
+    cmap = plt.get_cmap('viridis')
+    # Sample 100 evenly spaced points from the colormap
+    colours = cmap(np.linspace(0, 1, 100))
+    
+    # Drop the alpha channel -> get 100x3 array
+    rgb_array = colours[:, :3]
+    for i,e in enumerate(e_e): 
+        dx = np.arange(e[1],e[-1])
+        if len(dx)>5:
+            dx = dx[-5:]
+            
+        tp = stats.circmean(phase[dx],high=np.pi,low=-np.pi)
+        ta = np.mean(amp[dx]).astype(int)
+        ta2 = np.mean(amp2[dx]).astype(int)
+        
+        plt.figure(1)
+        if np.sum(jumps[:,2]==e[2])>0:
+            plt.scatter(i,tp,color=rgb_array[ta,:],marker='*')
+        else:
+            plt.scatter(i,tp,color=rgb_array[ta,:])
+            
+        plt.figure(2)
+        if np.sum(jumps[:,2]==e[2])>0:
+            plt.scatter(i,tp,color=rgb_array[ta2,:],marker='*')
+        else:
+            plt.scatter(i,tp,color=rgb_array[ta2,:])
+        
+        
+    for i in range(2):
+        plt.figure(i+1)
+        plt.xlabel('entry number')
+        plt.subplots_adjust(bottom=0.3)
+        if diff:
+            plt.ylabel('FC2 - EB phase')
+            plt.savefig(os.path.join(savedir,fignames[i] +'_diff_'+ cxa.name+'.png'))
+        else:
+            plt.ylabel('FC2 phase')
+   
+            plt.savefig(os.path.join(savedir,fignames[i] + cxa.name+'.png'))
 #%%
 plt.close('all')
 entries,exits = cxa.get_entries_exits()

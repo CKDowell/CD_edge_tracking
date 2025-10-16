@@ -27,8 +27,8 @@ plt.rcParams['pdf.fonttype'] = 42
 
 #%% Image registraion
 
-for i in [1,2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\\Trial"+str(i))
+for i in [1,2,3,4]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251010\f1","Trial" +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -40,9 +40,14 @@ for i in [1,2]:
     ex.t_projection_mask_slice()
 #%%
 experiment_dirs = [
-    r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\Trial1",
-    r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\\Trial2"
-                   
+    # r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\Trial1",
+    # r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\\Trial2"
+   # r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial5"               .
+   # r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial3"   
+# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial1",
+# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial2",
+# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial3"
+r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251010\f1\Trial3"
                    ]
 regions = ['fsb']
 for e in experiment_dirs:
@@ -66,7 +71,7 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%%
-datadir = r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\Trial1"
+datadir =  r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial5"  
 cxa = CX_a(datadir,regions=regions,yoking=False,denovo=False)
 cxa.simple_raw_plot(plotphase=False,yeseb=False)
 cxa.simple_raw_plot(plotphase=True,yeseb=False)

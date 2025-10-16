@@ -372,6 +372,14 @@ class CX_a:
         eb = self.pv2[ebs].to_numpy()
         eb[np.isnan(eb)] = 0
         eb = eb/np.max(eb,axis=0)
+        
+        eb = np.zeros((len(phase),len(regions)*17))-1
+        for i,r in enumerate(regions):
+            dx = np.arange(i*16+i,i*16+16+i)
+            eb[:,dx] = self.pdat['wedges_'+r]
+        
+        
+        
        # eb[:,16:] = -eb[:,16:] +np.tile(np.max(eb[:,16:],axis=1)[:,np.newaxis],(1,16))
         print(np.shape(eb))
         t = np.arange(0,len(eb))
@@ -383,22 +391,25 @@ class CX_a:
             plt.plot([15.5,15.5],[min(t), max(t)],color='w')
             plt.xticks([0, 7, 15, 16,23, 31,32,40,48],
                        labels=['eb:1', 'eb:8', 'eb:16','fsb:1','fsb:8','fsb16','-$\pi$','0','$\pi$'],rotation=45)
-            off = 0.5
+            off = -0.5
         else:
-            off = -15.5
-        reps = np.shape(phase)[1]
-        for i in range(reps):
+            off = -0.5
+        reps = phase.shape[1]
+        
+        for i in range(len(regions)):
             print(i)
-            off = off+15
+            
             o2 = off+16
-            new_phase = np.interp(phase[:,i], (-np.pi, np.pi), (off, o2))
+            new_phase = np.interp(self.pdat['phase_'+ regions[i]], (-np.pi, np.pi), (off, o2))
             if plotphase:
                 plt.scatter(new_phase,t,color='r',s=1)
             off = off+1
+            off = off+16
         off = off+1
+        off = off-10
         new_heading = self.ft2['ft_heading'].to_numpy()
         new_heading = np.interp(new_heading, (new_heading.min(), new_heading.max()), (off+15, off+31))
-        for i in range(reps):
+        for i in range(len(regions)):
             try:
                 p = self.pdat['offset_'+ regions[i]+'_phase']
             except:
@@ -1292,10 +1303,12 @@ class CX_a:
             tfsb = 7.5*(fsb2[dx]+np.pi)/np.pi
             teb = 7.5*(eb2[dx]+np.pi)/np.pi
             teb2 = 7.5*(ug.circ_subtract(eb2[dx],np.pi)+np.pi)/np.pi
+            tfsb2 = 7.5*(ug.circ_subtract(fsb2[dx],np.pi)+np.pi)/np.pi
             ax[2].imshow(w_fsb[dx,:].T,vmin=0,vmax=1,interpolation='None',aspect='auto')
-            ax[2].scatter(x*10,tfsb,color='r')
-            ax[2].scatter(x*10,teb,color='k')
-            ax[2].scatter(x*10,teb2,color=[0.5,0.5,0.5])
+            ax[2].scatter(x*10,tfsb,color='r',s=10)
+            ax[2].scatter(x*10,tfsb2,color=[1,0.5,0.5],s=10)
+            ax[2].scatter(x*10,teb,color='k',s=10)
+            ax[2].scatter(x*10,teb2,color=[0.5,0.5,0.5],s=10)
     
     def return_jump_info(self,inbins=50,outbins=50,fsb_names=['fsb_upper','fsb_lower'],time_threshold=60):
         this_j = self.get_jumps(time_threshold)
@@ -2536,13 +2549,104 @@ class CX_a:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+      
+        
+    def plot_traj_arrow_new(self,regions,a_sep=20,traindat=False,fulldat=True):
+        colours = np.array([[228,26,28],
+                    [55,126,184],
+                   [ 77,175,74],
+                    [152,78,163],
+                    [255,127,0]])/255
+        phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
+        phases = np.zeros((len(phase_eb),len(regions)))
+        amps = np.zeros((len(phase_eb),len(regions)))
+        for i,r in enumerate(regions):
+            phases[:,i] = self.pdat['offset_'+r+'_phase'].to_numpy()
+            amps[:,i] = np.mean(self.pdat['wedges_'+r],axis=1)
+            
+        amp_eb = self.amp_eb.copy()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        led = self.ft2['led1_stpt'].to_numpy()
+        
+        x,y = self.fictrac_repair(x,y)
+        instrip = self.ft2['instrip'].to_numpy()
+        if traindat:
+            mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+            it = self.ft2['intrain'].to_numpy()>0
+        try:    
+            is1 =np.where(instrip)[0][0]
+        except:
+            instrip = self.ft2['mfc3_stpt'].to_numpy()>0
+            is1 = np.where(instrip)[0][0]
+            
+        if fulldat:
+            is1= 0
+        dx =np.diff(x)
+        dy = np.diff(y)
+        dist = np.cumsum(np.sqrt(dx**2+dy**2))
+        dist = np.append(0,dist)
+        # dist = np.sqrt(x**2+y**2)
+        # dist = dist-dist[0]
+        plt.figure()
+        
+        x = x[is1:]
+        y = y[is1:]
+        dist = dist[is1:]
+        
+        instrip = instrip[is1:]
+        led = led[is1:]
+        if traindat:
+            it = it[is1:]
+            mfc = mfc[is1:]
+        phases = phases[is1:]
+        phase_eb = phase_eb[is1:]
+        amps = amps[is1:]
+        amp_eb = amp_eb[is1:]
+        
+        
+        if traindat:
+            plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
+            ito = np.logical_and(it,mfc)
+            
+        plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
+        #plt.scatter(x[led<1],y[led<1],color='r')
+        try:
+            plt.scatter(x[self.pure_stim[is1:]],y[self.pure_stim[is1:]],color='g')
+            print('success')
+        except:
+            print('not plotting leds')
+           # plt.scatter(x[led<1],y[led<1],color='r')
+        
+        if traindat:
+            plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
+        
+        if set(['train_heading']).issubset(self.ft2):
+            susp = self.ft2['fix_heading'].to_numpy()
+            plt.scatter(x[susp>0],y[susp>0],color=[0.2,1,0.2])
+        
+        plt.plot(x,y,color='k')
+        t_sep = a_sep
+        
+        for i,d in enumerate(dist):
+            if np.abs(d-t_sep)>a_sep:
+                t_sep = d
+                
+                xa = 50*amp_eb[i]*np.sin(phase_eb[i])
+                ya = 50*amp_eb[i]*np.cos(phase_eb[i])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
+                for p  in range(len(regions)):
+                    xa = 50*amps[i,p]*np.sin(phases[i,p])
+                    ya = 50*amps[i,p]*np.cos(phases[i,p])
+                    plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
         
         
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False,fulldat=True):
-        try:
-            phase_eb = self.pdat['offset_eb_phase'].to_numpy()
-        except:
-            phase_eb = self.pdat['offset_pb_phase'].to_numpy()
+        phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
+        
         #phase_eb = self.phase_eb
         amp_eb = self.amp_eb.copy()
         x = self.ft2['ft_posx'].to_numpy()

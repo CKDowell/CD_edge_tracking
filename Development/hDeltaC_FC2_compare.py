@@ -54,7 +54,6 @@ datadirs_fc2 = [
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial5",
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial2",
 r"Y:\Data\FCI\Hedwig\FC2_maimon2\250128\f1\Trial4"]
-
 all_flies_fc2 = {}
 etp_fc2 = {}
 for i,datadir in enumerate(datadirs_fc2):
@@ -63,8 +62,9 @@ for i,datadir in enumerate(datadirs_fc2):
     all_flies_fc2.update({str(i):cxa})
     etp = ET_paper(datadir)
     etp_fc2.update({str(i):etp})
+    
 datadirs_fc2_pam = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",
-                    r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"]
+                r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"]
 all_flies_fc2pam = {}
 etp_fc2pam = {}
 for i,datadir in enumerate(datadirs_fc2_pam):
@@ -87,7 +87,149 @@ for i,datadir in enumerate(datadirs_hdj):
     etp = ET_paper(datadir)
     etp_hdj.update({str(i):etp})
     
+#%% Pre vs post reinforcement/threshold
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_PAM'
+datadirs = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",
+ r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"]
+fignames = ['PVA','mean_fluor']
+diff = True
+for d in all_flies_fc2:
+    plt.close('all')
+    cxa = all_flies_fc2[d]
+    #cxa = CX_a(d,regions=['eb','fsb_upper','fsb_lower'],yoking=True,stim=True,denovo=False)
+    e_e = cxa.get_entries_exits_like_jumps()
+    jumps = cxa.get_jumps(time_threshold=1000000)
+    led = cxa.ft2['led1_stpt'].to_numpy()
+    ledon = np.where(led==0)[0][0]-10
+    if diff:
+        phase = ug.circ_subtract(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['offset_eb_phase'].to_numpy())
+    else:
+        phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+    amp = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+    amp2 = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    eon = np.where(e_e[:,2]>ledon)[0][0]-0.5
+    
+    plt.figure(1,figsize=(9,3))
+    plt.plot([0,len(e_e)],[0,0],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[-np.pi/2,-np.pi/2],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[np.pi/2,np.pi/2],color='k',linestyle='--')
+    
+    plt.plot([eon,eon],[-np.pi,np.pi],color='r',linestyle='-')
+    plt.figure(2,figsize=(9,3))
+    plt.plot([0,len(e_e)],[0,0],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[-np.pi/2,-np.pi/2],color='k',linestyle='--')
+    plt.plot([0,len(e_e)],[np.pi/2,np.pi/2],color='k',linestyle='--')
+    
+    plt.plot([eon,eon],[-np.pi,np.pi],color='r',linestyle='-')
+    
+    amp = amp-np.min(amp)
+    amp[amp>np.percentile(amp,95)] = np.percentile(amp,95)
+    amp = amp/np.max(amp)
+    amp = np.round(amp*99).astype(int)
+    
+    amp2 = amp2-np.min(amp2)
+    amp2[amp2>np.percentile(amp2,95)] = np.percentile(amp2,95)
+    amp2 = amp2/np.max(amp2)
+    amp2 = np.round(amp2*99).astype(int)
+    
+    cmap = plt.get_cmap('viridis')
+    # Sample 100 evenly spaced points from the colormap
+    colours = cmap(np.linspace(0, 1, 100))
+    
+    # Drop the alpha channel -> get 100x3 array
+    rgb_array = colours[:, :3]
+    for i,e in enumerate(e_e): 
+        dx = np.arange(e[1],e[-1])
+        if len(dx)>5:
+            dx = dx[-5:]
+            
+        tp = stats.circmean(phase[dx],high=np.pi,low=-np.pi)
+        ta = np.mean(amp[dx]).astype(int)
+        ta2 = np.mean(amp2[dx]).astype(int)
+        
+        plt.figure(1)
+        if np.sum(jumps[:,2]==e[2])>0:
+            plt.scatter(i,tp,color=rgb_array[ta,:],marker='*')
+        else:
+            plt.scatter(i,tp,color=rgb_array[ta,:])
+            
+        plt.figure(2)
+        if np.sum(jumps[:,2]==e[2])>0:
+            plt.scatter(i,tp,color=rgb_array[ta2,:],marker='*')
+        else:
+            plt.scatter(i,tp,color=rgb_array[ta2,:])
+        
+        
+    for i in range(2):
+        plt.figure(i+1)
+        plt.xlabel('entry number')
+        plt.subplots_adjust(bottom=0.3)
+        if diff:
+            plt.ylabel('FC2 - EB phase')
+            plt.savefig(os.path.join(savedir,fignames[i] +'_diff_'+ cxa.name+'.png'))
+        else:
+            plt.ylabel('FC2 phase')
+   
+            plt.savefig(os.path.join(savedir,fignames[i] + cxa.name+'.png'))
+#%% regression modelling of wedges
+import sklearn.linear_model as lm
+plt.close('all')
+ymat = cxa.pdat['wedges_fsb_upper']
+wed_eb = cxa.pdat['wedges_eb']
+eb = cxa.pdat['phase_eb'][:,np.newaxis]
+ebmat = np.tile(eb,(1,16))
+fsb = cxa.pdat['phase_fsb_upper'][:,np.newaxis]
+fsbmat = np.tile(fsb,(1,16))
+tscale = 10
+wedid = np.linspace(-np.pi,np.pi,16)
+tp = eb[100]
+eb_cos = np.cos(wedid+fsbmat)
+eb_cos = eb_cos+1 
+fsb_cos =np.cos(wedid+fsbmat-np.pi)
+fsb_cos = fsb_cos+1
+ymat = ymat-np.min(ymat,axis=1)[:,np.newaxis]
+ymat = ymat/np.max(ymat,axis=1)[:,np.newaxis]
+eb_delays = np.array([0,0.5,1,2,4,8])*tscale
+#eb_delays = np.array([0])*tscale
+fsb_delay = np.array([0.5,1,2,4,8])*tscale
+eb_delays = eb_delays.astype(int)
+fsb_delay = fsb_delay.astype(int)
+start = np.max(eb_delays)
+regdx = np.arange(start,len(ymat),1)
 
+betas = np.zeros((len(regdx),len(eb_delays)+len(fsb_delay)))
+r2s = np.zeros((len(regdx),len(eb_delays)+len(fsb_delay)))
+
+# Change to do regression separately on each regressor since you get a good fit every time
+for i,r in enumerate(regdx):
+    print(i)
+    xdx = i-eb_delays
+    xeb = eb_cos[xdx,:]
+    xdxf = i-fsb_delay
+    xfsb = fsb_cos[xdxf,:]
+    X = np.append(xeb,xfsb,axis=0)
+    X = np.transpose(X)
+    
+    y = ymat[i,:]
+    for a in range(X.shape[1]):
+        reg = lm.LinearRegression(fit_intercept=False)
+        x = X[:,a][:,np.newaxis]
+        reg.fit(x,y);
+        betas[i,a] = reg.coef_
+        r2s[i,a] = reg.score(x,y)
+    # 
+    # plt.figure()
+    # plt.plot(y)
+    # plt.plot(reg.predict(X))
+    
+    
+plt.imshow(r2s,aspect='auto',interpolation='none',vmax=0.5,vmin=0)
+
+#%%
+x = regdx
+plt.scatter(x,fsb[x],color='r',s=5)
+plt.plot((r2s[:,6]>0.25) *3)
+plt.scatter(x,ug.circ_subtract(fsb[x],-np.pi),color=[1,0.5,0.5],s=5)
 #%% Inferrred goal vs phase
 plt.close('all')
 grand_mean_fc2 = np.zeros((len(all_flies_fc2),2))
@@ -103,9 +245,13 @@ for i,f in enumerate(all_flies_fc2):
     heading = cxa.ft2['ft_heading']
     plt.figure()
     #plt.plot([0,len(e_e)],[0,0],color='k')
+    plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
+    plt.plot([-np.pi,0],[0,np.pi],color='r')
+    plt.plot([0,np.pi],[-np.pi,0],color='r')
     data_goal = np.array([])
     data_inf_goal = np.array([])
     data_diff = np.array([])
+    data_ent_ang = np.array([])
     for ie,e in enumerate(e_e[1:]):
         if mode=='all':
             if (e[0]-e_e[ie,1])<30:
@@ -119,28 +265,37 @@ for i,f in enumerate(all_flies_fc2):
         strt = np.max([e[2]-5,e[1]])
         dx = np.arange(strt,e[2])
         goal = stats.circmean(fsb_phase[dx],low=-np.pi,high=np.pi)
+        entang = stats.circmean(heading[dx],low=-np.pi,high=np.pi)
         data_goal = np.append(data_goal,goal)
         data_diff = np.append(data_diff,goal-inf_goal)
+        data_ent_ang = np.append(data_ent_ang,entang)
         #plt.scatter(ie,goal,color='b')
         #plt.scatter(ie,inf_goal,color='r')
     igm = stats.circmean(data_inf_goal,high=np.pi,low=-np.pi)
     
     
     x = np.arange(0,len(data_goal))
-    plt.scatter(x,data_inf_goal,color='r',s=5)
-    plt.scatter(x,data_goal,color='b',s=5)
-    plt.plot([0,x[-1]],[igm,igm],color='r')
-    plt.plot([0,x[-1]],[0,0],color='k')
+    #plt.scatter(x,data_inf_goal,color='r',s=5)
+    #plt.scatter(x,data_goal,color='b',s=5)
+    #plt.plot([0,x[-1]],[igm,igm],color='r')
+    #plt.plot([0,x[-1]],[0,0],color='k')
+    plt.scatter(data_inf_goal,data_goal,color='r')
+    plt.scatter(data_ent_ang,data_goal,color='k')
     gm = stats.circmean(data_goal,high=np.pi,low=-np.pi)
-    plt.plot([0,x[-1]],[gm,gm],color='b')
+    #plt.plot([0,x[-1]],[gm,gm],color='b')
     plt.ylim([-np.pi,np.pi])
+    plt.xlim([-np.pi,np.pi])
     grand_mean_fc2[i,:] = [igm,gm]
     gm_diff_fc2[i] = stats.circmean(data_diff,low=-np.pi,high=np.pi)
+    
 grand_mean_hdc = np.zeros((len(all_flies_hdc),2))
 gm_diff_hdc = np.zeros(len(all_flies_fc2))
 for i, f in enumerate(all_flies_hdc):
     cxa= all_flies_hdc[f]
-    e_e = cxa.get_entries_exits_like_jumps()
+    if mode=='all':
+        e_e = cxa.get_entries_exits_like_jumps()
+    elif mode=='jumps':
+        e_e = cxa.get_jumps()
     fsb_phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
     heading = cxa.ft2['ft_heading']
     plt.figure()
@@ -149,10 +304,11 @@ for i, f in enumerate(all_flies_hdc):
     data_inf_goal = np.array([])
     data_diff = np.array([])
     for ie,e in enumerate(e_e[1:]):
-        if (e[0]-e_e[ie,1])<30:
-            continue
-        if (e[2]-e[1])<30:
-            continue
+        if mode =='all':
+            if (e[0]-e_e[ie,1])<30:
+                continue
+            if (e[2]-e[1])<30:
+                continue
         
         strt =np.max([e[0]-5,e_e[ie,1]])
         dx = np.arange(strt,e[0])
@@ -173,6 +329,12 @@ for i, f in enumerate(all_flies_hdc):
     plt.ylim([-np.pi,np.pi])
     grand_mean_hdc[i,:] = [igm,gm]
     gm_diff_hdc[i] = stats.circmean(data_diff,low=-np.pi,high=np.pi)
+    
+    
+    
+    
+
+
 plt.figure()
 grand_mean_fc2 = 180*grand_mean_fc2/np.pi
 grand_mean_hdc = 180*grand_mean_hdc/np.pi

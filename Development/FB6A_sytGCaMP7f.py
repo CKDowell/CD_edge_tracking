@@ -127,7 +127,7 @@ for d in datadirs:
     ins = cxa.ft2['instrip'].to_numpy()
     t = np.arange(0,len(heading))/10
     try:
-        cxa.simple_raw_plot(plotphase=False,yeseb=False)
+        cxa.simple_raw_plot(plotphase=True,yeseb=False)
     except:
         x=1
 

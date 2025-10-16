@@ -94,9 +94,10 @@ class CX:
                 slice_num =1
                 mask = mask[:,:,np.newaxis]
             
-            tseries = np.zeros((num_frames,r_num))
+            
             tot_pixels = np.zeros((1,r_num))
             for c in range(num_chans):
+                tseries = np.zeros((num_frames,r_num))
                 for s in range(slice_num):
                     # Load imaging data   
                         

@@ -205,7 +205,7 @@ class opto:
         a_s = meta_data['act_inhib']
         #x,y = self.fictrac_repair(x,y)
         s_type = meta_data['stim_type']
-        plt.figure(figsize=(16,16))
+        #plt.figure(figsize=(16,16))
         if a_s=='act':
             led_colour = [1,0.8,0.8]
         elif a_s=='inhib':
@@ -578,6 +578,106 @@ class opto:
                     'median data': mdn_data
             }
         return out_dict
+    def get_ret_efficiency(self,df,tilt=0,min_duration=0.5):
+        """Gets efficiencies of each plume return"""
+        jumps = False
+        if 'left_border'in df.columns:
+            jumps = True
+        
+        e_e = self.get_entries_exits(df)
+        # Get each entry and exit
+        x = df['ft_posx'].to_numpy()
+        y = df['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        
+        xy = np.append(x[:,np.newaxis],y[:,np.newaxis],axis=1)
+        if tilt>0 and tilt<90:
+            tsign = -np.sign(df['adapted_center'][e_e[0,0]:e_e[0,1]].mean()) # adapted center for first entry, animal should always go upwind for this
+        else:
+            tsign = 1
+            
+        tilt = np.pi*(tilt/180)
+        proj_vec = np.array([np.cos(tilt)*tsign,np.sin(tilt)])
+        
+        
+        tt =ug.get_ft_time(df)
+        dt = np.mean(np.diff(tt))
+        minlen = int(min_duration/dt)
+        #  Efficiency = perp distance/pathlength
+        
+        de = e_e[:,2]-e_e[:,1]
+        e_e = e_e[de>=minlen,:]
+        output = np.zeros(len(e_e))
+        
+        for i,e in enumerate(e_e):
+            dx = np.arange(e[1],e[2])
+            txy = xy[dx,:]
+            txy = txy-txy[0,:]
+            tproj = np.matmul(txy,proj_vec.T)
+            pmax = np.max(tproj)-np.min(tproj)
+            # if jumps:
+            #     dj = np.abs(df['left_border'][e[0]+2]-df['left_border'][e[2]-1])
+            #     pmax = pmax+dj
+            
+            dtxy = np.diff(txy,axis=0)
+            ddist = np.sqrt(np.sum(dtxy**2,axis=1))
+            pathlen = np.sum(ddist)
+            output[i] = pmax/pathlen
+            
+            
+            
+            # if output[i]>0.5:
+            #     print(output[i])
+            #     print(minlen)
+            #     print(e[2]-e[1])
+            #     plt.figure()
+            #     plt.subplot(1,2,1)
+            #     plt.plot(tproj)
+            #     plt.plot(txy[:,0],color='k')
+            #     plt.plot(txy[:,1],color='r')
+            #     plt.subplot(1,2,2)
+            #     plt.plot(txy[:,0],txy[:,1],color='k')
+            #     g=plt.gca()
+            #     g.set_aspect('equal')
+            #     raise ValueError('Not correct efficiency')
+    
+        return output
+            
+            
+            
+            
+    def get_entries_exits(self,df,ent_duration=.25):
+        
+        try:
+            ins = df['instrip'].to_numpy()
+        except:
+            ins = df['mfc2_stpt'].to_numpy()>0
+            if np.sum(ins)==0:
+                ins = df['mfc3_stpt'].to_numpy()>0
+                if np.sum(ins)==0:
+                    print('Cannot detect odour onset')
+                    return
+            ins = ins.astype(int)
+        tt = ug.get_ft_time(df)
+        td = np.mean(np.diff(tt))
+        block,blocksize = ug.find_blocks(ins)
+        block_o = block.copy()
+        thresh = np.round(td/ent_duration).astype(int)
+        bdx = blocksize>=thresh
+        block = block[bdx]
+        blocksize = blocksize[bdx]
+        e_ex = np.zeros((len(block),3),dtype='int')
+        for i,b in enumerate(block):
+            e_ex[i,0] = b
+            e_ex[i,1] = b+blocksize[i]
+            try:
+                next_block = np.min(block_o[block_o>b])
+                e_ex[i,2] = next_block
+            except:
+                e_ex[i,2] = 0
+        if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
+            e_ex = e_ex[:-1,:]
+        return e_ex
     def extract_stats_alternation(self,meta_data,df):
         """
         

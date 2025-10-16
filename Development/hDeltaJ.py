@@ -24,21 +24,28 @@ from Utilities.utils_general import utils_general as ug
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
-for i in [3,2,4]:
-    datadir =os.path.join("Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial"+str(i))
+for i in [1,2,3,4,5]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
     ex = im.fly(name, datadir)
-    ex.register_all_images(overwrite=True)
-    ex.z_projection()
+    #ex.register_all_images(overwrite=True)
+    #ex.z_projection()
     #%
     ex.mask_slice = {'All': [1,2,3,4]}
     ex.t_projection_mask_slice()
 #%% Basic data processing
 experiment_dirs = [
  
-                   "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3"
+                   #"Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\250926\f1\Trial3" # not quite making all jumps, simply anti heading and inhibited in plume
+                   
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1", # Nice trial backwards pointing vector towards plume
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial2", # Again, nice backwards vector towards plume
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial3", # Not amazing tracker, crossed over plumes
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial4", # ACV pulses
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial5" # Oct pulses
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -63,6 +70,8 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%% Data exploration
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\240529\\f1\Trial3"
+cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
 cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'])
 #cxa.simple_raw_plot(plotphase=True)

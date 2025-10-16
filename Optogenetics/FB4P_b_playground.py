@@ -106,6 +106,7 @@ flies = [
 meta_data['stim_type'] = 'alternation'
 meta_data['act_inhib'] = 'inhib'
 for i,f in enumerate(flies):
+    plt.figure()
     searchdir = os.path.join(rootdir,f)
     indir = os.listdir(searchdir)
     datadir= os.path.join(searchdir,indir[0])
@@ -114,6 +115,51 @@ for i,f in enumerate(flies):
     df = fc.read_log(savepath)
     op = opto()
     op.plot_plume_simple(meta_data,df)
+#%% Sansu test
+rootdir = r"F:\MB022B_GtACR1"
+plt.close('all')
+flies = [
+    
+    r'250911\f1\Trial1_Control',
+    r'250911\f1\Trial2_Test',
+    
+    r'250912\f1\Trial1_Control',
+    r'250912\f1\Trial2_Test',
+    
+    r'250919\f1\Trial1_Control',
+    r'250919\f1\Trial3_Test',
+    
+    r'250916\f1\Trial1_Test',
+    r'250916\f1\Trial2_Control',
+    
+    
+    
+    r'250919\f3\Trial1_Test',
+    r'250919\f3\Trial2_Control',
+    
+    r'250923\f1\Trial1_Test',
+    r'250923\f1\Trial2_Control',
+    ]
+
+meta_data['stim_type'] = 'alternation_jump'
+meta_data['act_inhib'] = 'inhib'
+for i,f in enumerate(flies):
+    searchdir = os.path.join(rootdir,f)
+    indir = os.listdir(searchdir)
+    datadir= os.path.join(searchdir,indir[0])
+    files = os.listdir(datadir)
+    tfile = [ir for ir in files if ir.endswith('.log')][0]
+    savepath = os.path.join(datadir,tfile)
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure(i)
+    try:
+        meta_data['stim_type'] = 'alternation_jump'
+        op.plot_plume_simple(meta_data,df)
+    except:
+        meta_data['stim_type'] = 'alternation'
+        op.plot_plume_simple(meta_data,df)
+    plt.title(f)
 
 #%% Inhibition jumps - Test
 # Need: 4 more good trackers before analysis
