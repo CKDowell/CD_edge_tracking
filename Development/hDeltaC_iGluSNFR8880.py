@@ -40,13 +40,13 @@ for i in [1]:
     
 #%%
 experiment_dirs = [
-    "Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial2", #volumetric not many entries
+    #"Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial2", #volumetric not many entries
     "Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial3", # Single plane lots of entries and jumps
     "Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f2\\Trial1",#Volumetric some plume entries
     ]
 #regions = ['fsb_whole','fsb_upper']
 regions = ['fsb_upper','fsb_lower']
-regions = ['fsb_upper_whole','fsb_lower_whole','fsb_upper','fsb_lower']
+# regions = ['fsb_upper_whole','fsb_lower_whole','fsb_upper','fsb_lower']
 for e in experiment_dirs:
     datadir =os.path.join(e)
     print(e)
@@ -63,15 +63,15 @@ for e in experiment_dirs:
     cx.crop = False
     cx.save_postprocessing(uperiod=0.02)
     pv2, ft, ft2, ix = cx.load_postprocessing()
-    cxa = CX_a(datadir,regions=['fsb_upper'],yoking=False)
+    cxa = CX_a(datadir,regions,yoking=False)
     cxa.save_phases()
-    cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper'],yeseb=False,yk='eb')
+    #cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper'],yeseb=False,yk='eb')
     
 
 
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yeseb=False,yk='eb')
 #%%
-cxa = CX_a(experiment_dirs[1],regions=['fsb_upper'],yoking=False,denovo=True)
+cxa = CX_a(experiment_dirs[0],regions=['fsb_upper'],yoking=False,denovo=False)
 cxt = CX_tan(experiment_dirs[1],tnstring='0_fsb_whole')
 plt.figure()
 plt.plot(cxt.ca)

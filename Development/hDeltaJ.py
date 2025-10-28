@@ -12,7 +12,7 @@ import src.utilities.funcs as fc
 from analysis_funs.optogenetics import opto 
 import os
 import matplotlib.pyplot as plt 
-from src.utilities import imaging as im
+from analysis_funs.utilities import imaging as im
 from skimage import io, data, registration, filters, measure
 from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
@@ -23,29 +23,57 @@ from Utilities.utils_general import utils_general as ug
 
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
-
-for i in [1,2,3,4,5]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial"+str(i))
+from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
+for i in [2]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
-    ex = im.fly(name, datadir)
-    #ex.register_all_images(overwrite=True)
-    #ex.z_projection()
+    # ex = im.fly(name, datadir)
+    # ex.register_all_images(overwrite=True)
+    
+    cxcai = CX_cai(datadir,dual_color=False)
+    cxcai.register_rigid()
+    
+   # ex.z_projection()
     #%
-    ex.mask_slice = {'All': [1,2,3,4]}
-    ex.t_projection_mask_slice()
+    cxcai.ex.mask_slice = {'All': [1,2,3,4]}
+    cxcai.ex.t_projection_mask_slice()
+    
+    
+
 #%% Basic data processing
 experiment_dirs = [
  
                    #"Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
                    #r"Y:\Data\FCI\Hedwig\hDeltaJ\250926\f1\Trial3" # not quite making all jumps, simply anti heading and inhibited in plume
                    
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1", # Nice trial backwards pointing vector towards plume
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial2", # Again, nice backwards vector towards plume
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial3", # Not amazing tracker, crossed over plumes
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial4", # ACV pulses
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial5" # Oct pulses
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1", # Nice trial backwards pointing vector towards plume
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial2", # Again, nice backwards vector towards plume
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial3", # Not amazing tracker, crossed over plumes
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial4", # ACV pulses
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial5", # Oct pulses
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial1", # Vector towards plume, not pointing downwind as much
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2", # Vector towards plume, not pointing downwind as much, a lot like FC2
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial3",
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial5", # ACV pulses -not walking
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial6", # Oct pulses - not walking
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial1", # Running through plumes, activity becomes backwards pointing vector
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial3", # Neuron pointing in odd direction
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial4", # Goes through multiple plumes, goes from backwards vector to goal with ET. Very interesting
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial5", # Oct pulses
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial6" # ACV pulses
+                   
+                   
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial1", # not many entries, backwards pointing and some goal pointing
+                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial2", #Problems with image registration. Multiple plumes, very interesting dataset, looks like neurons poitn backwards after exit to where first turn was. Some integration of stim
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial3", # Interesting pointing again, alternation between backwards and goal. Sample moves a bit even after reg, which is not good
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial4", # Oct pulses
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial5" # ACV pulses
+                   
+                   
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -70,10 +98,11 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%% Data exploration
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\240529\\f1\Trial3"
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial3"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
-cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'])
+cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'])
+cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'],np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
 #cxa.simple_raw_plot(plotphase=True)
 #%% 
 cxa.point2point_heat(3500,4500,toffset=0,arrowpoint=np.array([50,243,500,600,700,800,900]))
@@ -81,10 +110,14 @@ cxa.point2point_heat(0,1000,toffset=0,arrowpoint=np.array([50,243,500,600,700,80
 
 #%% Jump arrows
 datadirs = [
-    "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3"]
+    "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
+    r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1",
+    r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2"
+    ]
 plt.close('all')
 x_offset = 0
 plt.figure()
+
 for datadir in datadirs:
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -94,12 +127,122 @@ for datadir in datadirs:
     x_offset = x_offset+30
 
 
-plt.ylim([-40,40])
+plt.ylim([-150,150])
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\hDeltaJ'
 plt.savefig(os.path.join(savedir,'MeanJumps.png'))
 plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
+#%% Columnar regression
+plt.close('all')
+from analysis_funs.column_correlation import CX_corr
+
+cxc = CX_corr(cxa)
+cxc.set_up_regressors(['eb','ret goal','leave goal','pre bias'],delays=[0],use_odour_delay=True)
+cxc.run('fsb_upper',plot_diagnostic=True)
 #%%
-cxa.mean_jump_arrows(x_offset,fsb_names=['fsb_upper'])
+#%% peaks in fluoriescence/coherence
+plt.close('all')
+wed = cxa.pdat['wedges_fsb_upper']
+phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+heading = cxa.ft2['ft_heading'].to_numpy()
+pva = ug.get_pvas(wed)
+wmean = np.mean(wed,axis=1)
+pvaz = (pva-np.mean(pva))/np.std(pva)
+wmz = (wmean-np.mean(wmean))/np.std(wmean)
+
+wmzs = sg.savgol_filter(wmz,20,3)
+#plt.plot(pvaz,color='k')
+plt.plot(wmz,color=[0.5,0.5,0.5])
+plt.plot(wmzs,color=[0.2,0.2,0.2])
+plt.plot(cxa.ft2['instrip']*2,color='r')
+
+e_e = cxa.get_entries_exits_like_jumps()
+e_flur = wmzs[e_e[:,0]]
+f_recovery = np.zeros(len(e_flur),dtype='int')
+f_recovery_peak = np.zeros_like(f_recovery)
+
+for i,e in enumerate(e_e):
+    dx = np.arange(e[1],e[2])
+    tw = wmzs[dx]
+    tfl = e_flur[i]
+    try:
+        f_recovery[i] = dx[np.where(tw>tfl)[0][0]]
+        dx2 = np.arange(f_recovery[i],f_recovery[i]+100) # look 10s into future
+        peaks,_ = sg.find_peaks(wmzs[dx2])
+        f_recovery_peak[i] = np.min(peaks)+f_recovery[i]
+    except:
+        continue
+
+plt.scatter(e_e[:,0],e_flur,color='g',zorder=10)
+plt.scatter(f_recovery,wmzs[f_recovery],color='r',zorder=9)
+plt.scatter(f_recovery_peak,wmzs[f_recovery_peak],color='m',zorder=11)
+
+
+e_phase = phase[e_e[:,0]]
+e_heading = heading[e_e[:,0]]
+recdx = f_recovery>0
+e_phase = e_phase[recdx]
+e_heading = e_heading[recdx]
+f_recovery = f_recovery[recdx]
+f_recovery_peak = f_recovery_peak[recdx]
+
+
+rec_phase =  phase[f_recovery]
+rec_peak_phase = phase[f_recovery_peak]
+rec_heading = heading[f_recovery]
+rec_peak_heading = heading[f_recovery]
+
+plt.figure()
+#plt.scatter(e_heading,rec_phase,color='k')
+plt.scatter(e_heading,rec_peak_phase,color=[1,0.5,0.5])
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.xlabel('Entry heading')
+plt.ylabel('Recovery phase')
+
+plt.figure()
+#plt.scatter(e_phase,rec_phase,color='k')
+plt.scatter(e_phase,rec_peak_phase,color=[1,0.5,0.5])
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.xlabel('Entry phase')
+plt.ylabel('Recovery phase')
+
+plt.figure()
+#plt.scatter(rec_heading,rec_phase,color='k')
+plt.scatter(rec_peak_heading,rec_peak_phase,color=[1,0.5,0.5])
+plt.xlim([-np.pi,np.pi])
+plt.ylim([-np.pi,np.pi])
+plt.xlabel('Recovery heading')
+plt.ylabel('Recovery phase')
+#%%
+e_e = cxa.get_entries_exits_like_jumps()
+
+
+
+
+phase_eb = cxa.pdat['phase_eb']
+phase_fsb = cxa.pdat['phase_fsb_upper']
+heading = cxa.ft2['ft_heading'].to_numpy()
+dx = np.arange(0,e_e[0,0])
+plt.figure()
+plt.scatter(phase_eb,phase_fsb,color='k',s=2,alpha=.2)
+plt.scatter(phase_eb[dx],phase_fsb[dx],color='g',s=2)
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r',linestyle='--')
+plt.plot([-np.pi,0],[0,np.pi],color='r',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='r',linestyle='--')
+
+plt.figure()
+plt.scatter(heading,phase_eb,color='k',s=2)
+plt.scatter(heading[dx],phase_eb[dx],color='g',s=2)
+plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r',linestyle='--')
+plt.plot([-np.pi,0],[0,np.pi],color='r',linestyle='--')
+plt.plot([0,np.pi],[-np.pi,0],color='r',linestyle='--')
+#%% Wedge regression - long pipeline may want to use elsewhere
+
+ 
+
+
+
 #%% regression for hDj
 regchoice = ['odour onset', 'odour offset', 'in odour', 
                              'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',

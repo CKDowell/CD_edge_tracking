@@ -412,7 +412,7 @@ class fly:
         return slice_stacks
 
 
-    def register_image_block(self, files, ini_reg_frames=600):
+    def register_image_block(self, files, ini_reg_frames=600,two_scale = True,scale=0.5):
         from pystackreg import StackReg
         
         f = files
@@ -426,10 +426,8 @@ class fly:
         if idxe==idx:
             runorder=True
         else:
-            runorder = False
-        
+            runorder = False        
         #images = io.imread_collection(f)
-        
         # CD edit 08/10/2024 
         # Simplifying and speeding up image loading
         print('Loading data...')
@@ -468,11 +466,24 @@ class fly:
         registered = np.zeros(original.shape)
         registered_blurred = np.zeros(original.shape)
         sr = StackReg(StackReg.RIGID_BODY)
-        #out_previous = sr.register_transform_stack(original, reference=reference)
-        registered = sr.register_transform_stack(original, reference='mean')#, n_frames=20, moving_average = 20)
+        
+        if two_scale: 
+            # register image on a lower res scale first to deal with large shifts. Then high res scale
+            downsampledim = fn.downsample_stack(original,scale_yx=(scale,scale))
+            print('Coarse registration, scale', scale)
+            tmat = sr.register_stack(downsampledim,reference='mean')
+            tmat_rescale = tmat.copy()
+            tmat_rescale[:,[0,1],2] = tmat_rescale[:,[0,1],2] /scale
+            registered_coarse = sr.transform_stack(original,tmats=tmat_rescale)
+            print('Full registration')
+            registered = sr.register_transform_stack(registered_coarse,reference='mean')
+        else:
+            registered = sr.register_transform_stack(original, reference='mean')#, n_frames=20, moving_average = 20)
+            
         for i, frame in enumerate(registered):
             registered_blurred[i] = filters.gaussian(frame, 1)
         reg_results = {}
+
         return reg_results, registered_blurred
 
     def register_all_images(self, overwrite=True):

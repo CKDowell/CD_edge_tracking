@@ -27,6 +27,82 @@ from scipy.stats import circmean, circstd
 
 plt.rcParams['pdf.fonttype'] = 42 
 
+#%% registration check
+from pystackreg import StackReg
+datadir = r"D:\Tests\registration_test\reg_test.tif"
+images = io.imread(datadir)
+sr = StackReg(StackReg.RIGID_BODY)
+registered = sr.register_transform_stack(images, reference='mean')
+tif_name = r"D:\Tests\registration_test\reg_test_registered1.tif"
+io.imsave(tif_name, registered, plugin='tifffile')
+
+tmat = sr.register_stack(registered, reference='mean')
+registered_log = sr.transform_stack(images,tmats=tmat)
+tif_name = r"D:\Tests\registration_test\reg_test_registered2.tif"
+io.imsave(tif_name, registered_log, plugin='tifffile')
+#%% 
+import cv2
+scale = 1/2.5
+
+import concurrent.futures
+
+def resize_stack_parallel(stack, scale_yx=(0.5, 0.5), interpolation=cv2.INTER_LINEAR):
+    T, Y, X = stack.shape
+    new_Y = int(round(Y * scale_yx[0]))
+    new_X = int(round(X * scale_yx[1]))
+
+    def resize_frame(frame):
+        return cv2.resize(frame, (new_X, new_Y), interpolation=interpolation)
+
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        frames = list(ex.map(resize_frame, stack))
+    return np.stack(frames)
+
+
+imresize = resize_stack_parallel(images,scale_yx=(scale, scale))
+sr = StackReg(StackReg.RIGID_BODY)
+
+tmat = sr.register_stack(imresize,reference='mean')
+tmat_rescale = tmat.copy()
+tmat_rescale[:,[0,1],2] = tmat_rescale[:,[0,1],2] /scale
+registered_coarse = sr.transform_stack(images,tmats=tmat_rescale)
+tif_name = r"D:\Tests\registration_test\reg_test_registered3_coarse.tif"
+io.imsave(tif_name, registered_coarse, plugin='tifffile')
+
+registered_small = sr.transform_stack(imresize,tmats=tmat)
+tif_name = r"D:\Tests\registration_test\reg_test_registered3_small.tif"
+io.imsave(tif_name, registered_small, plugin='tifffile')
+
+registered_full = sr.register_transform_stack(registered_coarse,reference='mean')
+tif_name = r"D:\Tests\registration_test\reg_test_registered3_full.tif"
+
+io.imsave(tif_name, registered_full, plugin='tifffile')
+#%%
+registered = sr.register_transform_stack(images, reference='previous',moving_average=100)
+tif_name = r"D:\Tests\registration_test\reg_test_registered_moving_average.tif"
+io.imsave(tif_name, registered, plugin='tifffile')
+
+#%% 
+
+from scipy.ndimage import fourier_shift
+
+def register_stack_translation(stack):
+    ref = np.mean(stack, axis=0)
+    aligned = np.empty_like(stack)
+    shifts = []
+
+    for t in range(stack.shape[0]):
+        shift, _ = cv2.phaseCorrelate(np.float32(ref), np.float32(stack[t]))
+        shifted = fourier_shift(np.fft.fftn(stack[t]), shift[::-1])
+        aligned[t] = np.fft.ifftn(shifted).real
+        shifts.append(shift)
+    return aligned, np.array(shifts)
+
+al_im,shifts = register_stack_translation(images)
+
+
+tif_name = r"D:\Tests\registration_test\reg_test_registered_cv2.tif"
+io.imsave(tif_name, al_im, plugin='tifffile')
 #%%
 pdiff = ug.circ_subtract(cxa.pdat['phase_fsb_upper'],cxa.pdat['phase_eb'])
 plt.hist(pdiff,bins=60)

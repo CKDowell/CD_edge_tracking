@@ -40,13 +40,13 @@ for i in [1,2,3,4]:
     ex.t_projection_mask_slice()
 #%%
 experiment_dirs = [
-    # r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\Trial1",
-    # r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\\Trial2"
-   # r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial5"               .
-   # r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial3"   
-# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial1",
-# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial2",
-# r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial3"
+    r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\Trial1",
+    r"Y:\Data\FCI\Hedwig\FB6A_SS95731_iGluSNFR\250911\f1\\Trial2",
+   r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial5",               
+   r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f2\Trial3",   
+r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial1",
+r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial2",
+r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251008\f1\Trial3",
 r"Y:\Data\FCI\Hedwig\FB5I_SS100553_iGluSNFR4\251010\f1\Trial3"
                    ]
 regions = ['fsb']

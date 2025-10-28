@@ -76,8 +76,8 @@ for e in experiment_dirs:
     
 #%% Co with pb
 experiment_dirs = [
-                   #r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial1",
-                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial4",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial3",
+                   #r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial4",
                    
                    ]
 regions = ['pb','fsb']
@@ -100,11 +100,13 @@ for e in experiment_dirs:
     cxa = CX_a(datadir,regions=regions,yoking=True,delta7=True)
     
     cxa.save_phases()
+#%%
+
 #%% 
 datadir= r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial1"
 cxa = CX_a(datadir,regions=regions,yoking=False,denovo=False)
 
-cxa.simple_raw_plot(plotphase=False,yeseb=False)
+cxa.simple_raw_plot_new(regions=regions)
 #%%
 plt.close('all')
 datadirs = [r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250813\f1\Trial1",
@@ -120,6 +122,7 @@ r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f1\Trial2",
 r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f1\Trial3",
 r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial2",
 ]
+regions = ['fsb']
 for d in datadirs:
     cxa = CX_a(d,regions=regions,yoking=False,denovo=False)
     phase = cxa.pdat['phase_fsb']
@@ -167,7 +170,7 @@ for e in experiment_dirs:
 #%%
 from analysis_funs.CX_analysis_tan import CX_tan
 #%%
-datadir = r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial1"
+datadir = r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial2"
 cxt = CX_tan(datadir) 
 
 #%%

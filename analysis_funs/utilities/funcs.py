@@ -12,7 +12,8 @@ import numpy.fft as fft
 from rdp import rdp
 from scipy.optimize import curve_fit
 import statsmodels.api as sm
-
+import cv2
+import concurrent.futures
 
 def save_obj(obj, name):
     """
@@ -47,6 +48,23 @@ def load_obj(name):
     """
     with open(name, 'rb') as f:
         return pickle.load(f)
+
+def downsample_stack(stack, scale_yx=(0.5, 0.5), interpolation=cv2.INTER_LINEAR):
+    """
+    Downsamples stack image
+    
+    """
+    T, Y, X = stack.shape
+    new_Y = int(round(Y * scale_yx[0]))
+    new_X = int(round(X * scale_yx[1]))
+
+    def resize_frame(frame):
+        return cv2.resize(frame, (new_X, new_Y), interpolation=interpolation)
+
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        frames = list(ex.map(resize_frame, stack))
+    return np.stack(frames)
+    
 
 def read_log(fileloc):
     """
@@ -422,16 +440,25 @@ def lnorm_dynamic(signal):
     signal[np.isnan(signal)] = 0
     frac = 1/4
     lowess = sm.nonparametric.lowess
-    yf = lowess(signal,np.arange(0,len(signal)),frac=frac)
-    df = signal-yf[:,1]
-    plt.figure()
-    plt.plot(signal)
-    plt.plot(yf[:,1])
-    plt.plot(df)
-    plt.show()
-    f0 = np.percentile(signal,5,axis=0)
-    fm = np.percentile(signal,97,axis=0)
-    newsignal = df/(fm-f0)
+    t = np.arange(len(signal))
+    t_ds = t[::10]#downsample by factor 10
+    signal_ds = signal[::10]
+    
+    yf = lowess(signal_ds,t_ds,frac=frac)
+    yf_up = np.interp(t,t_ds,yf[:,1])
+    
+    df = signal-yf_up
+    
+    f0 = np.percentile(df,5,axis=0)
+    fm = np.percentile(df,97,axis=0)
+    newsignal = (df-f0)/(fm-f0)
+    # plt.figure()
+    # plt.plot(yf_up)
+    # plt.plot(newsignal)
+    # plt.plot(signal)
+    # plt.plot(yf[:,1])
+    # plt.plot(df)
+    # plt.show()
     return newsignal
 def closest_argmin(A, B):
     """

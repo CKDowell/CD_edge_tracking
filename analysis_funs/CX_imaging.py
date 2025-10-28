@@ -199,11 +199,11 @@ class CX:
         yoke_wedges.fillna(method='ffill', inplace=True)
         yoke_wedges = yoke_wedges.to_numpy()
         if yoke_roi=='pb':
-            pb_wedges = np.zeros_like(yoke_wedges)
-            pb_wedges[:,self.pb_logic2anat] = yoke_wedges # Alignement to anatomy from imaging
-            pb_wedges = np.fliplr(pb_wedges) # Flip lr
-            phase,amp = fn.get_fftphase(pb_wedges)
-            
+            # pb_wedges = np.zeros_like(yoke_wedges)
+            # pb_wedges[:,self.pb_logic2anat] = yoke_wedges # Alignement to anatomy from imaging
+            # pb_wedges = np.fliplr(pb_wedges) # Flip lr
+            # phase,amp = fn.get_fftphase(pb_wedges)
+            phase,amp = self.get_centroidphase(yoke_wedges)
         else:
             phase,amp = self.get_centroidphase(yoke_wedges)
             

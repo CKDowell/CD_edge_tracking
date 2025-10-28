@@ -76,7 +76,8 @@ for i,datadir in enumerate(datadirs_fc2_pam):
     
 datadirs_hdj = [
                 r"Y:\Data\FCI\Hedwig\hDeltaJ\240529\f1\Trial3",#Good pointer
-                ]
+                r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1",
+                r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2"]
 
 all_flies_hdj = {}
 etp_hdj = {}
@@ -86,7 +87,96 @@ for i,datadir in enumerate(datadirs_hdj):
     all_flies_hdj.update({str(i):cxa})
     etp = ET_paper(datadir)
     etp_hdj.update({str(i):etp})
+#%% Columnar regression
+# FC2
+plt.close('all')
+from analysis_funs.column_correlation import CX_corr
+pmat = np.zeros((len(all_flies_fc2)*16+len(all_flies_fc2),200))
+sides = np.zeros(len(all_flies_fc2))
+p_phase = np.zeros((len(all_flies_fc2),200))
+delays = [0]
+for f in all_flies_fc2:
+    cxa = all_flies_fc2[f]
+    cxc = CX_corr(cxa)
+    cxc.set_up_regressors(['eb','ret goal'],delays=delays,use_odour_delay=False,offset=True)
+    cxc.run('fsb_upper',plot_diagnostic=False,fit_type='ridge',enforce_conn=False,conn_off=0,dilation=1)
+    #cxc.cxa.plot_traj_arrow_new(['fsb_upper','fsb_upper_pred'],a_sep=5)
+    dx = np.arange(int(f)*16+int(f),(int(f)+1)*16+int(f))
+    pmat[dx,:cxc.all_params.shape[1]] = cxc.all_params
+    cxa.get_jumps()
+    sides[int(f)] = cxa.side
+    params = cxc.all_params
     
+    p = ug.phase_from_wed(params.T)
+    p_phase[int(f),:params.shape[1]] = p
+    
+pmat[pmat==0] = np.nan
+p_phase[p_phase==0] = np.nan
+plt.figure()
+plt.imshow(pmat,aspect='auto',interpolation='none',cmap='coolwarm',vmax=0.4,vmin=-0.4)
+phase_plot = 7.5*(p_phase+np.pi)/np.pi
+yticks = np.array([])
+for i,s in enumerate(sides):
+    if s==-1:
+        plt.text(200,(i+1)*16+i-8,'Right')
+    else:
+        plt.text(200,(i+1)*16+i-8,'Left')
+        
+    tp = phase_plot[i,:]+i*16+i
+    x = np.arange(0,200)
+    plt.scatter(x,tp,color='k',s=5)
+    
+    plt.plot([0,200],[(i+1)*16+i-8,(i+1)*16+i-8],color='k',linestyle='--')
+    yticks = np.append(yticks,[(i)*16+i-.5,(i+1)*16+i-.5])
+plt.yticks(yticks,[])
+plt.xticks(cxc.param_ticks[1:]-0.5,['EB','Return offset'])
+#%% hDeltaC
+plt.close('all')
+from analysis_funs.column_correlation import CX_corr
+pmat = np.zeros((len(all_flies_hdc)*16+len(all_flies_hdc),500))
+sides = np.zeros(len(all_flies_hdc))
+for f in all_flies_hdc:
+    cxa = all_flies_hdc[f]
+    cxc = CX_corr(cxa)
+    cxc.set_up_regressors(['eb','ret goal','leave goal','pre bias'],delays=[0],use_odour_delay=True,offset=True)
+    cxc.run('fsb_upper',plot_diagnostic=False)
+    dx = np.arange(int(f)*16+int(f),(int(f)+1)*16+int(f))
+    pmat[dx,:cxc.all_params.shape[1]] = cxc.all_params
+    cxa.get_jumps()
+    sides[int(f)] = cxa.side
+    
+pmat[pmat==0] = np.nan
+plt.imshow(pmat,aspect='auto',interpolation='none',cmap='coolwarm',vmax=0.4,vmin=-0.4)
+for i,s in enumerate(sides):
+    if s==-1:
+        plt.text(400,(i+1)*16+i-8,'Right')
+    else:
+        plt.text(400,(i+1)*16+i-8,'Left')
+    plt.plot([0,400],[(i+1)*16+i-8,(i+1)*16+i-8],color='k',linestyle='--')
+#%% hDeltaJ
+plt.close('all')
+from analysis_funs.column_correlation import CX_corr
+pmat = np.zeros((len(all_flies_hdj)*16+len(all_flies_hdj),500))
+sides = np.zeros(len(all_flies_hdj))
+for f in all_flies_hdj:
+    cxa = all_flies_hdj[f]
+    cxc = CX_corr(cxa)
+    
+    cxc.set_up_regressors(['eb','ret goal','leave goal','pre bias'],delays=[0],use_odour_delay=True,offset=True)
+    cxc.run('fsb_upper',plot_diagnostic=False,fit_type='ridge',enforce_conn=False,conn_off=5,dilation=0)
+    dx = np.arange(int(f)*16+int(f),(int(f)+1)*16+int(f))
+    pmat[dx,:cxc.all_params.shape[1]] = cxc.all_params
+    cxa.get_jumps()
+    sides[int(f)] = cxa.side
+    
+pmat[pmat==0] = np.nan
+plt.imshow(pmat,aspect='auto',interpolation='none',cmap='coolwarm',vmax=0.4,vmin=-0.4)
+for i,s in enumerate(sides):
+    if s==-1:
+        plt.text(400,(i+1)*16+i-8,'Right')
+    else:
+        plt.text(400,(i+1)*16+i-8,'Left')
+    plt.plot([0,400],[(i+1)*16+i-8,(i+1)*16+i-8],color='k',linestyle='--')
 #%% Pre vs post reinforcement/threshold
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_PAM'
 datadirs = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",

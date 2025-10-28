@@ -26,7 +26,7 @@ plt.rcParams['pdf.fonttype'] = 42
 #%% Image registraion
 
 for i in [1,2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251014\f2", "Trial"+str(i))
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251017\f1", "Trial"+str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -39,29 +39,35 @@ for i in [1,2]:
     
     
 #%%
-datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251014\f2\Trial1"
+datadirs=[ 
+    #r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251014\f2\Trial1", # not great behaviour proof of principle
+          #r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251017\f1\Trial1",# 20 entries plume traversals
+          r"Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251017\f1\Trial2",# some entries and exits
+          ]
 
   
-regions = ['eb','fsb_upper_1','fsb_lower_1','fsb_upper_2']
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
 
-cx = CX(name,regions,datadir)
-
-# save preprocessing, consolidates behavioural data
-cx.save_preprocessing()
-# Process ROIs and saves csv
-cx.process_rois()
-# Post processing, saves data as h5
-cx.crop = False
-cx.save_postprocessing()#upsample to 50Hz
-pv2, ft, ft2, ix = cx.load_postprocessing()
-#Channel 2 = Green, Channel 1 = red
-regions = ['eb_ch1','eb_ch2','fsb_upper_1_ch1','fsb_lower_1_ch1','fsb_upper_2_ch2']
-#regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
-cxa = CX_a(datadir,regions=regions,yoking=True)
-cxa.save_phases()
-cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
+for datadir in datadirs:
+    regions = ['eb','fsb_upper_1','fsb_lower_1','fsb_upper_2']
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    
+    cx = CX(name,regions,datadir)
+    
+    # save preprocessing, consolidates behavioural data
+    cx.save_preprocessing()
+    # Process ROIs and saves csv
+    cx.process_rois()
+    # Post processing, saves data as h5
+    cx.crop = False
+    cx.save_postprocessing()#upsample to 50Hz
+    pv2, ft, ft2, ix = cx.load_postprocessing()
+    #Channel 2 = Green, Channel 1 = red
+    regions = ['eb_ch1','eb_ch2','fsb_upper_1_ch1','fsb_lower_1_ch1','fsb_upper_2_ch2']
+    #regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
+    cxa = CX_a(datadir,regions=regions,yoking=True)
+    cxa.save_phases()
+    cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
 
 #%%
 regions2 = ['eb_ch1','eb_ch2','fsb_upper_1_ch1','fsb_upper_2_ch2']

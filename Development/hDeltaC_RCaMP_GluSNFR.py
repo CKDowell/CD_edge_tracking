@@ -38,7 +38,7 @@ for i in [1,2]:
     ex.t_projection_mask_slice()
     
 #%%
-datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250715\f2\Trial2"
+datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250513\f1\Trial2"
 
   
 regions = ['fsb_upper','fsb_lower']
@@ -59,7 +59,13 @@ pv2, ft, ft2, ix = cx.load_postprocessing()
 regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
 cxa = CX_a(datadir,regions=regions,yoking=False)
 
-cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
+cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
+#%% Quick load
+datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250715\f2\Trial2"
+
+regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
+cxa = CX_a(datadir,regions=regions,yoking=False)
+
 #%%
 w1 = np.mean(cxa.pdat['wedges_fsb_upper_ch1'],axis=1)
 w2 = np.mean(cxa.pdat['wedges_fsb_upper_ch2'],axis=1)

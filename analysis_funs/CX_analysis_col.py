@@ -25,6 +25,7 @@ class CX_a:
     def __init__(self,datadir,regions =['eb','fsb'],Andy=False,denovo=True,yoking=True,stim=False,suspend=False,delta7=False):
         # Will need to edit more if yoking to PB and multiple FSB layers
         self.stab = regions[0]
+        self.regions = regions
         if self.stab=='pb':
             # Array to convert numbering of PB glomeruli from logical space to anatomical space
             self.logic2anat = np.array([8,0,9,1,10,2,11,3,12,4,13,5,14,6,15,7],dtype='int')
@@ -480,6 +481,7 @@ class CX_a:
         plt.figure()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
         strip = self.ft2['instrip'].to_numpy()
         plt.plot(x,y,color='k')
         plt.scatter(x[strip>0],y[strip>0],c='r',s=15)
@@ -1829,7 +1831,7 @@ class CX_a:
         # Pick the most common side
         v,c = np.unique(jns,return_counts=True)
         side = v[np.argmax(c)]
-        self.side = side
+        self.side = side # -1 is leftward jumps ie tracking right side, ie left goal
         # Get time of return: choose quick returns
         dt = []
         for i,j in enumerate(jn):
@@ -2563,7 +2565,8 @@ class CX_a:
         for i,r in enumerate(regions):
             phases[:,i] = self.pdat['offset_'+r+'_phase'].to_numpy()
             amps[:,i] = np.mean(self.pdat['wedges_'+r],axis=1)
-            
+            if np.min(amps[:,i])<0:
+                amps[:,i] = amps[:,i]-np.min(amps[amps[:,i]<0,i])
         amp_eb = self.amp_eb.copy()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
@@ -2599,7 +2602,7 @@ class CX_a:
         if traindat:
             it = it[is1:]
             mfc = mfc[is1:]
-        phases = phases[is1:]
+        phases = phases[is1:,:]
         phase_eb = phase_eb[is1:]
         amps = amps[is1:]
         amp_eb = amp_eb[is1:]
@@ -2645,6 +2648,7 @@ class CX_a:
         
         
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False,fulldat=True):
+        
         phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
         
         #phase_eb = self.phase_eb

@@ -65,6 +65,22 @@ cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
 #%%
 datadir= r"Y:\Data\FCI\Hedwig\60D05\250725\f1\Trial3"
 
+regions = ['pb']
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+
+cx = CX(name,regions,datadir)
+
+# save preprocessing, consolidates behavioural data
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()#upsample to 50Hz
+pv2, ft, ft2, ix = cx.load_postprocessing()
+
+
 #Channel 2 = Green, Channel 1 = red
 regions = ['pb_ch1','pb_ch2']
 cxa = CX_a(datadir,regions=regions,yoking=False)
