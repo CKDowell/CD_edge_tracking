@@ -23,22 +23,19 @@ from Utilities.utils_general import utils_general as ug
 
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
-from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
-for i in [2]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial"+str(i))
+for i in [1,2,3]:
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1",'Trial' +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
-    # ex = im.fly(name, datadir)
+    ex = im.fly(name, datadir)
     # ex.register_all_images(overwrite=True)
     
-    cxcai = CX_cai(datadir,dual_color=False)
-    cxcai.register_rigid()
     
    # ex.z_projection()
     #%
-    cxcai.ex.mask_slice = {'All': [1,2,3,4]}
-    cxcai.ex.t_projection_mask_slice()
+    ex.mask_slice = {'All': [1,2,3,4]}
+    ex.t_projection_mask_slice()
     
     
 
@@ -98,11 +95,12 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%% Data exploration
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial3"
+
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial3"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
 cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'])
-cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'],np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'],np.mean(cxa.pdat['wedges_fsb_upper']/4,axis=1),a_sep= 4)
 #cxa.simple_raw_plot(plotphase=True)
 #%% 
 cxa.point2point_heat(3500,4500,toffset=0,arrowpoint=np.array([50,243,500,600,700,800,900]))
@@ -131,6 +129,30 @@ plt.ylim([-150,150])
 savedir= 'Y:\\Data\\FCI\\FCI_summaries\\hDeltaJ'
 plt.savefig(os.path.join(savedir,'MeanJumps.png'))
 plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
+
+#%% Look back analysis
+mnfluor = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+mnfluor = (mnfluor-np.mean(mnfluor))/np.std(mnfluor)
+ins = cxa.ft2['instrip'].to_numpy()
+pva = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+pva = (pva-np.mean(pva))/np.std(pva)
+u = ug()
+_,_,velocity = u.get_velocity(cxa.ft2['ft_posx'],cxa.ft2['ft_posy'],cxa.pv2['relative_time'])
+velocity = velocity/(np.std(velocity))
+#plt.plot(mnfluor,color='k')
+plt.plot(ins,color='r')
+mnfluors = sg.savgol_filter(mnfluor,20,3)
+plt.plot(mnfluors,color='b')
+plt.plot(velocity,color=[0.5,0.5,0.5])
+#plt.plot(pva,color='k')
+pvas = sg.savgol_filter(pva,20,3)
+plt.plot(pvas,color='m')
+
+
+
+
+
+
 #%% Columnar regression
 plt.close('all')
 from analysis_funs.column_correlation import CX_corr

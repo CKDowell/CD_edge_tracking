@@ -1175,6 +1175,10 @@ class CX_a:
             
             
     def jump_return_details(self,fsb_region='fsb_upper',flynum=0,index_type='jumps'):
+        try:
+            self.get_jumps() # needed to termine tracking side
+        except:
+            self.side=-1    
         if index_type=='jumps':
         
             jumps = self.get_jumps()
