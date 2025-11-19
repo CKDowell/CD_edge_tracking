@@ -36,6 +36,7 @@ class CX_registration_caiman:
         'shifts_opencv': True,  # flag for correcting motion using bicubic interpolation (otherwise FFT interpolation is used)
         'border_nan': 'copy'}  # replicate values along the boundary (if True, fill in with NaN)
         self.temp_folder = r'D:\FCI\reg_temporary_data'
+        self.rigid_out = {}
     def register_rigid(self,params=[]):
         new_params = self.default_params.copy()
         if len(params)>0:
@@ -164,6 +165,7 @@ class CX_registration_caiman:
         
         mc.motion_correct(save_movie=True)
         registered = cm.load(mc.mmap_file)
+        self.rigid_out.update({'plane'+str(plane):mc.shifts_rig})
         
         if len(ch)==0:
             tif_name = os.path.join(self.temp_folder, self.ex.name+'_slice'+str(plane)+'.tif')
@@ -174,6 +176,6 @@ class CX_registration_caiman:
             
         for i, frame in enumerate(registered):
             registered_blurred[i] = filters.gaussian(frame, 1)
-        reg_results = {}
+        reg_results = {'rigid_shift':mc.shifts_rig}
         return reg_results, registered_blurred
         

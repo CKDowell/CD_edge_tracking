@@ -188,7 +188,7 @@ experiment_dirs = [
                   # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial6", # ACV pulses
                   
                   
-                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1",#lots of jumps
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1",#lots of jumps, points in opposite direction to plume
                   #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial2",# v strip 1.5 plumes
                   #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial3",# Plough through plumes
                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial4", #new bump jump, no jumps
@@ -235,7 +235,7 @@ for e in experiment_dirs:
         print('no jumps')
 #%% Single data check
 
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250907\f1\Trial2"
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 4)

@@ -796,6 +796,53 @@ class fci_regmodel:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
     
+    def mean_traj_jump_indi(self,ca,cmin,cmax):
+        from Utilities.utils_plotting import uplt
+        
+        tmean,tca,atraj,aca = self.mean_traj_nF_jump(ca,return_all=True)
+        
+        calen= aca.shape[1]
+        fig,ax=plt.subplots()
+        offset = 50
+        pedge = tmean[-1,0]
+        plt.fill(np.array([-10,0,0,-10])+pedge,np.array([0,0,50,50]),color=[0.7,0.7,0.7])
+        plt.fill(np.array([-10,0,0,-10]),np.array([0,0,-50,-50]),color=[0.7,0.7,0.7])
+        
+        
+    
+        for ic in range(calen):
+            ca =aca[:,ic]
+            x = atraj[:,ic,0]
+            y = atraj[:,ic,1]
+            x = np.append([np.nan,np.nan],x)
+            y = np.append([np.nan,np.nan],y)
+            ca = np.append([cmin,cmax],ca)
+            # y[0] = cmin
+            # y[1] = cmax
+            ca[ca<cmin] =cmin
+            ca[ca>cmax] = cmax
+            #uplt.coloured_line_simple(atraj[:,0,ic],atraj[:,1,ic],ca,'coolwarm',-0.25,0.25,alpha=0.5)
+            uplt.coloured_line(x,y,aca[:,ic],ax,cmap='coolwarm',alpha=0.3)
+            
+        plt.fill(np.array([-10,0,0,-10])+pedge+offset,np.array([0,0,50,50]),color=[0.7,0.7,0.7])
+        plt.fill(np.array([-10,0,0,-10])+offset,np.array([0,0,-50,-50]),color=[0.7,0.7,0.7])
+        
+        tca[tca<cmin] =cmin
+        tca[tca>cmax] = cmax
+        x = tmean[:,0]
+        y = tmean[:,1]
+        x = np.append([np.nan,np.nan],x)
+        y = np.append([np.nan,np.nan],y)
+        tca = np.append([cmin,cmax],tca)
+        uplt.coloured_line(x+offset,y,tca,ax,cmap='coolwarm',linewidth=2)
+        ax.set_aspect('equal')  
+        ax.set_xlim([-25,80])
+        ax.set_ylim([-50,60])
+        
+       
+    
+    
+    
     def example_trajectory_jump(self,ca,ft,cmin=0,cmax=1,xcent= 0,pw=5,jsize=3,cmap='coolwarm',selection=[]):    
         colour = ca.copy()#self.ca.copy()
         x = self.ft2['ft_posx']
@@ -975,7 +1022,7 @@ class fci_regmodel:
         if output:
             return plt_mn,t
         
-    def mean_traj_nF_jump(self,ca,plotjumps=False,cmx=False,offsets=20,colormap='coolwarm'):
+    def mean_traj_nF_jump(self,ca,plotjumps=False,cmx=False,offsets=20,colormap='coolwarm',return_all=False):
         ft2 = self.ft2
         pv2 = self.pv2
         
@@ -1070,7 +1117,10 @@ class fci_regmodel:
         tca = np.append(inmean_amp,outmean_amp,axis=0)
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
-        return traj, tca
+        if return_all:
+            return traj,tca,np.append(inplume_traj,outplume_traj,axis=0),np.append(inplume_amp,outplume_amp,axis=0)
+        else:
+            return traj, tca
     def jump_heat(self,traj,ca,xoffset,set_cmx=False,set_cmn=False,colormap='coolwarm'):
         
         yrange = [np.min(traj[:,1]),np.max(traj[:,1])]

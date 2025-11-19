@@ -17,6 +17,7 @@ import pickle
 from matplotlib import cm
 from analysis_funs.regression import fci_regmodel
 from Utilities.utils_plotting import uplt
+from Utilities.utils_general import utils_general as ug
 #%%
 class CX_tan:
     def __init__(self,datadir,tnstring='0_fsbtn',Andy=False,span=500):
@@ -31,6 +32,9 @@ class CX_tan:
             post_processing_file = os.path.join(datadir,'postprocessing.h5')
             self.pv2 = pd.read_hdf(post_processing_file, 'pv2')
             self.ft2 = pd.read_hdf(post_processing_file, 'ft2')
+            column_names = self.pv2.columns
+            self.pv2.rename(columns={column_names[1]:tnstring+'_raw',column_names[2]:tnstring},inplace=True)
+        print(self.pv2.columns)
         self.fc = fci_regmodel(self.pv2[[tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
         
         #self.ca = self.fc.ca
@@ -42,6 +46,88 @@ class CX_tan:
         
     def reinit_fc(self):    
         self.fc = fci_regmodel(self.pv2[[self.tnstring]].to_numpy().flatten(),self.ft2,self.pv2)
+        
+    def get_jumps(self,time_threshold=60):
+        # Function will find jump instances in the data and output the indices
+        ft2 = self.ft2
+        pv2 = self.pv2
+        jumps = ft2['jump']
+        ins = ft2['instrip']
+        times = pv2['relative_time']
+       
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        exts = np.where(insd<0)[0]+1 
+        jd = np.diff(jumps)
+        jn = np.where(np.abs(jd)>0)[0]
+        jkeep = np.where(np.diff(jn)>1)[0]
+        jn = jn[jkeep]
+        jns = np.sign(jd[jn])
+
+        time_threshold = 60
+        # Pick the most common side
+        v,c = np.unique(jns,return_counts=True)
+        side = v[np.argmax(c)]
+        self.side = side # -1 is leftward jumps ie tracking right side, ie left goal
+        # Get time of return: choose quick returns
+        dt = []
+        for i,j in enumerate(jn):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            tdx = np.arange(ents[ie],ents[t_ent],step=1,dtype='int')
+            dt.append(times[tdx[-1]]-times[sub_dx])
+        this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
+        
+        out_dx = np.zeros((len(this_j),3),dtype='int')
+        for i,j in enumerate(this_j):
+            ex = exts-j
+            ie = np.argmin(np.abs(ex))
+            t_ent = ie+1
+            sub_dx = exts[ie]
+            ent = ents[ie]
+            ent2 = ents[t_ent]
+            out_dx[i,:] = np.array([ent,sub_dx,ent2],dtype='int')
+        return out_dx
+    
+    def get_entries_exits(self,ent_duration=0.5): 
+        #Funciton gets all entries and exits to the plume
+        ins = self.ft2['instrip'].to_numpy()
+        tt = self.pv2['relative_time'].to_numpy()
+        td = np.mean(np.diff(tt))
+        block,blocksize = ug.find_blocks(ins)
+        thresh = np.round(td/ent_duration).astype(int)
+        bdx = blocksize>=thresh
+        entries = block[bdx]
+        exits = entries+blocksize[bdx]
+        return entries, exits
+    def get_entries_exits_like_jumps(self,ent_duration=0.5,odour='ACV'):
+        if odour =='ACV':
+            ins = self.ft2['instrip'].to_numpy()
+        elif odour=='Oct':
+            ins = self.ft2['mfc3_stpt'].to_numpy()>0
+        tt = self.pv2['relative_time'].to_numpy()
+        td = np.mean(np.diff(tt))
+        block,blocksize = ug.find_blocks(ins)
+        block_o = block.copy()
+        thresh = np.round(td/ent_duration).astype(int)
+        bdx = blocksize>=thresh
+        block = block[bdx]
+        blocksize = blocksize[bdx]
+        e_ex = np.zeros((len(block),3),dtype='int')
+        for i,b in enumerate(block):
+            e_ex[i,0] = b
+            e_ex[i,1] = b+blocksize[i]
+            try:
+                next_block = np.min(block_o[block_o>b])
+                e_ex[i,2] = next_block
+            except:
+                e_ex[i,2] = 0
+        if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
+            e_ex = e_ex[:-1,:]
+        return e_ex
+        
         
     def mean_traj_nF(self,use_rebase = True,tnstring='0_fsbtn'):
         """

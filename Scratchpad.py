@@ -26,7 +26,35 @@ from Utilities.utils_general import utils_general as ug
 from scipy.stats import circmean, circstd
 
 plt.rcParams['pdf.fonttype'] = 42 
-
+#%%
+savepath = r'E:\data\earwig_timelapse\2025-11-09'
+savedir = r'E:\data\earwig_timelapse\movies\251109'
+files = os.listdir(savepath)
+import cv2
+for i in range(0,24):
+    print(i)
+    fx =np.array( [],dtype='int')
+    for i2,f in enumerate(files):
+        fspl = f.split('_')
+        f3 = int(fspl[2][:2])
+        if f3==i:
+            fx = np.append(fx,i2)
+    
+    eg = io.imread(os.path.join(savepath,files[fx[0]]))
+    imsize = eg.shape
+    h, w = eg.shape[:2]
+    #stack = np.zeros((len(fx),imsize[0],imsize[1]))
+    
+    out = cv2.VideoWriter(os.path.join(savedir,'Hour_'+str(i)+'.mp4'),cv2.VideoWriter_fourcc(*'avc1'),10,(w,h),isColor=False)
+    
+    
+    for i1,i2 in enumerate(fx):
+        print(i1)
+        frame = io.imread(os.path.join(savepath,files[i2]))
+        out.write(frame.astype('uint8'))
+        # if i1==120:
+        #     break
+    out.release()
 #%% registration check
 from pystackreg import StackReg
 datadir = r"D:\Tests\registration_test\reg_test.tif"

@@ -1173,17 +1173,48 @@ class CX_a:
             plt.plot([9,9],[-np.pi,np.pi],color='r',linestyle='--')
             plt.plot(x,circmean(alldat,axis=1,high=np.pi,low=-np.pi),color='b')
             
-            
-    def jump_return_details(self,fsb_region='fsb_upper',flynum=0,index_type='jumps'):
+    def get_cross_overs(self):
+        entries,exits = self.get_entries_exits()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        
+        edx = entries>0#jumps[0,0]
+        tentries = entries[edx]
+        texits = exits[edx]
+        
+        x_ent = x[tentries]
+        x_ex = x[texits]
+        ee_diff = x_ent-x_ex
+        cross_overs = np.where(np.abs(ee_diff)>5)[0]
+        jumps = np.zeros((len(cross_overs),3),dtype=int)
+        for ic,c in enumerate(cross_overs):
+            jumps[ic,0] = tentries[c]
+            jumps[ic,1] = texits[c]
+            if c<len(tentries)-1:
+                jumps[ic,2] = tentries[c+1]
+            else: 
+                jumps[ic,2] = len(x)-1     
+                
+        return jumps
+    def jump_return_details(self,fsb_region='fsb_upper',flynum=0,index_type='jumps',jumplen = 60):
+        import matplotlib.gridspec as gridspec
+        
         try:
-            self.get_jumps() # needed to termine tracking side
+            self.get_jumps(time_threshold=jumplen) # needed to termine tracking side
         except:
             self.side=-1    
         if index_type=='jumps':
         
-            jumps = self.get_jumps()
+            jumps = self.get_jumps(time_threshold=jumplen)
         elif index_type=='all':
             jumps = self.get_entries_exits_like_jumps()
+            
+        elif index_type=='long':
+            jumps = self.get_entries_exits_like_jumps()
+            retlen = jumps[:,2]- jumps[:,1]
+            long_ret = retlen>300
+            jumps = jumps[long_ret,:]
         elif index_type=='cross overs':
             entries,exits = self.get_entries_exits()
             x = self.ft2['ft_posx'].to_numpy()
@@ -1221,6 +1252,10 @@ class CX_a:
         eb_o = self.pdat['offset_eb_phase'].to_numpy()*-self.side
         eb2 = self.pdat['phase_eb'] *self.side
         heading = self.ft2['ft_heading'].to_numpy()*-self.side
+        fx =self.ft2['ft_posx'].to_numpy()*-self.side
+        fy = self.ft2['ft_posy'].to_numpy()
+        fx,fy = self.fictrac_repair(fx,fy)
+        ins = self.ft2['instrip'].to_numpy()
         
         ebuw = np.unwrap(eb2)
         huw = np.unwrap(heading) 
@@ -1241,7 +1276,18 @@ class CX_a:
         pvcorr = ug.time_varying_correlation(pvaz,wmeanz,20)
         for ij,j in enumerate(jumps):
             #if len(t_stills)==0:
-            fig, ax = plt.subplots(3,1,figsize=(12,9))
+            fig = plt.figure(figsize=(15, 9))  # a bit wider
+            gs = gridspec.GridSpec(3, 2, width_ratios=[2, 2])  # 3 rows × 2 columns
+            
+            # Left column (existing three)
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[1, 0])
+            ax3 = fig.add_subplot(gs[2, 0])
+            
+            # Right column (the new vertical panel)
+            ax4 = fig.add_subplot(gs[:, 1])  # spans all 3 rows
+            
+            ax = [ax1, ax2, ax3, ax4]
                 
             dx = np.arange(j[0],j[2])
             od_off= j[1]-j[0]
@@ -1306,6 +1352,8 @@ class CX_a:
                 ax[a].set_yticks([-np.pi,0,np.pi],labels=[-180,0,180])
                 
                 plt.show()
+                
+            # Wedges
             tfsb = 7.5*(fsb2[dx]+np.pi)/np.pi
             teb = 7.5*(eb2[dx]+np.pi)/np.pi
             teb2 = 7.5*(ug.circ_subtract(eb2[dx],np.pi)+np.pi)/np.pi
@@ -1315,7 +1363,41 @@ class CX_a:
             ax[2].scatter(x*10,tfsb2,color=[1,0.5,0.5],s=10)
             ax[2].scatter(x*10,teb,color='k',s=10)
             ax[2].scatter(x*10,teb2,color=[0.5,0.5,0.5],s=10)
-    
+            
+            
+            # Trajectory
+            tins = ins[dx]
+            tfx = fx[dx]
+            tfy = fy[dx]
+            tfx = tfx-tfx[0]
+            tfy = tfy-tfy[0]
+            tpva = pvaz[dx]
+            ax[3].plot(tfx[tins==1],tfy[tins==1],color='r')
+            #ax[3].plot(tfx[tins==0],tfy[tins==0],color='k')
+            uplt.coloured_line_simple(tfx[tins==0],tfy[tins==0],tpva[tins==0],'coolwarm',-2,2)
+            ax[3].set_aspect('equal')
+            ax[3].set_xticks([])
+            ax[3].set_yticks([])
+            drange = np.arange(0,len(dx),5,dtype='int')
+            for id1 in drange:
+                p1 = t_fsb[id1]
+                p1s = [tfx[id1] ,tfx[id1]+np.sin(p1)*3]
+                p1c =[tfy[id1], tfy[id1]+np.cos(p1)*3]
+                
+                
+                ax[3].plot(p1s,p1c,color=[0.3,0.3,1],zorder=-1)
+                p1s = [tfx[id1] ,tfx[id1]+np.sin(p1)*10]
+                p1c =[tfy[id1], tfy[id1]+np.cos(p1)*10]
+                ax[3].scatter(p1s[1],p1c[1],color=[0.3,0.3,1],s=5 )
+                
+                p2 = t_eb[id1]
+                p2s = [tfx[id1] ,tfx[id1]+np.sin(p2)*3]
+                p2c =[tfy[id1], tfy[id1]+np.cos(p2)*3]
+
+                ax[3].plot(p2s,p2c,color=[0.3,0.3,0.3],zorder=-2)
+                
+            
+            
     def return_jump_info(self,inbins=50,outbins=50,fsb_names=['fsb_upper','fsb_lower'],time_threshold=60):
         this_j = self.get_jumps(time_threshold)
         side_mult = self.side*-1
@@ -1653,14 +1735,14 @@ class CX_a:
                 phase = self.pdat['offset_' + r + '_phase'].to_numpy()
                 phase = phase.reshape(-1,1)
                 
-                heat = self.pdat['fit_wedges_' +r]
+                heat = self.pdat['wedges_offset_' +r]
                 heat = heat.reshape(-1,16,1)
                 
                 amp = self.pdat['amp_' +r]
                 amp = amp.reshape(-1,1)
             else:
                 phase = np.append(phase,self.pdat['offset_' + r + '_phase'].to_numpy().reshape(-1,1),axis=1)
-                heat = np.append(heat,self.pdat['fit_wedges_'+ r ].reshape(-1,16,1),axis=2)
+                heat = np.append(heat,self.pdat['wedges_offset_'+ r ].reshape(-1,16,1),axis=2)
                 amp = np.append(amp,self.pdat['amp_' +r ].reshape(-1,1),axis=1)
                 
         # Flip data all to one side        
@@ -1775,7 +1857,7 @@ class CX_a:
             pltphase_int = np.flipud(pltphase_int)
             pltphase = 15.5*(pltphase_int+np.pi)/(2*np.pi)
             a[ir+1].plot([7, 7],[yp[0], yp[-1]],color='w',linestyle='--')
-            a[ir+1].plot(pltphase,yp,color='k')
+            a[ir+1].scatter(pltphase,yp,color='r',s=4)
        
         # for i,j in enumerate(this_j):
         #     y = np.append(inplume_traj[:,i,1],outplume_traj[:,i,1],axis=0)
@@ -1869,11 +1951,15 @@ class CX_a:
         entries = block[bdx]
         exits = entries+blocksize[bdx]
         return entries, exits
-    def get_entries_exits_like_jumps(self,ent_duration=0.5):
-        ins = self.ft2['instrip'].to_numpy()
+    def get_entries_exits_like_jumps(self,ent_duration=0.5,odour='ACV'):
+        if odour =='ACV':
+            ins = self.ft2['instrip'].to_numpy()
+        elif odour=='Oct':
+            ins = self.ft2['mfc3_stpt'].to_numpy()>0
         tt = self.pv2['relative_time'].to_numpy()
         td = np.mean(np.diff(tt))
         block,blocksize = ug.find_blocks(ins)
+        print(block)
         block_o = block.copy()
         thresh = np.round(td/ent_duration).astype(int)
         bdx = blocksize>=thresh

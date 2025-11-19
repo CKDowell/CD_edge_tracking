@@ -834,6 +834,13 @@ for i in range(len(datadirs_hdc)):
     cxa = all_flies_hdc[str(i)]
     plotdata_hdc[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk='All')
     
+    
+plotdata_hdj = np.zeros((16,bins*2,2,len(datadirs_hdj)))
+for i in range(len(datadirs_hdj)):   
+    offset = 0
+    cxa = all_flies_hdj[str(i)]
+    plotdata_hdj[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk='All')
+    
 plotdata_fc2 = np.zeros((16,bins*2,2,len(datadirs_fc2)))
 for i in range(len(datadirs_fc2)): 
     offset = 0
@@ -841,54 +848,81 @@ for i in range(len(datadirs_fc2)):
     plotdata_fc2[:,:,:,i] = cxa.phase_nulled_jump(bins=bins,fsb_names=['eb','fsb_upper'],walk='All')
     
 fig  = plt.figure()    
+mplotdata_hdj = np.mean(plotdata_hdj,axis=3)
 mplotdata_hdc = np.mean(plotdata_hdc,axis=3)
 mplotdata_fc2 = np.mean(plotdata_fc2,axis=3)
 #Exit
+# hDeltaj
+xticks = np.array([0.5])
+plt.plot(x,plotdata_hdj[:,bins-1,1,:],color=[0.4,0,1],alpha=0.2)
+plt.plot(x,mplotdata_hdj[:,bins-1,1],color=[0.4,0,1],linewidth=2)
+offset= 1.1 
+xticks = np.append(xticks,np.mean(x))
+
+
 # hDeltaC
+x+=offset
 xticks = np.array([0.5])
 plt.plot(x,plotdata_hdc[:,bins-1,1,:],color=[0.4,0,1],alpha=0.2)
 plt.plot(x,mplotdata_hdc[:,bins-1,1],color=[0.4,0,1],linewidth=2)
-offset= 1.1 
-xticks = np.append(xticks,offset+0.5)
-# FC2
-plt.plot(x+offset,plotdata_fc2[:,bins-1,1,:],color='b',alpha=0.2)
-plt.plot(x+offset,mplotdata_fc2[:,bins-1,1],color='b',linewidth=2)
-offset+= 1.1 
-xticks = np.append(xticks,offset+0.5)
-# EPG FC2
-plt.plot(x+offset,plotdata_hdc[:,bins-1,0,:],color='k',alpha=0.2)
-plt.plot(x+offset,mplotdata_hdc[:,bins-1,0],color='k',linewidth=2)
 
-offset+= 1.1 
-xticks = np.append(xticks,offset+0.5)
+xticks = np.append(xticks,np.mean(x))
+
+# FC2
+x+=offset
+plt.plot(x,plotdata_fc2[:,bins-1,1,:],color='b',alpha=0.2)
+plt.plot(x,mplotdata_fc2[:,bins-1,1],color='b',linewidth=2)
+xticks = np.append(xticks,np.mean(x))
+
+
 # EPG FC2
-plt.plot(x+offset,plotdata_fc2[:,bins-1,0,:],color='k',alpha=0.2)
-plt.plot(x+offset,mplotdata_fc2[:,bins-1,0],color='k',linewidth=2)
+x+=offset
+plt.plot(x,plotdata_hdc[:,bins-1,0,:],color='k',alpha=0.2)
+plt.plot(x,mplotdata_hdc[:,bins-1,0],color='k',linewidth=2)
+xticks = np.append(xticks,np.mean(x))
+# offset+= 1.1 
+# xticks = np.append(xticks,offset+0.5)
+# # EPG FC2
+# plt.plot(x+offset,plotdata_fc2[:,bins-1,0,:],color='k',alpha=0.2)
+# plt.plot(x+offset,mplotdata_fc2[:,bins-1,0],color='k',linewidth=2)
+
+
 
 # Return
-offset +=1.6
-xticks = np.append(xticks,offset+0.5)
+x +=1.6
+
+# hDeltaJ
+x+=offset
+plt.plot(x,plotdata_hdj[:,-1,1,:],color=[0.4,0,1],alpha=0.2)
+plt.plot(x,mplotdata_hdj[:,-1,1],color=[0.4,0,1],linewidth=2)
+xticks = np.append(xticks,np.mean(x))
+
+
 # hDeltaC
-plt.plot(x+offset,plotdata_hdc[:,-1,1,:],color=[0.4,0,1],alpha=0.2)
-plt.plot(x+offset,mplotdata_hdc[:,-1,1],color=[0.4,0,1],linewidth=2)
-offset+= 1.1 
-xticks = np.append(xticks,offset+0.5)
+x+=offset
+plt.plot(x,plotdata_hdc[:,-1,1,:],color=[0.4,0,1],alpha=0.2)
+plt.plot(x,mplotdata_hdc[:,-1,1],color=[0.4,0,1],linewidth=2)
+xticks = np.append(xticks,np.mean(x))
+
+
 # FC2
-plt.plot(x+offset,plotdata_fc2[:,-1,1,:],color='b',alpha=0.2)
-plt.plot(x+offset,mplotdata_fc2[:,-1,1],color='b',linewidth=2)
-offset+= 1.1 
-xticks = np.append(xticks,offset+0.5)
-# EPG FC2
-plt.plot(x+offset,plotdata_hdc[:,-1,0,:],color='k',alpha=0.2)
-plt.plot(x+offset,mplotdata_hdc[:,-1,0],color='k',linewidth=2)
+x+=offset
+plt.plot(x,plotdata_fc2[:,-1,1,:],color='b',alpha=0.2)
+plt.plot(x,mplotdata_fc2[:,-1,1],color='b',linewidth=2)
+xticks = np.append(xticks,np.mean(x))
 
-offset+= 1.1 
-xticks = np.append(xticks,offset+0.5)
 # EPG FC2
-plt.plot(x+offset,plotdata_fc2[:,-1,0,:],color='k',alpha=0.2)
-plt.plot(x+offset,mplotdata_fc2[:,-1,0],color='k',linewidth=2)
+x+=offset
+plt.plot(x,plotdata_hdc[:,-1,0,:],color='k',alpha=0.2)
+plt.plot(x,mplotdata_hdc[:,-1,0],color='k',linewidth=2)
+xticks = np.append(xticks,np.mean(x))
+# offset+= 1.1 
+# xticks = np.append(xticks,offset+0.5)
+# # EPG FC2
+# plt.plot(x+offset,plotdata_fc2[:,-1,0,:],color='k',alpha=0.2)
+# plt.plot(x+offset,mplotdata_fc2[:,-1,0],color='k',linewidth=2)
 
-plt.xticks(xticks,labels=['hDeltaC','FC2','EPG (hDeltaC)','EPG (FC2)','hDeltaC','FC2','EPG (hDeltaC)','EPG (FC2)'])
+plt.xticks(xticks,labels=['hDeltaJ','hDeltaC','FC2','EPG','hDeltaJ','hDeltaC','FC2','EPG'])
 plt.ylabel('dF/F0')
 fig.set_figwidth(14.39)
 
@@ -1126,7 +1160,22 @@ for f in fc2_disappear:
     plt.ylabel('phase (rad)')
     plt.title('FC2 '+ str(f))
 #%% ET paper scripts
+savedirJ = r'Y:\Data\FCI\FCI_summaries\hDeltaJ'
+for i in etp_hdj:
+    etp = etp_hdj[i]
+    plt.figure()
+    etp.plt_tmp(scalar=8,phase_num=6)
+    plt.ylim([-100,100])
+    plt.savefig(os.path.join(savedirJ,'Mean_jump_'+etp.cxa.name+'.pdf'))
 
+savedirC = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+for i in etp_hdc:
+    etp = etp_hdc[i]
+    plt.figure()
+    plt.title(etp.cxa.name)
+    etp.plt_tmp(scalar=8,phase_num=6)
+    plt.ylim([-100,100])
+    plt.savefig(os.path.join(savedirC,'Mean_jump_'+etp.cxa.name+'.pdf'))
 
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_hDeltaC_comparison'
@@ -1161,7 +1210,7 @@ for i, d in enumerate(etp_hdc):
 colours = np.array([[81,156,204],[84,39,143],[0,0,0],[6,149,207]])/255
 colours = np.array([[0,0,0],[81,156,204]])/255
 plt.figure()
-plt.subplot(1,2,1)
+plt.subplot(1,3,2)
 pm = stats.circmean(pltmean,high=180,low=-180,axis=2,nan_policy='omit')
 zorder = [1,3,0]
 for i in range(2):
@@ -1169,7 +1218,7 @@ for i in range(2):
     #plt.plot(pltmean[:,i,:],t,color = colours[i,:],alpha=0.3,zorder=zorder[i])
     for i2 in range(pltmean.shape[2]):
         plt.scatter(pltmean[:,i,i2],t,color = colours[i,:],alpha=0.4,zorder=zorder[i],s=4)
-    plt.plot(pm[:,i],t,color=colours[i,:],zorder=zorder[i])
+    #plt.plot(pm[:,i],t,color=colours[i,:],zorder=zorder[i])
  
     
     
@@ -1202,7 +1251,7 @@ for i, d in enumerate(etp_fc2):
     #plt.plot(t,pmean[:,0],color=colours[0,:],alpha=1)
     #plt.plot(t,pmean[:,1],color=colours[1,:],alpha=1)
     if i==0:
-        pltmean = np.zeros((len(pmean),4,len(etp_hdc)))
+        pltmean = np.zeros((len(pmean),4,len(etp_fc2)))
     
     pltmean[:,:,i] = 180*pmean/np.pi
 
@@ -1210,14 +1259,14 @@ for i, d in enumerate(etp_fc2):
 colours = np.array([[81,156,204],[84,39,143],[0,0,0],[6,149,207]])/255
 colours = np.array([[0,0,0],[81,156,204]])/255
 
-plt.subplot(1,2,2)
+plt.subplot(1,3,3)
 pm = stats.circmean(pltmean,high=180,low=-180,axis=2,nan_policy='omit')
 zorder = [1,3,0]
 for i in range(2):
     #plt.plot(pltmean[:,i,:],t,color = colours[i,:],alpha=0.3,zorder=zorder[i])
     for i2 in range(pltmean.shape[2]):
         plt.scatter(pltmean[:,i,i2],t,color = colours[i,:],alpha=0.4,zorder=zorder[i],s=4)
-    plt.plot(pm[:,i],t,color=colours[i,:],zorder=zorder[i])
+    #plt.plot(pm[:,i],t,color=colours[i,:],zorder=zorder[i])
  
     
     
@@ -1234,8 +1283,60 @@ plt.title('FC2')
 plt.yticks(np.arange(0,17.6,2.5),labels=[-15,-12.5,-10,-7.5,-5,-2.5,0,2.5]);
 plt.show()
 
-plt.savefig(os.path.join(savedir,'FC2_hDC_timecourse_comp.pdf'))
 
+plt.subplot(1,3,1)
+
+for i, d in enumerate(etp_hdj):
+    
+    etp = etp_hdj[d]
+    p1 = etp.phase_time(timecourse)
+    p2 = etp.phase_time_inside(timecourse_inside)
+    p = np.append(p1,p2,axis=0)
+    p[np.abs(p)==0.0] = np.nan
+    pmean = stats.circmean(p,high=np.pi, low=-np.pi,axis=2,nan_policy='omit') #%need to do circ mean
+    t = np.arange(0,timecourse+timecourse_inside,0.1)
+    #plt.plot(t,p[:,0,:],color=colours[0,:],alpha=0.1,linestyle=':')
+    #plt.plot(t,p[:,1,:],color=colours[1,:],alpha=0.1,linestyle=':')
+    tt = np.tile(t,(np.shape(p)[2],1))
+    #plt.scatter(tt,p[:,0,:],alpha=0.4,s=5,color=colours[0,:])
+    #plt.scatter(tt,p[:,1,:],alpha=0.4,s=5,color=colours[1,:])
+    #plt.plot(t,pmean[:,0],color=colours[0,:],alpha=1)
+    #plt.plot(t,pmean[:,1],color=colours[1,:],alpha=1)
+    if i==0:
+        pltmean = np.zeros((len(pmean),4,len(etp_hdj)))
+    
+    pltmean[:,:,i] = 180*pmean/np.pi
+
+
+colours = np.array([[81,156,204],[84,39,143],[0,0,0],[6,149,207]])/255
+colours = np.array([[0,0,0],[81,156,204]])/255
+
+
+pm = stats.circmean(pltmean,high=180,low=-180,axis=2,nan_policy='omit')
+zorder = [1,3,0]
+for i in range(2):
+    #plt.plot(pltmean[:,i,:],t,color = colours[i,:],alpha=0.3,zorder=zorder[i])
+    for i2 in range(pltmean.shape[2]):
+        plt.scatter(pltmean[:,i,i2],t,color = colours[i,:],alpha=0.4,zorder=zorder[i],s=4)
+    #plt.plot(pm[:,i],t,color=colours[i,:],zorder=zorder[i])
+ 
+    
+    
+plt.plot([-180,180],[timecourse,timecourse],color='k',linestyle='--')
+plt.plot([0,0],[0,timecourse+timecourse_inside],color='k',linestyle='--')
+plt.plot([-90,-90],[0,timecourse],color=colours2[1,:],linestyle='--')
+plt.xlim([-180,180])
+plt.xlabel('angle (deg)')
+plt.ylabel('time (s)')
+
+plt.ylim([0,timecourse+timecourse_inside+0.2])
+plt.xticks([-180,0,180])
+plt.title('hDeltaJ')
+plt.yticks(np.arange(0,17.6,2.5),labels=[-15,-12.5,-10,-7.5,-5,-2.5,0,2.5]);
+plt.show()
+plt.savefig(os.path.join(savedir,'FC2_hD_timecourse_comp.pdf'))
+
+#%% ETpaper jump plots
 
 
 

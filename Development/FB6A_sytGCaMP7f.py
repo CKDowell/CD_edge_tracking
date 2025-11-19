@@ -149,8 +149,20 @@ for d in datadirs:
 #%% Normal tangential post processing ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 experiment_dirs = [
-                    r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial1",
-                   #r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial2", # Tracked multiple jumps
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial1",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial2", # Tracked multiple jumps
+                   
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250813\f1\Trial1",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250813\f1\Trial2",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250813\f1\Trial3",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250813\f1\Trial4",
+
+                   
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f2\Trial2",
+
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f1\Trial1",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f1\Trial2",
+                   r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250818\f1\Trial3",
                    
                    ]
 regions = ['fsbTN']
@@ -170,9 +182,21 @@ for e in experiment_dirs:
 #%%
 from analysis_funs.CX_analysis_tan import CX_tan
 #%%
-datadir = r"Y:\Data\FCI\Hedwig\FB6A_SS95731\250821\f2\Trial2"
-cxt = CX_tan(datadir) 
 
+for datadir in experiment_dirs:
+
+
+    cxt = CX_tan(datadir) 
+    ins = cxt.ft2['instrip'].to_numpy()
+    x = cxt.ft2['ft_posx'].to_numpy()
+    y = cxt.ft2['ft_posy'].to_numpy()
+    x,y = cxt.fc.fictrac_repair(x,y)
+    plt.figure()
+    plt.plot(x,y,color='k')
+    plt.scatter(x[ins>0],y[ins>0],color=[0.5,0.5,0.5])
+    g = plt.gca()
+    g.set_aspect('equal')
+    plt.title(cxt.name)
 #%%
 regchoice = ['odour onset', 'odour offset', 'in odour', 'first odour',
                                 'cos heading pos','cos heading neg', 'sin heading pos', 'sin heading neg',

@@ -24,7 +24,7 @@ from Utilities.utils_general import utils_general as ug
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 for i in [1,2,3]:
-    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1",'Trial' +str(i))
+    datadir =os.path.join(r"Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1",'Trial' +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     #% Registration
@@ -65,12 +65,23 @@ experiment_dirs = [
                    
                    
                    # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial1", # not many entries, backwards pointing and some goal pointing
-                   r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial2", #Problems with image registration. Multiple plumes, very interesting dataset, looks like neurons poitn backwards after exit to where first turn was. Some integration of stim
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial2", #Problems with image registration. Multiple plumes, very interesting dataset, looks like neurons poitn backwards after exit to where first turn was. Some integration of stim
                    # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial3", # Interesting pointing again, alternation between backwards and goal. Sample moves a bit even after reg, which is not good
                    # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial4", # Oct pulses
                    # r"Y:\Data\FCI\Hedwig\hDeltaJ\251023\f2\Trial5" # ACV pulses
                    
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial1",# Running through plume, backwards pointing vector
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2",# Running through plume, mix of back and forward
+                   # r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial3",# Running through plume, backwards. Not backwards before plume
+                  
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f2\Trial1", # small amount of tracking
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f2\Trial2",# Downwind, mainly backwards vector
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f2\Trial3", # Backwards vector
+                   #r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f2\Trial4", #Backwards then not when animal does some local search type stuff
                    
+                   #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial1',#Backwards vector
+                   #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial2', #Backwards vector, downwind walking
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial3', # Lots of circling, bump is noisy
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -96,7 +107,8 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial3"
+datadir =r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1"
+#datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
 cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'])
@@ -131,28 +143,184 @@ plt.savefig(os.path.join(savedir,'MeanJumps.png'))
 plt.savefig(os.path.join(savedir,'MeanJumps.pdf'))
 
 #%% Look back analysis
+plt.close('all')
 mnfluor = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
 mnfluor = (mnfluor-np.mean(mnfluor))/np.std(mnfluor)
 ins = cxa.ft2['instrip'].to_numpy()
 pva = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
 pva = (pva-np.mean(pva))/np.std(pva)
 u = ug()
-_,_,velocity = u.get_velocity(cxa.ft2['ft_posx'],cxa.ft2['ft_posy'],cxa.pv2['relative_time'])
+velx,_,velocity = u.get_velocity(cxa.ft2['ft_posx'],cxa.ft2['ft_posy'],cxa.pv2['relative_time'])
 velocity = velocity/(np.std(velocity))
+velx = velx/np.std(velx)
 #plt.plot(mnfluor,color='k')
 plt.plot(ins,color='r')
 mnfluors = sg.savgol_filter(mnfluor,20,3)
-plt.plot(mnfluors,color='b')
-plt.plot(velocity,color=[0.5,0.5,0.5])
+#plt.plot(mnfluors,color='b')
+plt.plot(-2+velocity/5,color=[0.5,0.5,0.5])
+#plt.plot(velx/5,color=[0.2,0.2,0.2])
 #plt.plot(pva,color='k')
 pvas = sg.savgol_filter(pva,20,3)
-plt.plot(pvas,color='m')
+#plt.plot(pvas,color='m')
+phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+phase_eb = cxa.pdat['phase_eb']
+phase_pred = ug.circ_subtract(phase_eb,np.pi)
+phase = cxa.pdat['phase_fsb_upper']
+phase_pred2 = phase.copy()
+delay = 1
+phase_pred2[:delay+1] = stats.circmean(phase_pred[:delay+1])
+w_in = 0.05
+w_out = 0.05
+offset_in = 0 
+offset_out = 0
+def get_phase(phase,w_in,w_out,offset_in,offset_out,velocity):
+    for i in range(len(phase)-1):
+        if ins[i]==0:
+            diff = ug.circ_subtract(phase_pred2[i],phase_pred[i]+offset_out)*w_out*velocity[i]
+            phase_pred2[i+1] = ug.circ_subtract(phase_pred2[i],diff)
+        else:
+            diff = ug.circ_subtract(phase_pred2[i],phase_eb[i]+offset_in)*w_in*velocity[i]
+            phase_pred2[i+delay] = ug.circ_subtract(phase_pred2[i],diff)
+    return phase_pred2
+
+phase = phase/np.pi
+phase_eb = phase_eb/np.pi
+phase_pred = phase_pred/np.pi
+phase_pred2 = phase_pred2/np.pi
+x = np.arange(0,len(phase))
+plt.scatter(x,phase,s=3,zorder=5,color='r')
+plt.scatter(x,phase_eb,s=3,color='k',zorder=6)
+plt.scatter(x,phase_pred,s=3,color=[0,0.8,0.2],zorder=7)
+plt.scatter(x,phase_pred2,color='m',s=3,zorder=8)
+#%% Class model of just weighted phase difference in past
+from scipy.optimize import minimize
+class model1:
+    def __init__(self):
+        self.version = 1
+    def circ_mse(self,y,ypred):
+        return np.mean(1-np.cos(ug.circ_subtract(y,ypred)))
+    def predict_phase1(self,weights,phase,phase_eb):
+        k_len = len(weights)
+        phase_pred = phase.copy()
+        for i in range(len(phase)-k_len):
+            diffs = []
+            for j in range(k_len):
+                d = ug.circ_subtract(phase_pred[i+k_len], phase_eb[i+j]) * weights[j]
+                diffs.append(d)
+            diffsum = np.angle(np.sum(np.exp(1j * np.array(diffs))))
+            phase_pred[i+k_len] = ug.circ_subtract(phase_pred[i+k_len-1],diffsum) 
+        return phase_pred
+    def fit_model1(self,phase,phase_eb,k_len=5):
+        weights = np.zeros(k_len)+0.01
+        bounds = [(0, 1)] * k_len
+        def objective(weights):
+            phase_pred =self.predict_phase1(weights,phase,phase_eb)
+            return self.circ_mse(phase,phase_pred)
+        
+    
+        self.res = minimize(objective, weights, bounds=bounds, method='L-BFGS-B')
+        
+    def fit_downsample(self,phase,phase_eb,k_len=5,downsample_factor=2):
+        x = np.arange(0,len(phase))
+        new_x = np.arange(0,len(phase),downsample_factor)
+        phase_w = np.unwrap(phase)
+        phase_ebw = np.unwrap(phase_eb)
+        
+        phase_ds = ug.circ_subtract(np.interp(new_x,x,phase_w),0)
+        phase_ebds = ug.circ_subtract(np.interp(new_x,x,phase_ebw),0)
+        
+        self.down_weights = int(k_len/downsample_factor)
+        weights = np.zeros(self.down_weights)+0.01
+        bounds = [(-1, 1)] * self.down_weights
+        def objective(weights):
+            phase_pred =self.predict_phase1(weights,phase_ds,phase_ebds)
+            return self.circ_mse(phase_ds,phase_pred)
+        
+        self.phase_ds = phase_ds
+        self.phas_ebds = phase_ebds
+        #plt.plot(x,phase,color='k')
+        #plt.plot(x,ug.circ_subtract(phase_w,0),color='r')
+        #plt.plot(new_x,phase_ds,color='r')
+        
+        self.res = minimize(objective, weights, bounds=bounds, method='L-BFGS-B')
+        
+        fitweights = self.res.x
+        x_up = np.arange(0,k_len)
+        x_dn = np.linspace(0,np.max(x_up),self.down_weights)
+        self.weights_full = np.interp(x_up,x_dn,fitweights)        
+        
+mdl = model1()
+mdl.fit_downsample(cxa.pdat['phase_fsb_upper'],ug.circ_subtract(cxa.pdat['phase_eb'],np.pi),k_len=50,downsample_factor=3)
+
+# mdl.fit_model1(cxa.pdat['phase_fsb_upper'],ug.circ_subtract(cxa.pdat['phase_eb'],np.pi),k_len=50)
+plt.plot(cxa.pdat['phase_fsb_upper'])
+plt.plot(mdl.predict_phase1(mdl.weights_full,cxa.pdat['phase_fsb_upper'],ug.circ_subtract(cxa.pdat['phase_eb'],np.pi)))
+#%%
+phase_eb = cxa.pdat['offset_eb_phase'].to_numpy()
+phase = cxa.pdat['offset_fsb_upper_phase'].to_numpy()
+phase_eb = cxa.pdat['phase_eb']
+phase_pred = ug.circ_subtract(phase_eb,np.pi)
+phase = cxa.pdat['phase_fsb_upper']
+
+def get_phaseO(phase,w_in,w_out,offset_in,offset_out,velocity,ins,phase_eb,delay):
+    phase_pred2 = phase.copy()
+    for i in range(len(phase)-delay):
+        if ins[i]==0:
+            diff = ug.circ_subtract(phase_pred2[i],phase_pred[i]+offset_out)*w_out*velocity[i]
+            phase_pred2[i+delay] = ug.circ_subtract(phase_pred2[i],diff)
+        else:
+            diff = ug.circ_subtract(phase_pred2[i],phase_eb[i]+offset_in)*w_in*velocity[i]
+            phase_pred2[i+delay] = ug.circ_subtract(phase_pred2[i],diff)
+    return phase_pred2
+
+from scipy.optimize import minimize
+def circ_mse(y,ypred):
+    return np.mean(1-np.cos(ug.circ_subtract(y,ypred)))
+
+def fit_phase_model(phase,velocity,ins,phase_pred,phase_eb,delay):
+    
+
+    def get_phase(phase,w_in,w_out,offset_in,offset_out,velocity,ins,phase_eb,delay):
+        phase_pred2 = phase.copy()
+        for i in range(len(phase)-delay):
+            if ins[i]==0:
+                diff = ug.circ_subtract(phase_pred2[i],phase_pred[i]+offset_out)*w_out*velocity[i]
+                phase_pred2[i+delay] = ug.circ_subtract(phase_pred2[i],diff)
+            else:
+                diff = ug.circ_subtract(phase_pred2[i],phase_eb[i]+offset_in)*w_in*velocity[i]
+                phase_pred2[i+delay] = ug.circ_subtract(phase_pred2[i],diff)
+        return phase_pred2
+    
+    def objective(params):
+        w_in,w_out,offset_in,offset_out = params
+        phase_pred2 = get_phase(phase,w_in,w_out,offset_in,offset_out,velocity,ins,phase_eb,delay)
+        return circ_mse(phase,phase_pred2)
+    
+    x0 = [.1, .1, 0.0, 0.0]
+
+    # Optional bounds (for stability)
+    bounds = [(0, 1), (0, 1), (-np.pi, np.pi), (-np.pi, np.pi)]
+
+    res = minimize(objective, x0, bounds=bounds, method='L-BFGS-B')
+    return res
+res = fit_phase_model(phase,velocity,ins,phase_pred,phase_eb,delay)
 
 
 
+phase_pred3 = get_phaseO(phase,res.x[0],res.x[1],res.x[2],res.x[3],velocity,ins,phase_eb,delay)/np.pi
 
-
-
+phase = phase/np.pi
+phase_eb = phase_eb/np.pi
+phase_pred = phase_pred/np.pi
+print("Best-fit parameters:", res.x)
+print("Final circular MSE:", res.fun)
+plt.plot(ins,color='r')
+plt.scatter(x,phase,s=3,zorder=5,color='r')
+plt.scatter(x,phase_eb,s=3,color='k',zorder=6)
+plt.scatter(x,phase_pred,s=3,color=[0,0.8,0.2],zorder=7)
+plt.scatter(x,phase_pred2,color='m',s=3,zorder=8)
+plt.scatter(x,phase_pred3,color='b',s=3,zorder=8)
 #%% Columnar regression
 plt.close('all')
 from analysis_funs.column_correlation import CX_corr

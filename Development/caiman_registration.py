@@ -5,10 +5,10 @@ Created on Wed Oct 29 11:37:35 2025
 @author: dowel
 """
 
-rootdir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f2"
+rootdir = r"Y:\Data\FCI\Hedwig\FB5I_SS100553_sytGC7f\251104\f1"
 import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
-for i in [1,2,3,4]:
+for i in [1,2]:
     datadir =os.path.join(rootdir,'Trial' +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -19,6 +19,17 @@ for i in [1,2,3,4]:
         import multiprocessing
         multiprocessing.freeze_support()
         cxcai = CX_cai(datadir,dual_color=False)
-        cxcai.register_rigid()
-        cxcai.ex.mask_slice = {'All': [1,2,3,4]}
-        cxcai.ex.t_projection_mask_slice()
+        cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2})
+        # cxcai.ex.mask_slice = {'All': [1,2,3,4]}
+        # cxcai.ex.t_projection_mask_slice()
+        
+#%%
+from analysis_funs.utilities import imaging as im
+
+for i in [1,2]:
+    datadir =os.path.join(rootdir,'Trial' +str(i))
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    ex = im.fly(name, datadir)
+    ex.mask_slice = {'All': [1,2,3,4]}
+    ex.t_projection_mask_slice()

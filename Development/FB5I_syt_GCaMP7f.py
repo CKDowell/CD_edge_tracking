@@ -32,9 +32,11 @@ for i in [2,3]:
     #%
     ex.mask_slice = {'All': [1,2,3,4]}
     ex.t_projection_mask_slice()
-#%%
-datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553_sytGC7f\\240607\\f1\\Trial3"
-cx = CX(name,['fsbTN'],datadir)
+#%% Columnar processing
+datadir = r"Y:\Data\FCI\Hedwig\FB5I_SS100553_sytGC7f\251104\f1\Trial2"
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+cx = CX(name,['fsb'],datadir)
 # save preprocessing, consolidates behavioural data
 cx.save_preprocessing()
 # Process ROIs and saves csv
@@ -44,6 +46,15 @@ cx.crop = False
 cx.save_postprocessing()
 pv2, ft, ft2, ix = cx.load_postprocessing()
 
+#%% Simple TN processing
+cx = CX(name,['fsbTN'],datadir)
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()
+pv2, ft, ft2, ix = cx.load_postprocessing()
 #%%
 cxt = CX_tan(datadir,span=100)
 cxt.fc.example_trajectory(cmin=-0.5,cmax =0.5)
@@ -75,9 +86,17 @@ fc = fci_regmodel(y.to_numpy().flatten(),ft2,pv2)
 fc.rebaseline()
 fc.example_trajectory_jump(cmin=-0.2,cmax=0.2)
 #%%
-datadir = "Y:\\Data\\FCI\\Hedwig\\FB5I_SS100553_sytGC7f\\240607\\f1\\Trial3"
+datadir = r"Y:\Data\FCI\Hedwig\FB5I_SS100553_sytGC7f\251104\f1\Trial2"
 
-d = datadir.split("\\")
-name = d[-3] + '_' + d[-2] + '_' + d[-1]
-#cx = CX(name,['eb','fsb'],datadir)
-cxa = CX_a(datadir,regions=['eb','fsb'])
+
+#cx = CX(name,['eb','fsb'],datadir) 
+cxa = CX_a(datadir,regions=['fsb'],yoking=False)
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb'],yeseb=False)
+
+cxa.simple_raw_plot(plotphase=True,regions = ['fsb'],yeseb=False)
+
+phase = cxa.pdat['phase_fsb']
+ins = cxa.ft2['instrip'].to_numpy()
+x = np.arange(0,len(phase))
+plt.scatter(x,phase,s=2,color='r')
+plt.plot(x,ins,color='b')
