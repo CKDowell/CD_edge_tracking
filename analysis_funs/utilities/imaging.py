@@ -487,6 +487,7 @@ class fly:
         return reg_results, registered_blurred
 
     def register_all_images(self, overwrite=True):
+        #import tifffile as tiff
         if overwrite or len(os.listdir(self.regfol))==0:
             slice_stacks = self.split_files()
             for i in np.arange(1, len(slice_stacks)+1):
@@ -499,7 +500,9 @@ class fly:
                         pickle_name = os.path.join(self.regfol, self.name+'_slice'+str(i)+'_split'+str(j)+'.pickle')
                         files_sub = files[(range[0]-1):(range[1]-1)]
                         reg_results, registered_blurred = self.register_image_block(files_sub, ini_reg_frames=100)
+                        print('Shape Reg blurred',np.shape(registered_blurred))
                         io.imsave(tif_name, registered_blurred, plugin='tifffile')
+                        #tiff.imwrite(tif_name,registered_blurred)
                         fn.save_obj(reg_results, pickle_name)
                 elif self.dual_color:
                     # need to create options for registering one color based on another, or registering both separately
@@ -527,6 +530,7 @@ class fly:
                     tif_name = os.path.join(self.regfol, self.name+'_slice'+str(i)+'.tif')
                     pickle_name = os.path.join(self.regfol, self.name+'_slice'+str(i)+'.pickle')
                     reg_results, registered_blurred = self.register_image_block(files, ini_reg_frames=100)
+                    print('Shape Reg blurred',np.shape(registered_blurred))
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
                     fn.save_obj(reg_results, pickle_name)
 

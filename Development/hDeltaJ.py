@@ -81,7 +81,12 @@ experiment_dirs = [
                    
                    #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial1',#Backwards vector
                    #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial2', #Backwards vector, downwind walking
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial3', # Lots of circling, bump is noisy
+                   #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial3', # Lots of circling, bump is noisy
+                   
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1', # EB coverage not amazing, lots of entries
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial2', # Some entries and exits, lots of downwind walking, which is good for neuronal characterisation
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial3',# ACV pulses
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial4'# Oct pulses not much of a response to octanaol...
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -107,7 +112,7 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir =r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1"
+datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial4'
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
@@ -122,7 +127,8 @@ cxa.point2point_heat(0,1000,toffset=0,arrowpoint=np.array([50,243,500,600,700,80
 datadirs = [
     "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
     r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1",
-    r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2"
+    r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2",
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1'
     ]
 plt.close('all')
 x_offset = 0

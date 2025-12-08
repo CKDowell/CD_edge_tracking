@@ -206,7 +206,10 @@ class CX_a:
         save_dict = self.pdat
         with open(savedir, 'wb') as f:
             pickle.dump(save_dict, f)
+    
             
+    
+    
     def suspend_heading_correction(self):
         ft2 = self.ft2.copy()
         self.ft2_presuspend = ft2.copy()
@@ -1372,6 +1375,7 @@ class CX_a:
             tfx = tfx-tfx[0]
             tfy = tfy-tfy[0]
             tpva = pvaz[dx]
+            tmn = wmeanz[dx]
             ax[3].plot(tfx[tins==1],tfy[tins==1],color='r')
             #ax[3].plot(tfx[tins==0],tfy[tins==0],color='k')
             uplt.coloured_line_simple(tfx[tins==0],tfy[tins==0],tpva[tins==0],'coolwarm',-2,2)
@@ -1896,7 +1900,7 @@ class CX_a:
         #         a[ir+1].plot([7, 7],[yp[0], yp[-1]],color='w',linestyle='--')
         #        # a[ir+1].plot(pltphase,yp,color='k')
         #         a[ir+1].set_aspect('equal', adjustable='box')
-    def get_jumps(self,time_threshold=60):
+    def get_jumps(self,time_threshold=60,time_threshold2=0):
         # Function will find jump instances in the data and output the indices
         ft2 = self.ft2
         pv2 = self.pv2
@@ -1927,7 +1931,7 @@ class CX_a:
             sub_dx = exts[ie]
             tdx = np.arange(ents[ie],ents[t_ent],step=1,dtype='int')
             dt.append(times[tdx[-1]]-times[sub_dx])
-        this_j = jn[np.logical_and(jns==side, np.array(dt)<time_threshold)]
+        this_j = jn[np.logical_and(jns==side, np.logical_and(np.array(dt)>time_threshold2,np.array(dt)<time_threshold))]
         
         out_dx = np.zeros((len(this_j),3),dtype='int')
         for i,j in enumerate(this_j):
@@ -1959,7 +1963,7 @@ class CX_a:
         tt = self.pv2['relative_time'].to_numpy()
         td = np.mean(np.diff(tt))
         block,blocksize = ug.find_blocks(ins)
-        print(block)
+        
         block_o = block.copy()
         thresh = np.round(td/ent_duration).astype(int)
         bdx = blocksize>=thresh

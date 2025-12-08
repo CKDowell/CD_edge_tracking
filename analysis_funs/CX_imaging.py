@@ -72,6 +72,7 @@ class CX:
         #t_slice = self.open_slice(1)
         t_slice = self.open_slice2(1)
         num_frames = t_slice.shape[-2]
+        
         num_chans = t_slice.shape[-1]
         if num_chans>1:
             multichan = True
@@ -118,10 +119,12 @@ class CX:
                         # Process each ROI
                         mskdx = t_mask ==i_n
                         projected = t_slice * mskdx[:,:,None]
+                        
                         active_pixels = projected[:,:,0].size-np.count_nonzero(projected[:,:,0]==0)
                         tot_pixels[0,i_n-1] = active_pixels+tot_pixels[0,i_n-1]
                         temp = []
                         for frame in range(num_frames):
+                            
                             temp.append(np.nansum(projected[:,:,frame]))
                         temp = np.array(temp)
                         

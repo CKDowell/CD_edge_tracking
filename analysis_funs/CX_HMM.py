@@ -12,7 +12,7 @@ The states can then be used to run other models
 import numpy as np
 
 from scipy.stats import vonmises
-
+from scipy import stats
 #%% 
 class CX_HMM:
     def __init__(self,n_states): 
@@ -149,7 +149,82 @@ class CX_HMM:
         self._last_gamma = gamma
         self._last_loglik = prev_ll
         return self
-   
+    def fit_hDeltaC(self,y,x,max_iters=100,tol=1e-6,verbose=False):
+        y = self.wrap_ang(np.asarray(y))
+        T = len(y)
+        # Initiate parameters
+        
+        # init pi0 uniform
+        self.pi0 = np.full(self.N, 1.0/self.N)
+        # init trans as slightly noisy identity (tendency to stay)
+        p_stay = 0.95
+        self.trans = np.full((self.N, self.N), (1-p_stay)/(self.N-1))
+        np.fill_diagonal(self.trans, p_stay)
+       
+       
+        # initialise angles
+        self.angles = [-(3/4)*np.pi,(3/4)*np.pi,0]
+        
+        # global kappa from overall resultant length
+        R = np.abs(np.mean(np.exp(1j * y)))
+        self.kappa = np.full(self.N, max(1.0, self.estimate_kappa_from_R(R)))
+        
+        # Main loop
+        
+        prev_ll = -np.inf
+        for it in range(max_iters):
+            # E-step: compute posteriors
+            log_em = self._compute_log_emission(y,x)  # (T,N)
+            log_alpha, log_beta, log_lik = self._forward_backward(log_em)
+            # posterior gamma_t(s)
+            log_gamma = log_alpha + log_beta
+            log_gamma = log_gamma - np.squeeze(self.logsumexp(log_gamma, axis=1))[:, None]
+            gamma = np.exp(log_gamma)  # (T,N)
+            # expected transitions xi_t(i,j) proportional to alpha[t,i] * A[i,j] * emission[t+1,j] * beta[t+1,j]
+            logA = np.log(self.trans + 1e-300)
+            xi_sum = np.zeros((self.N, self.N))
+            for t in range(T-1):
+                # compute matrix of shape (N,N): log_alpha[t,i] + logA[i,j] + log_em[t+1,j] + log_beta[t+1,j]
+                M = log_alpha[t][:, None] + logA + log_em[t+1][None, :] + log_beta[t+1][None, :]
+                M = M - self.logsumexp(M)  # normalize to log-probabilities
+                xi_sum += np.exp(M)
+            # M-step:
+            # 1) Update pi0
+            self.pi0 = gamma[0] / np.sum(gamma[0])
+            # 2) Update transition matrix
+            trans_new = xi_sum / np.maximum(xi_sum.sum(axis=1, keepdims=True), 1e-12)
+            # Small regularization to avoid zeros
+            trans_new = (trans_new + 1e-8)
+            trans_new = trans_new / trans_new.sum(axis=1, keepdims=True)
+            self.trans = trans_new
+            
+            z = np.sum(gamma * np.exp(1j * (y-x)[:,None]), axis=0)
+            R_s = np.abs(z) / np.maximum(np.sum(gamma, axis=0), 1e-12)
+            mu_s = np.angle(z)
+            kappa_s = np.array([self.estimate_kappa_from_R(R) for R in R_s])
+            self.angles = self.wrap_ang(mu_s)
+            self.angles[0] = stats.circmean(np.abs(self.angles[:2]),high=np.pi,low=-np.pi)
+            self.angles[1] = -self.angles[0] # enforce negative of angle
+            self.kappa = kappa_s
+            
+            if verbose:
+                print(f"Iter {it:3d}  logL={log_lik:.4f}")
+            if np.abs(log_lik - prev_ll) < tol:
+                if verbose:
+                    print("Converged.")
+                break
+            prev_ll = log_lik
+    
+      
+        # final posterior gamma and loglik
+        self._last_log_em = log_em
+        self._last_log_alpha = log_alpha
+        self._last_log_beta = log_beta
+        self._last_gamma = gamma
+        self._last_loglik = prev_ll
+        return self
+            
+            
     def posterior_states(self):
         """Return posterior state probabilities gamma (T,N) from last fit."""
         return getattr(self, "_last_gamma", None)

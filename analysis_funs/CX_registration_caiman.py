@@ -48,6 +48,7 @@ class CX_registration_caiman:
             print('stack:', i)
             files = slice_stacks[i]
             files.sort()
+            
             if hasattr(self.ex, 'split'):
                 for j, range in enumerate(self.ex.split):
                     tif_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.tif')
@@ -61,10 +62,11 @@ class CX_registration_caiman:
                 Ch1 = [f for f in files if 'Ch1' in f]
                 Ch2 = [f for f in files if 'Ch2' in f]
                 Chns = [Ch1, Ch2]
+                
                 for ch in [1,2]:
                     tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
                     pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=ch)
+                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
                     
                     #reg_results, registered_blurred = self.register_image_block(Chns[ch-1], ini_reg_frames=100,two_scale = True,scale=0.5)
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
@@ -77,7 +79,7 @@ class CX_registration_caiman:
                 for ch in [2,3]:
                     tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
                     pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=ch)
+                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
                     #reg_results, registered_blurred = self.register_image_block(Chns[ch-2], ini_reg_frames=100,two_scale = True,scale=0.5)
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
                     fn.save_obj(reg_results, pickle_name)
@@ -103,10 +105,13 @@ class CX_registration_caiman:
             all_images = [image[np.newaxis, ...] for image in images]
             all_images2 = all_images[1:]
             print(np.shape(all_images[0]))
+            
             if len(np.shape(all_images[0]))==4:
                 extra_im = all_images[0][0,chn,:,:]
             elif len(np.shape(all_images[0]))==5:
                 extra_im = all_images[0][0,0,chn,:,:]
+            elif len(np.shape(all_images[0]))==6:
+                 extra_im = all_images[0][0,0,chn,plane-1,:,:]
             extra_im = extra_im[np.newaxis,...]
             all_images2.append(extra_im)
             original = np.concatenate(all_images2)
@@ -120,7 +125,7 @@ class CX_registration_caiman:
         if len(ch)==0:
             tempname = os.path.join(self.temp_folder, self.ex.name+'pre_register_slice'+str(plane)+'.tif')
         else:
-            tempname = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(ch)+'pre_register_slice'+str(ch)+'.tif')
+            tempname = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(ch[0])+'pre_register_slice'+str(plane)+'.tif')
         io.imsave(tempname,original,plugin='tifffile')
         
         # Start parallel computing
@@ -170,7 +175,7 @@ class CX_registration_caiman:
         if len(ch)==0:
             tif_name = os.path.join(self.temp_folder, self.ex.name+'_slice'+str(plane)+'.tif')
         else:
-            tif_name = os.path.join(self.regfol, self.name+'_Ch'+str(ch)+'_slice'+str(ch)+'.tif')
+            tif_name = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(ch[0])+'_slice'+str(plane)+'.tif')
             
         io.imsave(tif_name,registered,plugin='tifffile') # save in temp folder for easy comparison
             
