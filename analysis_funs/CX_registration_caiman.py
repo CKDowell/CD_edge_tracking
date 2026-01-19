@@ -37,6 +37,7 @@ class CX_registration_caiman:
         'border_nan': 'copy'}  # replicate values along the boundary (if True, fill in with NaN)
         self.temp_folder = r'D:\FCI\reg_temporary_data'
         self.rigid_out = {}
+        self.one2other=False
     def register_rigid(self,params=[]):
         new_params = self.default_params.copy()
         if len(params)>0:
@@ -54,7 +55,7 @@ class CX_registration_caiman:
                     tif_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.tif')
                     pickle_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.pickle')
                     files_sub = files[(range[0]-1):(range[1]-1)]
-                    reg_results,registered_blurred = self.run_rigid_register(files_sub,i)
+                    reg_results,registered_blurred,mc = self.run_rigid_register(files_sub,i)
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
                     fn.save_obj(reg_results, pickle_name)
             elif self.ex.dual_color:
@@ -63,14 +64,26 @@ class CX_registration_caiman:
                 Ch2 = [f for f in files if 'Ch2' in f]
                 Chns = [Ch1, Ch2]
                 
-                for ch in [1,2]:
-                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
-                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
+                if self.one2other:
                     
-                    #reg_results, registered_blurred = self.register_image_block(Chns[ch-1], ini_reg_frames=100,two_scale = True,scale=0.5)
+                    reg_results,registered_blurred,registered_blurred2 = self.run_rigid_1_to_other(Chns[self.chreg-1],Chns[self.chmov-1],i,self.chreg,self.chmov)
+                    
+                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.tif')
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
-                    fn.save_obj(reg_results, pickle_name)
+                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.pickle')
+                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.tif')
+                    io.imsave(tif_name, registered_blurred2, plugin='tifffile')
+                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.pickle')
+                else:
+
+                    for ch in [1,2]:
+                        tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
+                        pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
+                        reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
+                        
+                        #reg_results, registered_blurred = self.register_image_block(Chns[ch-1], ini_reg_frames=100,two_scale = True,scale=0.5)
+                        io.imsave(tif_name, registered_blurred, plugin='tifffile')
+                        fn.save_obj(reg_results, pickle_name)
             elif self.ex.dual_color_old:
                 # for imaging on Lyndon where the channel names are 2 and 3 instead of 1 and 2
                 Ch2 = [f for f in files if 'Ch2' in f]
@@ -79,7 +92,7 @@ class CX_registration_caiman:
                 for ch in [2,3]:
                     tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
                     pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                    reg_results,registered_blurred = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
+                    reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
                     #reg_results, registered_blurred = self.register_image_block(Chns[ch-2], ini_reg_frames=100,two_scale = True,scale=0.5)
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
                     fn.save_obj(reg_results, pickle_name)
@@ -92,32 +105,34 @@ class CX_registration_caiman:
                 fn.save_obj(reg_results, pickle_name)
         
     def run_rigid_register(self,files,plane,ch=[]):
-        f = files
-        f1 = f[0]
-        f1s = f1.split('.')
-        chn = int(f1s[0][-1])-1
-        images = io.imread_collection(f)
+        # f = files
+        # f1 = f[0]
+        # f1s = f1.split('.')
+        # chn = int(f1s[0][-1])-1
+        # images = io.imread_collection(f)
         params = self.params   
         # CD edit: io.concatenate does not work because tiffs are loaded in 
         # a strange way. This is a work around
-        try :
-            print(chn)
-            all_images = [image[np.newaxis, ...] for image in images]
-            all_images2 = all_images[1:]
-            print(np.shape(all_images[0]))
+        # try :
+        #     print(chn)
+        #     all_images = [image[np.newaxis, ...] for image in images]
+        #     all_images2 = all_images[1:]
+        #     print(np.shape(all_images[0]))
             
-            if len(np.shape(all_images[0]))==4:
-                extra_im = all_images[0][0,chn,:,:]
-            elif len(np.shape(all_images[0]))==5:
-                extra_im = all_images[0][0,0,chn,:,:]
-            elif len(np.shape(all_images[0]))==6:
-                 extra_im = all_images[0][0,0,chn,plane-1,:,:]
-            extra_im = extra_im[np.newaxis,...]
-            all_images2.append(extra_im)
-            original = np.concatenate(all_images2)
-        except: # CD edit -reordeded this since below actually takes some time
-            print(chn)
-            original = io.concatenate_images(images)
+        #     if len(np.shape(all_images[0]))==4:
+        #         extra_im = all_images[0][0,chn,:,:]
+        #     elif len(np.shape(all_images[0]))==5:
+        #         extra_im = all_images[0][0,0,chn,:,:]
+        #     elif len(np.shape(all_images[0]))==6:
+        #          extra_im = all_images[0][0,0,chn,plane-1,:,:]
+        #     extra_im = extra_im[np.newaxis,...]
+        #     all_images2.append(extra_im)
+        #     original = np.concatenate(all_images2)
+        # except: # CD edit -reordeded this since below actually takes some time
+        #     print(chn)
+        #     original = io.concatenate_images(images)
+        
+        original = self.load_stack(files,plane)
         
         registered = np.zeros(original.shape)
         registered_blurred = np.zeros(original.shape)
@@ -182,5 +197,96 @@ class CX_registration_caiman:
         for i, frame in enumerate(registered):
             registered_blurred[i] = filters.gaussian(frame, 1)
         reg_results = {'rigid_shift':mc.shifts_rig}
-        return reg_results, registered_blurred
+        return reg_results, registered_blurred,mc
+    def load_stack(self,files,plane):
+        f = files
+        f1 = f[0]
+        f1s = f1.split('.')
+        chn = int(f1s[0][-1])-1
+        images = io.imread_collection(f)
+        # CD edit: io.concatenate does not work because tiffs are loaded in 
+        # a strange way. This is a work around
+        try :
+            print(chn)
+            all_images = [image[np.newaxis, ...] for image in images]
+            all_images2 = all_images[1:]
+            print(np.shape(all_images[0]))
+            
+            if len(np.shape(all_images[0]))==4:
+                extra_im = all_images[0][0,chn,:,:]
+            elif len(np.shape(all_images[0]))==5:
+                extra_im = all_images[0][0,0,chn,:,:]
+            elif len(np.shape(all_images[0]))==6:
+                 extra_im = all_images[0][0,0,chn,plane-1,:,:]
+            extra_im = extra_im[np.newaxis,...]
+            all_images2.append(extra_im)
+            stack = np.concatenate(all_images2)
+        except: # CD edit -reordeded this since below actually takes some time
+            print(chn)
+            stack = io.concatenate_images(images)
+        return stack
+    def run_rigid_1_to_other(self,files_Chref,files_Chmov,plane,ref_chan,mov_chan):
+        reg_results, registered_blurred,mc = self.run_rigid_register(files_Chref,plane,ch=[ref_chan])
         
+        stack = self.load_stack(files_Chmov,plane)
+        
+        
+        tempname = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(mov_chan)+'pre_register_slice'+str(plane)+'.tif')
+        io.imsave(tempname,stack,plugin='tifffile')
+        
+        
+        second_memmap = mc.apply_shifts_movie(tempname,save_memmap=True,
+                                              save_base_name=os.path.join(self.temp_folder,self.ex.name+'_Ch'+str(mov_chan)+'_slice'+str(plane)))
+        
+        registered = cm.load(second_memmap)
+        self.rigid_out.update({'plane'+str(plane):mc.shifts_rig})
+        
+        
+        tif_name = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(mov_chan)+'_slice'+str(plane)+'.tif')
+            
+        io.imsave(tif_name,registered,plugin='tifffile') # save in temp folder for easy comparison
+        registered_blurred2 = np.zeros(stack.shape)
+        for i, frame in enumerate(registered):
+            registered_blurred2[i] = filters.gaussian(frame, 1)
+        reg_results = {'rigid_shift':mc.shifts_rig}
+        
+        return reg_results, registered_blurred,registered_blurred2
+    
+    
+    def run_rigid_stack(self,stack,tempname='Stack1'):
+        tempsave = os.path.join(self.tempfolder,tempname+'.tif')
+        io.imsave(tempsave,stack,plugin='tifffile')
+        params= self.params
+        try:
+            # If a cluster already exists, stop it
+            
+            cm.stop_server(dview=dview)
+            dview.terminate()
+        except Exception:
+            pass
+        
+        # Now safely start a fresh one
+        c, dview, n_processes = cm.cluster.setup_cluster(
+            backend='multiprocessing',
+            n_processes=None,
+            single_thread=False
+        )
+        
+        
+                
+                
+        mc  = MotionCorrect(tempsave,dview=dview,
+                            max_shifts= params['max_shifts'],strides = params['strides'],
+                            overlaps=params['overlaps'], max_deviation_rigid=params['max_deviation_rigid'],
+                            shifts_opencv =params['shifts_opencv'],nonneg_movie = True,
+                            border_nan=params['border_nan'])
+        
+        mc.motion_correct(save_movie=True)
+        registered = cm.load(mc.mmap_file)
+        
+        tif_name = os.path.join(self.tempfolder,tempname+'_registered'+'_.tif')
+        io.imsave(tif_name,registered,plugin='tifffile')
+        
+        return mc
+        
+        # Runs above but on stack you give it

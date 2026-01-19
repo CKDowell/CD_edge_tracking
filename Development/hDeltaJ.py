@@ -83,10 +83,17 @@ experiment_dirs = [
                    #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial2', #Backwards vector, downwind walking
                    #r'Y:\Data\FCI\Hedwig\hDeltaJ\251029\f1\Trial3', # Lots of circling, bump is noisy
                    
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1', # EB coverage not amazing, lots of entries
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial2', # Some entries and exits, lots of downwind walking, which is good for neuronal characterisation
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial3',# ACV pulses
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial4'# Oct pulses not much of a response to octanaol...
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1', # EB coverage not amazing, lots of entries
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial2', # Some entries and exits, lots of downwind walking, which is good for neuronal characterisation
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial3',# ACV pulses
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial4'# Oct pulses not much of a response to octanaol...
+                   
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial1', # Made 10 jumps
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2', # Made to end of jumps
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial3', # ACV pulses
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial4' # Oct pulses
+                   
+                   
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -112,7 +119,7 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial4'
+datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2'
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
@@ -128,7 +135,8 @@ datadirs = [
     "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
     r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1",
     r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2",
-    r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1'
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1',
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2',
     ]
 plt.close('all')
 x_offset = 0
@@ -139,7 +147,7 @@ for datadir in datadirs:
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
     cxa.save_phases()
-    cxa.mean_jump_arrows(x_offset,fsb_names=['fsb_upper'],ascale=100)
+    cxa.mean_jump_arrows(x_offset,fsb_names=['eb','fsb_upper'],ascale=100)
     x_offset = x_offset+30
 
 

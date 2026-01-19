@@ -74,7 +74,7 @@ datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+cxa.simple_raw_plot(plotphase=False,regions = ['eb','fsb_upper','fsb_lower'],yk='eb')
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_lower_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_lower']/2,axis=1),a_sep= 2)
 
@@ -92,7 +92,7 @@ plt.plot(t,cd,color='b')
 #plt.plot(t,cd2,color='m')
 plt.plot(t,cxa.ft2['instrip'],color='r')
 plt.figure()
-cxa.mean_jump_arrows(fsb_names=['fsb_upper','fsb_lower'],jsize =3,ascale=100)
+cxa.mean_jump_arrows(fsb_names=['eb','fsb_lower','fsb_upper'],jsize =3,ascale=100)
 
 #%%
 plt.figure()

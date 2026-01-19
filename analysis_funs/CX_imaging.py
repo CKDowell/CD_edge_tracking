@@ -151,8 +151,30 @@ class CX:
                 else:
                     pd.DataFrame(tseries_df).to_csv(os.path.join(self.regfol,r +'.csv'))
                 
-           
-                
+    def upsample8_2_16(self,regions):
+        select_vec = ['0','1','2','3','4','5','6','7']
+        x_old = np.linspace(0,1,8)
+        x_new = np.linspace(0,1,16)
+        A = np.zeros((8,16))
+        E = np.eye(8)
+        for i in range(8):
+            A[i,:] = np.interp(x_new, x_old, E[i,:])   # (16, 8)
+        #load csv
+        for r in regions:
+            df = pd.read_csv(os.path.join(self.regfol,r+'.csv'))
+            data = df[select_vec].to_numpy()
+            # upsample
+            
+
+            # Apply to data
+            data_u = data @ A
+            #save csv
+            df_u = pd.DataFrame(data_u)        
+            df_u.to_csv(os.path.join(self.regfol,r+'_16.csv'),index=False)
+        
+        
+        
+        
     def save_postprocessing(self, overwrite=True,upsample=True,uperiod=0.1):
         post_processing_file = os.path.join(self.processedfol, 'postprocessing.h5')
         if not os.path.exists(post_processing_file) or overwrite:
@@ -327,6 +349,7 @@ class CX:
             a = fn.closest_argmin(A, B)
             gap = np.mean(B[a]-A)
             if np.abs(gap)>0.1:
+                print('Large gap!')
                 delta_t = self.calculate_del_t_old()
                 B = ft.seconds[ft_idx].to_numpy()-delta_t
                 # find indices where fictrac pulses are closest to prarieview received pulses
@@ -534,7 +557,7 @@ class CX:
         ft = self.load_preprocessing()
         ft['seconds'] = ft['seconds']-delta_t
         ix = fn.closest_argmin(pv2.seconds.to_numpy(),ft.seconds.to_numpy()) #FT index closest to PV index
-
+        #return ix,ft,pv2,delta_t
         # if there are duplicates remove those rows from FT and PV.
         dup = pd.DataFrame(ix)
         if dup.duplicated().any():

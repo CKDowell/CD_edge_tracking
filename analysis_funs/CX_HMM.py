@@ -248,7 +248,7 @@ class CX_HMM:
         states[-1] = np.argmax(delta[-1])
         for t in range(T-2, -1, -1):
             states[t] = psi[t+1, states[t+1]]
-        return states
+        return states,log_em
     
     # ------------------------
     # Utility functions

@@ -559,6 +559,9 @@ class fly:
             if len(spl)>1:
                 if spl[1][2] == 'p':
                     slices = np.append(slices,int(spl[1][0]))
+                else:
+                    slices = np.append(slices,int(spl[1][0]))
+        slices = np.unique(slices)
         # for key in list(self.mask_slice.keys()):
         #     slices = self.mask_slice[key]
         key = 'All'    
@@ -570,9 +573,9 @@ class fly:
         snames = np.unique(snames)
         allchans = np.zeros(len(snames),dtype='int')
         for i,s in enumerate(snames):
-            sd = s.find('Ch')
+            sd = s.find('_Ch')
             if sd>-1:
-                allchans[i] = int(s[sd+2])
+                allchans[i] = int(s[sd+3])
                 
         
         if sum(allchans)>0:
@@ -585,17 +588,22 @@ class fly:
                 stack = []
                 stackm = []
                 for slice in slices:
-                    for file in tfiles:             
+                    for file in tfiles:  
                         if file.endswith('Ch'+str(c)+'_slice'+str(slice)+'.tif') and not file.startswith('._'):
                             tfile= os.path.join(self.regfol,file)
-                            image = io.imread(tfile, plugin='tifffile')                     
+                            image = io.imread(tfile, plugin='tifffile') 
+                            print('is',image.shape)
                             proj = np.mean(image, axis=0)
                             stack.append(proj)
                             projm = np.max(image, axis =0)
                             stackm.append(projm)
+                        else:
+                            print(file)
+                            
                             
                 stack = np.array(stack)
                 stackm = np.array(stackm)
+                print(stack.shape)
                 tif_name = os.path.join(self.regfol, self.name+'_Ch' + str(c)+'_'+key+'.tif')
                 
                 io.imsave(tif_name, stack)

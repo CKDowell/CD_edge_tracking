@@ -55,3 +55,4 @@ regions = ['eb_ch1','eb_ch2','fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fs
 cxa = CX_a(datadir,regions=regions,yoking=True)
 
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
+

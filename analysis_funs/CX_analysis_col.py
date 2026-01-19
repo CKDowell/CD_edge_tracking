@@ -181,8 +181,9 @@ class CX_a:
                 loaddir = os.path.join(self.datadir,'processed','phase_dict.pkl')
                 with open(loaddir, 'rb') as f:
                     self.pdat = pickle.load(f)
-                self.phase_eb = self.pdat['phase_'+self.stab]
-                self.amp_eb = self.pdat['amp_' + self.stab]
+                if yoking:
+                    self.phase_eb = self.pdat['phase_'+self.stab]
+                    self.amp_eb = self.pdat['amp_' + self.stab]
                 if len(regions)>1:
                     self.phase = self.pdat['phase_'+regions[1]]
                     self.amp = self.pdat['amp_' + regions[1]]
@@ -453,10 +454,10 @@ class CX_a:
         plt.yticks(yt,labels=np.round(yt*frate))
         plt.ylabel('Time (s)')
         plt.show()
-    def entry_exit_phase(self):
+    def entry_exit_phase(self,eb_name,fsb_name):
         mult = float(180)/np.pi
-        eb_phase = self.pdat['offset_eb_phase']*mult
-        fsb_phase = self.pdat['offset_fsb_phase']*mult
+        eb_phase = self.pdat[eb_name]*mult
+        fsb_phase = self.pdat[fsb_name]*mult
         strip = self.ft2['instrip'].to_numpy()
         sdiff = np.diff(strip)
         son = np.where(sdiff>0)[0]+1
@@ -1554,7 +1555,7 @@ class CX_a:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
         
-    def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower'],ascale=50,jsize=3,cond=[False]):
+    def mean_jump_arrows(self,x_offset=0,fsb_names=['fsb_upper','fsb_lower'],ascale=50,jsize=3,cond=[False],time_threshold=60):
         
         ft2 = self.ft2
         pv2 = self.pv2
@@ -1568,9 +1569,9 @@ class CX_a:
         insd = np.diff(ins)
         ents = np.where(insd>0)[0]+1
         exts = np.where(insd<0)[0]+1 
-        time_threshold = 60
         
-        this_j = self.get_jumps(time_threshold)
+        
+        this_j = self.get_jumps(time_threshold=time_threshold)
         # Initialise arrays
         inplume_traj = np.zeros((50,len(this_j),2))
         outplume_traj = np.zeros((50,len(this_j),2))
@@ -1586,10 +1587,17 @@ class CX_a:
         plt.fill([-13+x_offset,-jsize+x_offset,-jsize+x_offset,-13+x_offset],[100,100,0,0],color=[0.8,0.8,0.8])
         plt.plot([-jsize+x_offset,-jsize+x_offset],[100,0],linestyle='--',color='k',zorder=2)
         x = x*side_mult
-        phase = self.pdat['offset_eb_phase'].to_numpy()
-        phase = phase.reshape(-1,1)
-        for f in fsb_names:
-            phase = np.append(phase,self.pdat['offset_' +f+'_phase'].to_numpy().reshape(-1,1),axis=1)
+        # try:
+        #     phase = self.pdat['offset_eb_phase'].to_numpy()
+        #     phase = phase.reshape(-1,1)
+        # except :
+        #     phase = np.empty(self.phase.shape)
+            
+        for f1, f in enumerate(fsb_names):
+            if f1==0:
+                phase = self.pdat['offset_' +f+'_phase'].to_numpy().reshape(-1,1)
+            else:
+                phase = np.append(phase,self.pdat['offset_' +f+'_phase'].to_numpy().reshape(-1,1),axis=1)
         phase = phase*side_mult
         if len(cond)>1:
             phase[~cond,:] = np.nan
@@ -1600,11 +1608,17 @@ class CX_a:
             # ie = np.argmin(np.abs(ex))
             # t_ent = ie+1
             # sub_dx = exts[ie]
-            
-            amp = self.pdat['amp_eb']
-            amp = amp.reshape(-1,1)
-            for f in fsb_names:
-                amp = np.append(amp,self.pdat['amp_'+f].reshape(-1,1),axis=1)
+            # try:
+            #     amp = self.pdat['amp_eb']
+            #     amp = amp.reshape(-1,1)
+            # except:
+            #     amp = np.empty(self.amp.shape)
+                
+            for f1,f in enumerate(fsb_names):
+                if f1==0:
+                    amp = self.pdat['amp_'+f].reshape(-1,1)
+                else:
+                    amp = np.append(amp,self.pdat['amp_'+f].reshape(-1,1),axis=1)
             # in plume
             ipdx = np.arange(j[0],j[1],step=1,dtype=int)
             old_time = ipdx-ipdx[0]
@@ -1617,7 +1631,7 @@ class CX_a:
             y_int = np.interp(new_time,old_time,ip_y)
             inplume_traj[:,i,0] = x_int
             inplume_traj[:,i,1] = y_int
-            for p in range(len(fsb_names)+1):
+            for p in range(len(fsb_names)):
                 t_p = phase[ipdx,p]  
                 p_int = np.interp(new_time,old_time,t_p)
                 inplume_phase[:,i,p] = p_int
@@ -1638,7 +1652,7 @@ class CX_a:
             y_int = np.interp(new_time,old_time,ip_y)
             outplume_traj[:,i,0] = x_int
             outplume_traj[:,i,1] = y_int
-            for p in range(len(fsb_names)+1):
+            for p in range(len(fsb_names)):
                 t_p = phase[ipdx,p]
                 p_int = np.interp(new_time,old_time,t_p)
                 outplume_phase[:,i,p] = p_int
@@ -1917,7 +1931,7 @@ class CX_a:
         jn = jn[jkeep]
         jns = np.sign(jd[jn])
 
-        time_threshold = 60
+        
         # Pick the most common side
         v,c = np.unique(jns,return_counts=True)
         side = v[np.argmax(c)]
@@ -1943,7 +1957,22 @@ class CX_a:
             ent2 = ents[t_ent]
             out_dx[i,:] = np.array([ent,sub_dx,ent2],dtype='int')
         return out_dx
-    
+    def get_jumps_w_prior(self,time_threshold=60,time_threshold2=0):
+        # gets jumps and index of prior plume exit before jump trial
+        # Index is 0: prior exit 1: entry 2: exit 3: entry
+        jumps = self.get_jumps(time_threshold=time_threshold,time_threshold2=time_threshold2)
+        ft2 = self.ft2
+        ins = ft2['instrip'].to_numpy()
+        insd = np.diff(ins)
+        ents = np.where(insd>0)[0]+1
+        out_dx = np.zeros((jumps.shape[0],jumps.shape[1]+1),dtype=int)
+        out_dx[:,1:] = jumps
+        for i,j in enumerate(jumps):
+            jd = ents-j[0]
+            ji = np.argmax(jd[jd<0])
+            out_dx[i,0] = ents[ji]
+            
+        return out_dx
     def get_entries_exits(self,ent_duration=0.5): 
         #Funciton gets all entries and exits to the plume
         ins = self.ft2['instrip'].to_numpy()
@@ -3901,7 +3930,10 @@ class CX_a:
 
         add_array = np.zeros(len(th))
         fh[fh>0] = 1
+        fh[np.isnan(fh.astype(float))] = 0
         dfh = np.where(np.diff(fh)>0)[0]
+        print(ubumps)
+        print(dfh)
         add_array[dfh] =ubumps
         add_array = np.cumsum(add_array)
 

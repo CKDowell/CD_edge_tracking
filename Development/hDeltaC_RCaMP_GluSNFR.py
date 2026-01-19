@@ -39,7 +39,7 @@ for i in [1,2]:
     
 #%%
 datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250513\f1\Trial2"
-
+datadir = r'Y:\Data\FCI\Hedwig\hDeltaC_68_A10LexGCaMP_hDeltaCGalRCaMP\f1\Trial1'
   
 regions = ['fsb_upper','fsb_lower']
 d = datadir.split("\\")
@@ -59,7 +59,9 @@ pv2, ft, ft2, ix = cx.load_postprocessing()
 regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
 cxa = CX_a(datadir,regions=regions,yoking=False)
 
-cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
+cxa.simple_raw_plot(regions=regions[0],yeseb=False,plotphase=False)
+cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
+
 #%% Quick load
 datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250715\f2\Trial2"
 

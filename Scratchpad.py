@@ -26,6 +26,46 @@ from Utilities.utils_general import utils_general as ug
 from scipy.stats import circmean, circstd
 
 plt.rcParams['pdf.fonttype'] = 42 
+#%% Noelle problem
+datadir = r'Y:\noelle_problem\260107_F1_T1_bad'
+#datadir = r'Y:\noelle_problem\260106_F2_T3_good'
+d = datadir.split("\\")
+name = d[-3] + '_' + d[-2] + '_' + d[-1]
+regions = ['hDC']
+cx = CX(name,regions,datadir)
+
+# save preprocessing, consolidates behavioural data
+cx.save_preprocessing()
+# Process ROIs and saves csv
+cx.process_rois()
+# Post processing, saves data as h5
+cx.crop = False
+cx.save_postprocessing()#upsample to 50Hz
+pv2, ft, ft2, ix = cx.load_postprocessing()
+#%%
+pv2,ft2,ft,ix = cx.behavior_imaging_align(upsample=True)
+#%% 
+plt.figure()
+plt.plot(ft2.seconds-ft2.seconds.iloc[0],ft2.instrip,color='r')
+plt.plot(pv2['relative_time'],pv2['0_hdc'])
+#plt.plot(ft2['instrip'])
+#plt.plot(pv2['0_hdc'])
+plt.plot(pv2['relative_time'],ft2.instrip,color='k')
+#%% 
+plt.figure()
+
+plt.subplot(1,2,1)
+plt.title('numpy')
+plt.plot(ft2['instrip'].to_numpy(),color='r')
+plt.plot(pv2['0_hdc'].to_numpy())
+plt.xlim([5600,6000])
+
+plt.subplot(1,2,2)
+plt.title('Pandas')
+
+plt.plot(ft2['instrip'],color='r')
+plt.plot(pv2['0_hdc'])
+plt.xlim([5600,6000])
 #%%
 savepath = r'E:\data\earwig_timelapse\2025-11-09'
 savedir = r'E:\data\earwig_timelapse\movies\251109'

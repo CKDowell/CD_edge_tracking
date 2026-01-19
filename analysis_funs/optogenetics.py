@@ -643,10 +643,24 @@ class opto:
     
         return output
             
+    def get_ret_path_len(self,df,min_duration=0.25):
+        e_e = self.get_entries_exits(df,ent_duration=min_duration)
+        # Get each entry and exit
+        x = df['ft_posx'].to_numpy()
+        y = df['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        output = np.zeros(e_e.shape[0])
+        for i,e in enumerate(e_e):
+            dx = np.arange(e[1],e[2])
+            tx = x[dx]
+            ty = y[dx]
+            dtx = np.diff(tx)
+            dty = np.diff(ty)
+            d_d = np.sqrt(dtx**2+dty**2)
+            output[i] = np.sum(d_d)
             
-            
-            
-    def get_entries_exits(self,df,ent_duration=.25):
+        return output            
+    def get_entries_exits(self,df,ent_duration=.25,ex_duration=.25):
         
         try:
             ins = df['instrip'].to_numpy()
