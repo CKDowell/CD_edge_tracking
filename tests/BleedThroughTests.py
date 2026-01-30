@@ -29,7 +29,7 @@ from Utilities.utils_general import utils_general as ug
 from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%% hDeltaC FSb test
-datadir = r'Y:\Data\FCI\Hedwig\Tests\BleedThroughCheck\ACV pulses 2'
+datadir = r'Y:\Data\FCI\Hedwig\Tests\BleedThroughCheck2\Trial1'
 regions = ['fsb']
 d = datadir.split("\\")
 name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -49,6 +49,7 @@ cxa = CX_a(datadir,regions=regions,yoking=False)
 
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
 #%%
+plt.close('all')
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
 
@@ -92,5 +93,10 @@ C = np.corrcoef(cmat.T)
 plt.figure()
 plt.imshow(C)
     
-    
+plt.figure()
+p1 = cxa.pdat['phase_'+regions[0]]
+p2 = cxa.pdat['phase_'+regions[1]]
+t = np.arange(0,len(p1))/10
+plt.scatter(t,p1,color='r',s=3)
+plt.scatter(t,p2,color='b',s=3)    
     

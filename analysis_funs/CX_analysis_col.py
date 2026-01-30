@@ -1379,7 +1379,7 @@ class CX_a:
             tmn = wmeanz[dx]
             ax[3].plot(tfx[tins==1],tfy[tins==1],color='r')
             #ax[3].plot(tfx[tins==0],tfy[tins==0],color='k')
-            uplt.coloured_line_simple(tfx[tins==0],tfy[tins==0],tpva[tins==0],'coolwarm',-2,2)
+            uplt.coloured_line_simple(tfx[tins==0],tfy[tins==0],tmn[tins==0],'coolwarm',-2,2)
             ax[3].set_aspect('equal')
             ax[3].set_xticks([])
             ax[3].set_yticks([])
@@ -1401,6 +1401,7 @@ class CX_a:
 
                 ax[3].plot(p2s,p2c,color=[0.3,0.3,0.3],zorder=-2)
                 
+                ax[3].text(p2s[0],p2c[0],str(id1/10))
             
             
     def return_jump_info(self,inbins=50,outbins=50,fsb_names=['fsb_upper','fsb_lower'],time_threshold=60):
@@ -2010,7 +2011,21 @@ class CX_a:
         if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
             e_ex = e_ex[:-1,:]
         return e_ex
+    def get_side_wo_jumps(self,ent_duration=0.5,odour='ACV'):
+        from scipy import stats
+        e_ex = self.get_entries_exits_like_jumps(ent_duration,odour)
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        x,y = self.fictrac_repair(x,y)
+        exen = x[e_ex[:,0]]
+        exen_ = x[e_ex[:,0]-10]
+        xdiff = exen-exen_  
+        sides = np.sign(xdiff)
+        side = stats.mode(sides)[0]
         
+        self.side2 = side
+        rprop = np.sum(sides==-1)/len(side)
+        self.rprop
     def point2point_heat(self,start,stop,regions=['eb','fsb_upper','fsb_lower'],arrowpoint='entry',toffset=-1):
         # Function will plot trajectory with arrows plus heatmaps of regions
         # The timepoints of arrows will be highlighted
@@ -2676,12 +2691,9 @@ class CX_a:
         plt.show()
       
         
-    def plot_traj_arrow_new(self,regions,a_sep=20,traindat=False,fulldat=True):
-        colours = np.array([[228,26,28],
-                    [55,126,184],
-                   [ 77,175,74],
-                    [152,78,163],
-                    [255,127,0]])/255
+    def plot_traj_arrow_new(self,regions,a_sep=20,traindat=False,fulldat=True, colours = 
+                            np.array([[228,26,28],[55,126,184],[ 77,175,74],[152,78,163],[255,127,0]])/255):
+        
         phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
         phases = np.zeros((len(phase_eb),len(regions)))
         amps = np.zeros((len(phase_eb),len(regions)))
@@ -2758,6 +2770,111 @@ class CX_a:
             if np.abs(d-t_sep)>a_sep:
                 t_sep = d
                 
+                xa = 20*amp_eb[i]*np.sin(phase_eb[i])
+                ya = 20*amp_eb[i]*np.cos(phase_eb[i])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
+                for p  in range(len(regions)):
+                    xa = 20*amps[i,p]*np.sin(phases[i,p])
+                    ya = 20*amps[i,p]*np.cos(phases[i,p])
+                    plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
+        ax = plt.gca()
+        ax.set_aspect('equal', adjustable='box')
+        plt.show()
+        
+    def plot_traj_arrow_heat(self,regions,heat,a_sep=20,traindat=False,fulldat=True,colormap='coolwarm',cmin=-1,cmax=1):
+        
+        
+        colours = np.array([[0,140,0],
+            [228,26,28],
+                    [55,126,184],
+                   [ 77,175,74],
+                    [152,78,163],
+                    [255,127,0]])/255
+        phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
+        phases = np.zeros((len(phase_eb),len(regions)))
+        amps = np.zeros((len(phase_eb),len(regions)))
+        for i,r in enumerate(regions):
+            phases[:,i] = self.pdat['offset_'+r+'_phase'].to_numpy()
+            amps[:,i] = np.mean(self.pdat['wedges_'+r],axis=1)
+            if np.min(amps[:,i])<0:
+                amps[:,i] = amps[:,i]-np.min(amps[amps[:,i]<0,i])
+        amp_eb = self.amp_eb.copy()
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        led = self.ft2['led1_stpt'].to_numpy()
+        
+        x,y = self.fictrac_repair(x,y)
+        instrip = self.ft2['instrip'].to_numpy()
+        if traindat:
+            mfc = self.ft2['mfc2_stpt'].to_numpy()>0
+            it = self.ft2['intrain'].to_numpy()>0
+        try:    
+            is1 =np.where(instrip)[0][0]
+        except:
+            instrip = self.ft2['mfc3_stpt'].to_numpy()>0
+            is1 = np.where(instrip)[0][0]
+            
+        if fulldat:
+            is1= 0
+        dx =np.diff(x)
+        dy = np.diff(y)
+        dist = np.cumsum(np.sqrt(dx**2+dy**2))
+        dist = np.append(0,dist)
+        # dist = np.sqrt(x**2+y**2)
+        # dist = dist-dist[0]
+        plt.figure()
+        
+        x = x[is1:]
+        y = y[is1:]
+        heat =heat[is1:]
+        dist = dist[is1:]
+        
+        instrip = instrip[is1:]
+        led = led[is1:]
+        if traindat:
+            it = it[is1:]
+            mfc = mfc[is1:]
+        phases = phases[is1:,:]
+        phase_eb = phase_eb[is1:]
+        amps = amps[is1:]
+        amp_eb = amp_eb[is1:]
+        
+        
+        if traindat:
+            plt.scatter(x[it],y[it],color=[0.8,0.2,0.2])
+            ito = np.logical_and(it,mfc)
+            
+        plt.scatter(x[instrip>0],y[instrip>0],color=[0.6,0.6,0.6])
+        #plt.scatter(x[led<1],y[led<1],color='r')
+        try:
+            plt.scatter(x[self.pure_stim[is1:]],y[self.pure_stim[is1:]],color='g')
+            print('success')
+        except:
+            print('not plotting leds')
+           # plt.scatter(x[led<1],y[led<1],color='r')
+        
+        if traindat:
+            plt.scatter(x[ito],y[ito],color=[0.6,0.6,0.6])
+        
+        if set(['train_heading']).issubset(self.ft2):
+            susp = self.ft2['fix_heading'].to_numpy()
+            plt.scatter(x[susp>0],y[susp>0],color=[0.2,1,0.2])
+        
+        #plt.plot(x,y,color='k')
+        ax = plt.gca()
+        hplot = heat.copy()
+        hplot[hplot<cmin] = cmin
+        hplot[hplot>cmax] = cmax
+        hplot[0] = cmin
+        hplot[-1] = cmax
+        print(cmin)
+        uplt.coloured_line(x,y,hplot,ax,cmap=colormap)
+        t_sep = a_sep
+        
+        for i,d in enumerate(dist):
+            if np.abs(d-t_sep)>a_sep:
+                t_sep = d
+                
                 xa = 50*amp_eb[i]*np.sin(phase_eb[i])
                 ya = 50*amp_eb[i]*np.cos(phase_eb[i])
                 plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
@@ -2768,7 +2885,6 @@ class CX_a:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
-        
         
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False,fulldat=True):
         

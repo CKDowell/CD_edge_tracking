@@ -48,19 +48,19 @@ r'Y:\Data\FCI\Hedwig\FC2_maimon2\240821\f2\Trial3', # bouts of tracking with lon
 #r'Y:\Data\FCI\Hedwig\FC2_maimon2\241024\f2\Trial3', # ok on one plume
 
 r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial1', # fly walked off after some ET
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial3', # fly walked off after some ET
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial4', # interesting plume crossing, could have some lookback activity
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial5', # leave plume
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial3', # fly walked off after some ET
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial4', # interesting plume crossing, could have some lookback activity
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241025\f2\Trial5', # leave plume
 
 r"Y:\Data\FCI\Hedwig\FC2_maimon2\241029\f2\Trial1", #Not a great tracker or walker, left after a few entries
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241029\f2\Trial2', # Not great tracker, bump seems to be dim... could be interesting
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241029\f2\Trial2', # Not great tracker, bump seems to be dim... could be interesting
 
-r'Y:\Data\FCI\Hedwig\FC2_maimon2\241030\f1\Trial1', # Some edge tracking but not great
+#r'Y:\Data\FCI\Hedwig\FC2_maimon2\241030\f1\Trial1', # Some edge tracking but not great
 r'Y:\Data\FCI\Hedwig\FC2_maimon2\241030\f1\Trial3',# Not great edge tracking leaves after a few entries
 
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial2",# Long plume entry and one plume
+#"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial2",# Long plume entry and one plume
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial3",# Long plume entries and cross overs -  a bit like the hdC
-"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4", # loopy returns, phase pointed out of plume
+#"Y:\Data\FCI\Hedwig\FC2_maimon2\\241104\\f1\\Trial4", # loopy returns, phase pointed out of plume
 
 "Y:\Data\FCI\Hedwig\FC2_maimon2\\241106\\f1\\Trial1",#ET walk off and then lost
 
@@ -72,6 +72,39 @@ r"Y:\Data\FCI\Hedwig\FC2_maimon2\250130\f1\Trial1", # very few plume interaction
 
 
 ]
+#%% Check bad tracker side
+regions = ['eb','fsb_upper','fsb_lower']
+from Utilities.utils_general import utils_general as ug
+
+for d in datadir_ok:
+    cxa = CX_a(d,regions=regions,denovo=False)
+    cxa.get_entries_exits_like_jumps()
+    
+    ins = cxa.ft2['instrip'].to_numpy()
+    ins = np.arange(0,np.where(ins>0)[0][0])
+    cxa.get_side_wo_jumps()
+    epg = cxa.pdat['phase_eb'][ins]
+    heading = cxa.ft2['ft_heading'].to_numpy()[ins]
+    offset= ug.circ_subtract(epg,heading)
+    #plt.figure()
+    #plt.hist(offset,bins=np.linspace(-np.pi,np.pi,100))
+    omn = stats.circmean(offset,high=-np.pi,low=np.pi)
+    #cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
+    plt.title(-cxa.side2)
+    plt.figure(102)
+    plt.scatter(-cxa.side2,omn,color='k')
+    # x = cxa.ft2['ft_posx'].to_numpy()
+    # y = cxa.ft2['ft_posy'].to_numpy()
+    # x,y = cxa.fictrac_repair(x,y)
+    # plt.plot(x[ins],y[ins],color='k')
+    # plt.gca().set_aspect('equal')
+    # plt.title('Offset: ' +str(180*omn/np.pi)+' Side: ' +str(-cxa.side))
+    
+plt.yticks([-np.pi,-np.pi/2,0,np.pi/2,np.pi],labels=[-180,-90,0,90,180])
+plt.ylim([-np.pi,np.pi])
+plt.ylabel('Mean heading EPG offset (degrees)')
+plt.xticks([-1,1],labels=['left tracker','right tracker'])
+plt.plot([-1,1],[0,0],color='r')
 #%%
 plt.close('all')
 regions = ['eb','fsb_upper','fsb_lower']

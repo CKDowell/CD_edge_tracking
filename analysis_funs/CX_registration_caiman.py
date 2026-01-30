@@ -45,92 +45,80 @@ class CX_registration_caiman:
                 new_params[p] = params[p]
         self.params= new_params
         slice_stacks = self.ex.split_files()
-        for i in np.arange(1, len(slice_stacks)+1):
-            print('stack:', i)
-            files = slice_stacks[i]
-            files.sort()
-            
-            if hasattr(self.ex, 'split'):
-                for j, range in enumerate(self.ex.split):
-                    tif_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.tif')
-                    pickle_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.pickle')
-                    files_sub = files[(range[0]-1):(range[1]-1)]
-                    reg_results,registered_blurred,mc = self.run_rigid_register(files_sub,i)
-                    io.imsave(tif_name, registered_blurred, plugin='tifffile')
-                    fn.save_obj(reg_results, pickle_name)
-            elif self.ex.dual_color:
-                # need to create options for registering one color based on another, or registering both separately
-                Ch1 = [f for f in files if 'Ch1' in f]
-                Ch2 = [f for f in files if 'Ch2' in f]
-                Chns = [Ch1, Ch2]
+        
+        cm.cluster.stop_server()
+        c, dview, n_processes = cm.cluster.setup_cluster(
+            backend='multiprocessing',
+            n_processes=None,
+            single_thread=False
+        )
+        try:
+            for i in np.arange(1, len(slice_stacks)+1):
+                print('stack:', i)
+                files = slice_stacks[i]
+                files.sort()
                 
-                if self.one2other:
-                    
-                    reg_results,registered_blurred,registered_blurred2 = self.run_rigid_1_to_other(Chns[self.chreg-1],Chns[self.chmov-1],i,self.chreg,self.chmov)
-                    
-                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.tif')
-                    io.imsave(tif_name, registered_blurred, plugin='tifffile')
-                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.pickle')
-                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.tif')
-                    io.imsave(tif_name, registered_blurred2, plugin='tifffile')
-                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.pickle')
-                else:
-
-                    for ch in [1,2]:
-                        tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
-                        pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                        reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
-                        
-                        #reg_results, registered_blurred = self.register_image_block(Chns[ch-1], ini_reg_frames=100,two_scale = True,scale=0.5)
+                if hasattr(self.ex, 'split'):
+                    for j, range in enumerate(self.ex.split):
+                        tif_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.tif')
+                        pickle_name = os.path.join(self.ex.regfol, self.cx.name+'_slice'+str(i)+'_split'+str(j)+'.pickle')
+                        files_sub = files[(range[0]-1):(range[1]-1)]
+                        reg_results,registered_blurred,mc = self.run_rigid_register(files_sub,i,dview)
                         io.imsave(tif_name, registered_blurred, plugin='tifffile')
                         fn.save_obj(reg_results, pickle_name)
-            elif self.ex.dual_color_old:
-                # for imaging on Lyndon where the channel names are 2 and 3 instead of 1 and 2
-                Ch2 = [f for f in files if 'Ch2' in f]
-                Ch3 = [f for f in files if 'Ch3' in f]
-                Chns = [Ch2, Ch3]
-                for ch in [2,3]:
-                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
-                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
-                    reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,ch=[ch])
-                    #reg_results, registered_blurred = self.register_image_block(Chns[ch-2], ini_reg_frames=100,two_scale = True,scale=0.5)
+                elif self.ex.dual_color:
+                    # need to create options for registering one color based on another, or registering both separately
+                    Ch1 = [f for f in files if 'Ch1' in f]
+                    Ch2 = [f for f in files if 'Ch2' in f]
+                    Chns = [Ch1, Ch2]
+                    
+                    if self.one2other:
+                        
+                        reg_results,registered_blurred,registered_blurred2 = self.run_rigid_1_to_other(Chns[self.chreg-1],Chns[self.chmov-1],i,self.chreg,self.chmov,dview)
+                        
+                        tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.tif')
+                        io.imsave(tif_name, registered_blurred, plugin='tifffile')
+                        pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chreg)+'_slice'+str(i)+'.pickle')
+                        tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.tif')
+                        io.imsave(tif_name, registered_blurred2, plugin='tifffile')
+                        pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(self.chmov)+'_slice'+str(i)+'.pickle')
+                    else:
+    
+                        for ch in [1,2]:
+                            tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
+                            pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
+                            reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,dview,ch=[ch])
+                            
+                            #reg_results, registered_blurred = self.register_image_block(Chns[ch-1], ini_reg_frames=100,two_scale = True,scale=0.5)
+                            io.imsave(tif_name, registered_blurred, plugin='tifffile')
+                            fn.save_obj(reg_results, pickle_name)
+                elif self.ex.dual_color_old:
+                    # for imaging on Lyndon where the channel names are 2 and 3 instead of 1 and 2
+                    Ch2 = [f for f in files if 'Ch2' in f]
+                    Ch3 = [f for f in files if 'Ch3' in f]
+                    Chns = [Ch2, Ch3]
+                    for ch in [2,3]:
+                        tif_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.tif')
+                        pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_Ch'+str(ch)+'_slice'+str(i)+'.pickle')
+                        reg_results,registered_blurred,mc = self.run_rigid_register(Chns[ch-1],i,dview,ch=[ch])
+                        #reg_results, registered_blurred = self.register_image_block(Chns[ch-2], ini_reg_frames=100,two_scale = True,scale=0.5)
+                        io.imsave(tif_name, registered_blurred, plugin='tifffile')
+                        fn.save_obj(reg_results, pickle_name)
+                else:
+                    tif_name = os.path.join(self.ex.regfol, self.ex.name+'_slice'+str(i)+'.tif')
+                    pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_slice'+str(i)+'.pickle')
+                    reg_results,registered_blurred,mc = self.run_rigid_register(files,i,dview)
+                    #reg_results, registered_blurred = self.register_image_block(files, ini_reg_frames=100)
                     io.imsave(tif_name, registered_blurred, plugin='tifffile')
                     fn.save_obj(reg_results, pickle_name)
-            else:
-                tif_name = os.path.join(self.ex.regfol, self.ex.name+'_slice'+str(i)+'.tif')
-                pickle_name = os.path.join(self.ex.regfol, self.ex.name+'_slice'+str(i)+'.pickle')
-                reg_results,registered_blurred = self.run_rigid_register(files,i)
-                #reg_results, registered_blurred = self.register_image_block(files, ini_reg_frames=100)
-                io.imsave(tif_name, registered_blurred, plugin='tifffile')
-                fn.save_obj(reg_results, pickle_name)
+        finally:
+            if dview is not None:
+                dview.terminate()
+            cm.cluster.stop_server()
+    def run_rigid_register(self,files,plane,dview,ch=[]):
         
-    def run_rigid_register(self,files,plane,ch=[]):
-        # f = files
-        # f1 = f[0]
-        # f1s = f1.split('.')
-        # chn = int(f1s[0][-1])-1
-        # images = io.imread_collection(f)
         params = self.params   
-        # CD edit: io.concatenate does not work because tiffs are loaded in 
-        # a strange way. This is a work around
-        # try :
-        #     print(chn)
-        #     all_images = [image[np.newaxis, ...] for image in images]
-        #     all_images2 = all_images[1:]
-        #     print(np.shape(all_images[0]))
-            
-        #     if len(np.shape(all_images[0]))==4:
-        #         extra_im = all_images[0][0,chn,:,:]
-        #     elif len(np.shape(all_images[0]))==5:
-        #         extra_im = all_images[0][0,0,chn,:,:]
-        #     elif len(np.shape(all_images[0]))==6:
-        #          extra_im = all_images[0][0,0,chn,plane-1,:,:]
-        #     extra_im = extra_im[np.newaxis,...]
-        #     all_images2.append(extra_im)
-        #     original = np.concatenate(all_images2)
-        # except: # CD edit -reordeded this since below actually takes some time
-        #     print(chn)
-        #     original = io.concatenate_images(images)
+        
         
         original = self.load_stack(files,plane)
         
@@ -143,39 +131,7 @@ class CX_registration_caiman:
             tempname = os.path.join(self.temp_folder, self.ex.name+'_Ch'+str(ch[0])+'pre_register_slice'+str(plane)+'.tif')
         io.imsave(tempname,original,plugin='tifffile')
         
-        # Start parallel computing
         
-        try:
-            # If a cluster already exists, stop it
-            
-            cm.stop_server(dview=dview)
-            dview.terminate()
-        except Exception:
-            pass
-        
-        # Now safely start a fresh one
-        c, dview, n_processes = cm.cluster.setup_cluster(
-            backend='multiprocessing',
-            n_processes=None,
-            single_thread=False
-        )
-        
-        
-        
-        # if 'dview' not in locals() or dview is None:
-        #     c, dview, n_processes = cm.cluster.setup_cluster(
-        #         backend='multiprocessing', n_processes=None, single_thread=False)
-        # else:
-        #     try:
-        #         # Check if cluster is alive
-        #         dview.apply_sync(lambda: 0)
-        #     except Exception:
-        #         # If it's dead, restart it
-        #         cm.stop_server()
-        #         c, dview, n_processes = cm.cluster.setup_cluster(
-        #             backend='multiprocessing', n_processes=None, single_thread=False)
-                
-                
                 
         mc  = MotionCorrect(tempname,dview=dview,
                             max_shifts= params['max_shifts'],strides = params['strides'],
@@ -225,8 +181,8 @@ class CX_registration_caiman:
             print(chn)
             stack = io.concatenate_images(images)
         return stack
-    def run_rigid_1_to_other(self,files_Chref,files_Chmov,plane,ref_chan,mov_chan):
-        reg_results, registered_blurred,mc = self.run_rigid_register(files_Chref,plane,ch=[ref_chan])
+    def run_rigid_1_to_other(self,files_Chref,files_Chmov,plane,ref_chan,mov_chan,dview):
+        reg_results, registered_blurred,mc = self.run_rigid_register(files_Chref,plane,dview,ch=[ref_chan])
         
         stack = self.load_stack(files_Chmov,plane)
         

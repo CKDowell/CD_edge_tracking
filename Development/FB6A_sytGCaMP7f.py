@@ -178,6 +178,33 @@ for e in experiment_dirs:
     # Post processing, saves data as h5
     cx.crop = False
     cx.save_postprocessing()
+#%%
+plt.close('all')
+for d in [1,3,6,8]:
+    cxt = CX_tan(experiment_dirs[d])
+    x = cxt.pv2['relative_time'].to_numpy()
+    # plt.plot(x,cxt.pv2['0_fsbtn'].to_numpy())
+    # plt.plot(x,cxt.ft2['instrip'].to_numpy())
+    # plt.plot(x,cxt.ft2['net_motion'].to_numpy())
+    ins = cxt.ft2['instrip'].to_numpy()
+    ca = cxt.pv2['0_fsbtn'].to_numpy()
+    di = np.where(np.diff(ins)<0)[0]+1
+    data = np.zeros((200,len(di[:-1])))
+    t = np.arange(0,200,1)/10
+    for i,d in enumerate(di[:-1]):
+        dx = np.arange(d,min(d+200,len(ca)))
+        #plt.plot(t[:len(dx)],ca[dx],color='k',alpha=0.01)
+        #plt.plot(t,-ca[dx]-np.min(-ca[dx]),color='r',alpha=0.2)    
+        data[:len(dx),i] = ca[dx]
+    dmean = np.mean(data,axis=1)
+    plt.plot(t,dmean,color='k')
+    plt.plot(t,-dmean+np.max(dmean),color='r')
+    plt.ylabel('mean dF/F',fontsize=15)
+    plt.xlabel('time from pulse end (s)',fontsize=15)
+    plt.xlim([0,20])
+    plt.xticks(np.arange(0,21,5),fontsize=15)
+    plt.yticks(np.arange(0,1,.2),fontsize=15)
+    plt.ylim([0,0.8])
 
 #%%
 from analysis_funs.CX_analysis_tan import CX_tan

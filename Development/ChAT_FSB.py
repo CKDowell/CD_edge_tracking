@@ -56,7 +56,7 @@ for e in experiment_dirs:
     
     cxa.save_phases()
 #%% 
-datadir =r'Y:\Data\FCI\Hedwig\ChAT\260102\f1\Trial2'
+datadir =r'Y:\Data\FCI\Hedwig\ChAT\260102\f1\Trial3'
 regions = ['eb','fsb_upper','fsb_middle','fsb_lower']
 
 cxa = CX_a(datadir,regions=regions,denovo=False)
@@ -75,6 +75,7 @@ u = ug()
 vx,vy,vd = u.get_velocity(cxa.ft2['ft_posx'].to_numpy(),cxa.ft2['ft_posy'].to_numpy(),cxa.pv2['relative_time'])
 plt.plot(x[1:],vd/20 -1,color=[0.5,0.5,.5])
 plt.legend()
+plt.show()
 #%% Plot on trajectory
 r = 'fsb_upper'
 ca = np.mean(cxa.pdat['wedges_'+r],axis=1)
@@ -118,6 +119,9 @@ cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper','fsb_middle','fsb
 #     cxa.mean_jump_lines()
 # except:
 #     print('no jumps')
+cxa.pdat['offset_fsb_lower2_phase'] = ug.circ_subtract(cxa.pdat['offset_fsb_lower_phase'],np.pi)
+cxa.pdat['wedges_fsb_lower2'] = cxa.pdat['wedges_fsb_lower']
+cxa.plot_traj_arrow_new(['fsb_lower','fsb_lower2'])
 #%% 
 plt.close('all')
 for ir,r in enumerate(regions):

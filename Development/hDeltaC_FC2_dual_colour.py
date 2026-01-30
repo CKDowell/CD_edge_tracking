@@ -50,11 +50,17 @@ datadirs=[
         #  r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\251202\f1\Trial3',
          
          #1030 nm data, should have less bleedthrough
-         r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial1',
-         r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial2',
-         r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial3',
-        # r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial4',
-         r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial5'
+        #  r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial1',
+        #  r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial2',
+        #  r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial3',
+        # # r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial4',
+        #  r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260114\f2\Trial5'
+        
+        r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260120\f1\Trial1',
+        r'Y:\Data\FCI\Hedwig\hDeltaC_68A10_FC2_GCaMP_RCaMP\260120\f1\Trial2',
+        
+         
+         
          
           ]
 
@@ -99,7 +105,7 @@ phase_fc2 = cxa.pdat['phase_fsb1_ch1']
 phase_hdc = cxa.pdat['phase_fsb2_ch2']
 ins = cxa.ft2['instrip'].to_numpy()
 
-x = np.arange(0,len(phase_fc2))
+x = np.arange(0,len(phase_fc2))/10
 plt.scatter(x,phase_fc2,color=colours[2,:],s=3)
 plt.scatter(x,phase_hdc,color=colours[1,:],s=3)
 plt.plot(x,2*ins*np.pi-np.pi,color='r')
@@ -113,20 +119,22 @@ plt.plot(x,amp-8,color=colours[2,:])
 plt.figure()
 jumps = cxa.get_entries_exits_like_jumps(ent_duration=1.5)
 phase_fc2 = cxa.pdat['phase_fsb1_ch1']
-phase_hdc = cxa.pdat['phase_fsb2_ch2']
+phase_hdc = np.squeeze(cxa.pdat['phase_fsb2_ch2'])
 heading = cxa.ft2['ft_heading'].to_numpy()
 offset = np.zeros_like(phase_fc2)
 last = 0
-for j in jumps:
+offmean = np.zeros(len(jumps))
+for ij,j in enumerate(jumps):
     dx = np.arange(j[1]-10,j[1])
     theading = stats.circmean(heading[dx],low=-np.pi,high=np.pi)
     tphase = stats.circmean(phase_fc2[dx])
     off = ug.circ_subtract(tphase,theading)
     offset[last:j[1]] = off
     last = j[1]  
-    
+    offmean[ij] = off
 #phase_fc2 = ug.savgol_circ(phase_fc2,20,3)
 #phase_hdc = ug.savgol_circ(phase_hdc,20,3)
+#offset = stats.circmean(offmean,low=-np.pi,high=np.pi)
 offset_fc2_phase = ug.circ_subtract(phase_fc2,offset)
 offset_hdc_phase = ug.circ_subtract(phase_hdc,offset)
 cxa.pdat['offset_fsb1_ch1_phase'] = pd.Series(offset_fc2_phase)
@@ -165,8 +173,8 @@ cxa.plot_traj_arrow(cxa.pdat['offset_'+region1+'_phase'].to_numpy(),np.mean(cxa.
 region2 = "fsb2_ch2"
 cxa.plot_traj_arrow(cxa.pdat['offset_'+region2+'_phase'].to_numpy(),np.mean(cxa.pdat['wedges_'+region2]/2,axis=1),a_sep= 2)
 
-
-cxa.plot_traj_arrow_new([region2,region1],a_sep=5)
+colours = colours = np.array([[49,99,125],[81,156,205]])/255
+cxa.plot_traj_arrow_new([region2,region1],a_sep=5,colours =colours)
 #%%
 cxa.plot_traj_arrow_new(['fsb2_ch2','fsb1_ch1'],a_sep=5)
 #%%
@@ -209,3 +217,51 @@ out_mean = stats.circmean(outdata,high=np.pi,low=-np.pi,axis=2)
 plt.fill([0,100,100,0],[-np.pi,-np.pi,np.pi,np.pi],color=[1,0.4,0.4])
 plt.plot(out_mean[:,0],color=colours[2,:])
 plt.plot(out_mean[:,1],color=colours[1,:])
+#%%
+jumps = cxa.get_entries_exits_like_jumps()
+#jumps = cxa.get_jumps()
+binsize = .25
+binsize = int(binsize*10)
+offset=.5
+wedges = cxa.pdat['wedges_fsb2_ch2']
+wedges_eb = cxa.pdat['wedges_fsb1_ch1']
+for ij,j in enumerate(jumps):
+    dxe  = np.arange(j[0]-5,j[2])
+    
+    twed = wedges[dxe,:]
+    twede = wedges_eb[dxe,:]
+    n_bins = twed.shape[0]//binsize
+    onbin = (j[1]-j[0]+5)//binsize
+    wed_trimmed =twed[:n_bins*binsize,:]
+    wed_binned = wed_trimmed.reshape(n_bins,binsize,16,-1).mean(axis=1)
+    
+    wed_trimmede =twede[:n_bins*binsize,:]
+    wed_binnede = wed_trimmede.reshape(n_bins,binsize,16,-1).mean(axis=1)
+    
+    
+    dxi  = np.arange(j[0],j[1])
+    
+        # plt.figure()
+        # plt.subplot(1,2,1)
+        # plt.imshow(twed)
+        # plt.subplot(1,2,2)
+        # plt.imshow(wed_binned)
+    plt.figure()
+    if n_bins>3:
+        for w in range(len(wed_binned)):
+            tw = wed_binned[w,:]
+            twe = wed_binnede[w,:]
+            x = np.arange(w*16,(w+1)*16)
+            plt.plot(x,twe,color='k')
+            plt.plot(x,tw+offset,color='b')
+            if w==1:
+                plt.plot([x[-1]+.5,x[-1]+.5],[-.1,1.2],color='r')
+            if w==onbin:
+                plt.plot([x[-1]+.5,x[-1]+.5],[-.1,1.2],color='r')
+            if np.mod(w,2)==0:
+                plt.fill_between(x,x*0-.1,x*0+1.2,color=[0.8,0.8,0.8],zorder=-1)
+                plt.text(x[7],-.2,str((w-1)*binsize/10))
+        plt.title(str(ij))
+        
+#cxa.jump_return_details()
+#%% EPG bump offset and bias

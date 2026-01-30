@@ -68,7 +68,7 @@ for d in datadirs[:-1]:
     #cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True,cmx=False,offsets=20)
 #%% Pulses
 cxt = CX_tan(datadirs[-1])
-#%%
+#%% Post odour pulse
 plt.close('all')
 x = cxt.pv2['relative_time'].to_numpy()
 plt.plot(x,cxt.pv2['0_fsbtn'].to_numpy())
