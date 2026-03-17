@@ -93,10 +93,14 @@ experiment_dirs = [
                    # r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial3', # ACV pulses
                    # r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial4' # Oct pulses
                    
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1', # ET made jumps
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial2', # V strip 22.5 deg
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial3',# V strip 45 deg with two geoms
-                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial4'# V strip fail
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1', # ET made jumps
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial2', # V strip 22.5 deg
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial3',# V strip 45 deg with two geoms
+                   # r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial4'# V strip fail
+                   
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial1', # lots of drift in z
+                   r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial2' # interesting dataset with plume jumps and cross overs
+                   
                    ]
 for e in experiment_dirs:
     datadir =os.path.join(e)
@@ -122,7 +126,7 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1'
+datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial2'
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
@@ -140,7 +144,8 @@ datadirs = [
     r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2",
     r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1',
     r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2',
-    r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1'
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1',
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial2'
     ]
 plt.close('all')
 x_offset = 0

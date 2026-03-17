@@ -1329,3 +1329,146 @@ for i2,io in enumerate(inson[1:]):
 #%% 
 rm,rt= fcm.set_up_regressors(['oct onset','in oct'],cirftau =[0.3,0.01])
 plt.plot(rm)
+
+
+
+
+
+#%% Analysis of 'bad trackers'
+
+experiment_dirs = [
+   
+    r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250313\f1\Trial2",#Lots of plume cross overs
+                   
+
+                  r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial3",#Made a few jumps
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial4",#Octanol [?] pulses - neuron is inhibited
+                   #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250320\f2\Trial5"#ACV pulses
+                   
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250327\f2\Trial3",
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250327\f2\Trial4", #Octanol pulses files missing near end :( reanalyse
+                  
+                 # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial1",# Walked until first jump
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial2",# Multiple plumes 2 jumps
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial3",#No jumps just going straight thru
+                   #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial4",'Octanol'
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250328\f1\Trial5",'ACV
+                  
+                  
+                  
+                  #r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial1", # One entry but encoding prior entry location
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial2", # No jumps but goal encoding
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial3", # Three jumps, not strong goal encoding, mainly look back activity - high dopamine...?
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial4", # V plume, did left plume, failed on right. Looks like animal had right goal but failed to pay attention to it... very interesting
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial5", # Poor tracker
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial6", # ACV pulses
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f1\Trial7", # octanol pulses
+                  
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial1", # one odour pulse
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2", # Three jumps, but very good goal encoding for entire experiment, interesting dynamics with locomotion
+                  
+                 
+                  
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial1", # Lots of plume cross overs
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial2", # Lots of walking not much edge tracking
+                  # r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial3", # Little edge tracking, lots of walking
+                   r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250716\f1\Trial4" # Traversing across plumes
+
+                  
+                    ]
+badtracks = {}
+for ie,e in enumerate(experiment_dirs):
+
+    cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    badtracks[ie] = cxa
+
+
+#%% 
+colours = np.array([[81,61,204],[49,99,125],[81,156,205]])/255
+plt.close('all')
+minlen = 50
+x = np.arange(0,600)/10
+
+
+meandat = np.zeros((600,len(badtracks)))
+for f in badtracks:
+    cxa = badtracks[f]
+    
+    amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    jumps = cxa.get_entries_exits_like_jumps()
+    jumplen = jumps[:,2]-jumps[:,1]
+    jumps = jumps[jumplen>minlen]
+    all_js = np.zeros((600,len(jumps)))
+    for i,j in enumerate(jumps):
+        dx = np.arange(j[1],j[2])
+       # plt.plot(amp[dx],color='k',alpha=0.3)
+        tamp = amp[dx]
+        amplen  = np.min([600,len(tamp)])
+        all_js[:amplen,i] = tamp[:amplen]
+        
+    all_js[all_js==0] = np.nan    
+    meandat[:,int(f)] = np.nanmean(all_js,axis=1)
+
+
+plt.plot(x[:200],meandat[:200,:],color=colours[1,:],alpha=0.3)
+plt.plot(x[:200],np.nanmean(meandat[:200,:],1),color=colours[1,:],alpha=1,linewidth=3)
+plt.ylabel('mean dF/F',fontsize=15)
+plt.xlabel('time from plume exit (s)',fontsize=15)
+plt.xlim([0,20])
+plt.ylim([0,.85])
+plt.xticks(np.arange(0,21,5),fontsize=15)
+plt.yticks(np.arange(0,1,.2),fontsize=15)
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
+plt.savefig(os.path.join(savedir,'Badtrackers_FluorRecoveryAllEntries.png'))
+plt.savefig(os.path.join(savedir,'Badtrackers_FluorRecoveryAllEntries.pdf'))
+
+
+#%%
+for di,f in enumerate(badtracks):
+
+    
+    cxa = badtracks[f]
+    amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    jumps = cxa.get_entries_exits_like_jumps()
+    #jumps = cxa.get_jumps()
+    jumplen = jumps[:,2]-jumps[:,1]
+    jumps = jumps[jumplen>minlen]
+    all_js = np.zeros((600,len(jumps)))
+    for i,j in enumerate(jumps):
+        dx = np.arange(j[1],j[2])
+       # plt.plot(amp[dx],color='k',alpha=0.3)
+        tamp = amp[dx]
+        amplen  = np.min([600,len(tamp)])
+        all_js[:amplen,i] = tamp[:amplen]
+        
+    all_js[all_js==0] = np.nan    
+    meandat[:,di] = np.nanmean(all_js,axis=1)
+    
+    
+    plt.figure(di)
+    x = np.arange(0,100)/10
+    r = np.arange(0,all_js.shape[1],5)
+    colours = uplt.defined_cmap('coolwarm',len(r))
+
+    for i,ir in enumerate(r[:-1]):
+        dx = np.arange(ir,r[i+1])
+        plt.plot(x,np.nanmean(all_js[:100,dx],axis=1),color=colours[i,:])
+plt.figure(101)
+x = np.arange(0,600)/10
+plt.plot(x[:200],meandat[:200,:],color=colours[0,:],alpha=0.3)
+plt.plot(x[:200],np.nanmean(meandat[:200,:],1),color=colours[0,:],alpha=1,linewidth=3)
+plt.ylabel('mean dF/F',fontsize=15)
+plt.xlabel('time from plume exit (s)',fontsize=15)
+plt.xlim([0,20])
+plt.xticks(np.arange(0,21,5),fontsize=15)
+plt.yticks(np.arange(0,1,.2),fontsize=15)
+#plt.savefig(os.path.join(savedir,'FluorRecoveryAllEntries_68A10.png'))
+#%% 
+offset = 0
+x = np.arange(0,100)/10
+r = np.arange(0,all_js.shape[1],5)
+colours = uplt.defined_cmap('coolwarm',len(r))
+
+for i,ir in enumerate(r[:-1]):
+    dx = np.arange(ir,r[i+1])
+    plt.plot(x,np.nanmean(all_js[:100,dx],axis=1),color=colours[i,:])

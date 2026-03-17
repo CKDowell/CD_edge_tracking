@@ -35,6 +35,7 @@ ex.z_projection()
 #%
 ex.mask_slice = {'All': [1,2,3,4]}
 ex.t_projection_mask_slice()
+
 #%%
 regions = ['eb','fsb_upper','fsb_lower']
 d = datadir.split("\\")
@@ -56,3 +57,25 @@ cxa = CX_a(datadir,regions=regions,yoking=True)
 
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
 
+#%% 
+datadir = r'Y:\Data\FCI\Hedwig\hDeltaC_68_A10LexGCaMP_hDeltaCGalRCaMP\f1\Trial1'
+regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
+cxa = CX_a(datadir,regions=regions,yoking=False)
+#%%
+red = np.mean(cxa.pdat['wedges_fsb_upper_ch1'],axis=1)
+green = np.mean(cxa.pdat['wedges_fsb_upper_ch2'],axis=1)
+ins = cxa.ft2['instrip'].to_numpy()
+
+plt.figure()
+plt.plot(red,color='m')
+plt.plot(green,color='g')
+plt.plot(ins,color='r')
+
+red = np.mean(cxa.pdat['wedges_fsb_lower_ch1'],axis=1)
+green = np.mean(cxa.pdat['wedges_fsb_lower_ch2'],axis=1)
+ins = cxa.ft2['instrip'].to_numpy()
+
+plt.figure()
+plt.plot(red,color='m')
+plt.plot(green,color='g')
+plt.plot(ins,color='r')

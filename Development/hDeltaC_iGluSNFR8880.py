@@ -69,7 +69,7 @@ for e in experiment_dirs:
     
 
 
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yeseb=False,yk='eb')
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper'],yeseb=False)
 #%%
 cxa = CX_a(experiment_dirs[0],regions=['fsb_upper'],yoking=False,denovo=False)
 cxt = CX_tan(experiment_dirs[1],tnstring='0_fsb_whole')

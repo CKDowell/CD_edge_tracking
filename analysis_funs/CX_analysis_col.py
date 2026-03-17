@@ -102,7 +102,7 @@ class CX_a:
         else: 
             self.cx = CX(name,regions,datadir)
             self.pv2, self.ft, self.ft2, ix = self.cx.load_postprocessing()  
-            self.pv2 = self.pv2.drop(columns=self.pv2.filter(regex='fsbtn').columns) # needed to drop any whole TN masks
+            #self.pv2 = self.pv2.drop(columns=self.pv2.filter(regex='fsbtn').columns) # needed to drop any whole TN masks
             if stim:
                 self.interpolate_over_stim(regions) # interpolates signal over shutter blockage with stimulation
             #self.pv2 = self.pv2.drop(columns=['0_fsbtn']) # drop any reference to tangential neurons
@@ -185,17 +185,21 @@ class CX_a:
                     self.phase_eb = self.pdat['phase_'+self.stab]
                     self.amp_eb = self.pdat['amp_' + self.stab]
                 if len(regions)>1:
-                    self.phase = self.pdat['phase_'+regions[1]]
-                    self.amp = self.pdat['amp_' + regions[1]]
-                    self.phase = self.phase.reshape(-1, 1)
-                    self.amp = self.amp.reshape(-1,1)
-                    for i,r in enumerate(regions[2:]):
-                        p = self.pdat['phase_'+r]
-                        a = self.pdat['amp_'+r]
-                        p = p.reshape(-1,1)                 
-                        a = a.reshape(-1,1) 
-                        self.phase = np.append(self.phase,p,axis =1)
-                        self.amp = np.append(self.amp,a,axis = 1)
+                    try:
+                        self.phase = self.pdat['phase_'+regions[1]]
+                        self.amp = self.pdat['amp_' + regions[1]]
+                        self.phase = self.phase.reshape(-1, 1)
+                        self.amp = self.amp.reshape(-1,1)
+                        for i,r in enumerate(regions[2:]):
+                            p = self.pdat['phase_'+r]
+                            a = self.pdat['amp_'+r]
+                            p = p.reshape(-1,1)                 
+                            a = a.reshape(-1,1) 
+                            self.phase = np.append(self.phase,p,axis =1)
+                            self.amp = np.append(self.amp,a,axis = 1)
+                    except:
+                        self.phase = self.phase_eb
+                        self.amp = self.amp_eb
                 else:
                     self.phase = self.pdat['phase_'+regions[0]]
                     self.amp = self.pdat['amp_' + regions[0]]

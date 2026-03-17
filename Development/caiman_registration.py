@@ -5,10 +5,11 @@ Created on Wed Oct 29 11:37:35 2025
 @author: dowel
 """
 
-rootdir = r"Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1"
+rootdir = r"Y:\Data\FCI\Hedwig\Tests\68A10_GCaMP8m\260211\f1"
 import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
-for i in [2,3,4]:
+import multiprocessing
+for i in [1,2,3]:
     datadir =os.path.join(rootdir,'Trial' +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -16,9 +17,9 @@ for i in [2,3,4]:
     # ex = im.fly(name, datadir)
     # ex.register_all_images(overwrite=True)
     if __name__ == '__main__':
-        import multiprocessing
+        
         multiprocessing.freeze_support()
-        cxcai = CX_cai(datadir,dual_color=False)
+        cxcai = CX_cai(datadir,dual_color=True)
         cxcai.one2other=False
         cxcai.chreg = 2 
         cxcai.chmov = 1
@@ -45,7 +46,7 @@ for i in [2,3,4]:
 #%%
 from analysis_funs.utilities import imaging as im
 
-for i in [1,2,3,4]:
+for i in [1,2,3]:
     datadir =os.path.join(rootdir,'Trial' +str(i))
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
