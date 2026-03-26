@@ -130,10 +130,21 @@ for d in datadirs:
     ins = cxa.ft2['instrip'].to_numpy()
     t = np.arange(0,len(heading))/10
     try:
-        cxa.simple_raw_plot(plotphase=True,yeseb=False)
+        cxa.simple_raw_plot(plotphase=False,yeseb=False)
     except:
         x=1
-
+    
+    amp = np.mean(cxa.pdat['wedges_fsb'],axis=1)
+    t = np.arange(0,len(amp))/10
+    ins = cxa.ft2['instrip'].to_numpy()
+    plt.figure()
+    plt.plot(t,amp,color='k')
+    plt.plot(t,ins,color='r')
+    u = ug()
+    x = cxa.ft2['ft_posx'].to_numpy()
+    y = cxa.ft2['ft_posy'].to_numpy()
+    vd,_,_ = u.get_velocity(x,y,t)
+    plt.plot(t[1:],(vd/20)-.5,color=[.5,.5,.5])
     # plt.figure()
     # plt.plot(t,heading,color='k')
     # plt.plot(t,ins*np.pi,color='r')

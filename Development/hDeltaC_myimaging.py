@@ -1382,6 +1382,19 @@ for ie,e in enumerate(experiment_dirs):
     cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
     badtracks[ie] = cxa
 
+# good trackers
+experiment_dirs = [r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250411\f1\Trial1",# Phase recording is not the best - strong pointer
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2", # Strong pointer
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250714\f1\Trial2",# Strong pointer, just like FC2
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f1\Trial1", # Points away ******
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250718\f2\Trial3", # Strong pointer
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250721\f1\Trial2",# Strong pointer
+r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250907\f1\Trial2"]
+goodtracks = {}
+for ie,e in enumerate(experiment_dirs):
+
+    cxa = CX_a(e,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    goodtracks[ie] = cxa
 
 #%% 
 colours = np.array([[81,61,204],[49,99,125],[81,156,205]])/255
@@ -1412,6 +1425,29 @@ for f in badtracks:
 
 plt.plot(x[:200],meandat[:200,:],color=colours[1,:],alpha=0.3)
 plt.plot(x[:200],np.nanmean(meandat[:200,:],1),color=colours[1,:],alpha=1,linewidth=3)
+
+meandat = np.zeros((600,len(goodtracks)))
+for f in goodtracks:
+    cxa = goodtracks[f]
+    
+    amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    jumps = cxa.get_entries_exits_like_jumps()
+    jumplen = jumps[:,2]-jumps[:,1]
+    jumps = jumps[jumplen>minlen]
+    all_js = np.zeros((600,len(jumps)))
+    for i,j in enumerate(jumps):
+        dx = np.arange(j[1],j[2])
+       # plt.plot(amp[dx],color='k',alpha=0.3)
+        tamp = amp[dx]
+        amplen  = np.min([600,len(tamp)])
+        all_js[:amplen,i] = tamp[:amplen]
+        
+    all_js[all_js==0] = np.nan    
+    meandat[:,int(f)] = np.nanmean(all_js,axis=1)
+
+plt.plot(x[:200],meandat[:200,:],color=colours[2,:],alpha=0.3)
+plt.plot(x[:200],np.nanmean(meandat[:200,:],1),color=colours[2,:],alpha=1,linewidth=3)
+
 plt.ylabel('mean dF/F',fontsize=15)
 plt.xlabel('time from plume exit (s)',fontsize=15)
 plt.xlim([0,20])
@@ -1421,8 +1457,21 @@ plt.yticks(np.arange(0,1,.2),fontsize=15)
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaC'
 plt.savefig(os.path.join(savedir,'Badtrackers_FluorRecoveryAllEntries.png'))
 plt.savefig(os.path.join(savedir,'Badtrackers_FluorRecoveryAllEntries.pdf'))
-
-
+#%% 
+plt.close('all')
+for di,f in enumerate(goodtracks):
+    plt.figure()
+    cxa = goodtracks[f]
+    amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+    ins = cxa.ft2['instrip'].to_numpy()
+    t = np.arange(0,len(amp))/10 
+    plt.plot(t,amp,color='k')
+    plt.plot(t,ins,color='r')
+    u = ug()
+    x = cxa.ft2['ft_posx'].to_numpy()
+    y = cxa.ft2['ft_posy'].to_numpy()
+    dd,_,_ = np.abs(u.get_velocity(x,y,t))
+    plt.plot(t[1:],(dd/20)-.5,color=[0.5,0.5,.5])
 #%%
 for di,f in enumerate(badtracks):
 
