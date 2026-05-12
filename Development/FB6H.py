@@ -98,7 +98,7 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250313\f1\Trial1",# walking in cir
             ]
 #%%
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\FB6H_SS95649_sytGCaMP7f\250923\f2\Trial4"
+datadir =  r"Y:\Data\FCI\Hedwig\FB6H_SS95649\250318\f1\Trial2"
 
 cxt = CX_tan(datadir)
 ca = cxt.ca.copy().ravel()

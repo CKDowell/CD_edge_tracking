@@ -67,29 +67,39 @@ for datadir in datadirs:
 #%% Check data
 regions2 = ['fsbtn1_ch1','fsb2_ch2']
 
-datadir = r'Y:\Data\FCI\Hedwig\FB5AB_hDeltaC\260203\f1\Trial4'
+datadir = r'Y:\Data\FCI\Hedwig\FB5AB_hDeltaC\260203\f1\Trial2'
 cxa = CX_a(datadir,regions=regions2,yoking=False,denovo=False)
 
 #%% 
+colours =  np.array([[49,99,125],[81,156,205]])/255
+
 fb5ab = cxa.pv2['0_fsbtn1_ch1'].to_numpy()
 hdc = cxa.pv2['0_fsbtn1_ch2'].to_numpy()
+fb5ab = fb5ab-np.median(fb5ab)
+hdc= hdc-np.median(hdc)
 #hdc2 = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
 t = cxa.pv2['relative_time'].to_numpy()
 
 plt.plot(t,fb5ab,color='k')
 #plt.plot(t,-fb5ab+1,color='m')
-plt.plot(t,hdc,color='b')
+plt.plot(t,hdc,color=colours[0,:])
 #plt.plot(t,hdc2,color='b')
 ins = cxa.ft2['instrip'].to_numpy().astype(float)
 
 if np.sum(ins)>0:
     #plt.plot(t,ins,color='r')
-    plt.fill_between(t,ins*0,ins*1.5,color=[1,.2,.2],linewidth=0)
+    plt.fill_between(t,ins*0-1,ins*2.25-1,color=[1,.2,.2])
 else:
     ins = cxa.ft2['mfc3_stpt'].to_numpy()>0
     plt.plot(t,ins,color='g')
+plt.plot(t,ins*2.25-1,color=[1,.2,.2])
 plt.ylabel('dF/F0')
 plt.xlabel('time (s)')
+
+plt.xlim([500,1100])
+plt.ylim([-1,1.25])
+savedir = r'Y:\Presentations\2026\04_LabMeeting_Frankfurt\fb5ab'
+plt.savefig(os.path.join(savedir,'fb5ab_hdc_example.pdf'))
 #%% Edge tracking  recovery
 datadirs = [r'Y:\Data\FCI\Hedwig\FB5AB_hDeltaC\260203\f1\Trial2']
 meandat = np.zeros((600,2,len(datadirs)))

@@ -117,8 +117,8 @@ for e in experiment_dirs:
 #%%
 for e in experiment_dirs:
     datadir =os.path.join(e)
-    cxa = CX_a(datadir,regions=np.flipud(regions),denovo='False')
-    cxa.simple_raw_plot(plotphase=True,regions = ['fsb_upper','fsb_lower'],yk='eb') 
+    cxa = CX_a(datadir,regions=np.flipud(regions),denovo=False)
+    cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'],yk='eb') 
     cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
 
 #%%

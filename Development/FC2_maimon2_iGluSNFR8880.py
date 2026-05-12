@@ -64,9 +64,9 @@ for e in experiment_dirs:
     cxa = CX_a(datadir,regions=['fsb'],yoking=False)
     cxa.save_phases()
 #%%
-cxa = CX_a(experiment_dirs[4],regions=['fsb'],yoking=False,denovo=False)
-
-cxa.simple_raw_plot(plotphase=True,regions = ['fsb'],yeseb=False,yk='eb')
+cxa = CX_a(experiment_dirs[3],regions=['fsb'],yoking=False,denovo=True)
+cxa.pdat['wedges_fsb'] = cxa.pdat['wedges_fsb'][:,:16]
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb'],yeseb=False,yk='eb')
 #%% 
 for i in range(4):
     print(i)

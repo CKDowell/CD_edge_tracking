@@ -65,10 +65,12 @@ oavpm3 = cxa.pv2['0_fsbtn1_ch1'].to_numpy()
 hdc = cxa.pv2['0_fsbtn1_ch2'].to_numpy()
 #hdc2 = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
 t = cxa.pv2['relative_time'].to_numpy()
+colours =  np.array([[49,99,125],[81,156,205]])/255
 
+plt.figure()
 plt.plot(t,oavpm3,color='k')
 #plt.plot(t,-fb5ab+1,color='m')
-plt.plot(t,hdc,color='b')
+#plt.plot(t,hdc,color=colours[0,:])
 #plt.plot(t,hdc2,color='b')
 ins = cxa.ft2['instrip'].to_numpy().astype(float)
 
@@ -80,7 +82,56 @@ else:
     plt.plot(t,ins,color='g')
 plt.ylabel('dF/F0')
 plt.xlabel('time (s)')
+plt.xlim([120, 200])
 
+plt.figure()
+#plt.plot(t,oavpm3,color='k')
+#plt.plot(t,-fb5ab+1,color='m')
+plt.plot(t,hdc,color=colours[0,:])
+#plt.plot(t,hdc2,color='b')
+ins = cxa.ft2['instrip'].to_numpy().astype(float)
+
+if np.sum(ins)>0:
+    #plt.plot(t,ins,color='r')
+    plt.fill_between(t,ins*0,ins*1.5,color=[1,.2,.2],linewidth=0)
+else:
+    ins = cxa.ft2['mfc3_stpt'].to_numpy()>0
+    plt.plot(t,ins,color='g')
+plt.ylabel('dF/F0')
+plt.xlabel('time (s)')
+plt.xlim([120, 200])
+plt.xticks(np.arange(120,200,20))
+savedir = r'Y:\Presentations\2026\04_LabMeeting_Frankfurt\OAVPM3'
+#plt.xlim([100, 300])
+#plt.savefig(os.path.join(savedir,'OA_VPM3_hdc_example.pdf'))
+
+
+#%%
+oavpm3 = cxa.pv2['0_fsbtn1_ch1'].to_numpy()
+hdc = cxa.pv2['0_fsbtn1_ch2'].to_numpy()
+#hdc2 = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
+t = cxa.pv2['relative_time'].to_numpy()
+colours =  np.array([[49,99,125],[81,156,205]])/255
+colours = np.array([[81,205,125],[49,99,125]])/255
+
+plt.figure()
+plt.plot(t,oavpm3,color=colours[0,:])
+#plt.plot(t,-fb5ab+1,color='m')
+plt.plot(t,hdc-1.2,color=colours[1,:])
+#plt.plot(t,hdc2,color='b')
+ins = cxa.ft2['instrip'].to_numpy().astype(float)
+
+if np.sum(ins)>0:
+    #plt.plot(t,ins,color='r')
+    plt.fill_between(t,ins*0-1.3,ins*2.8-1.3,color=[1,.2,.2],linewidth=0)
+else:
+    ins = cxa.ft2['mfc3_stpt'].to_numpy()>0
+    plt.plot(t,ins,color='g')
+plt.ylabel('dF/F0')
+plt.xlabel('time (s)')
+savedir = r'Y:\Presentations\2026\04_LabMeeting_Frankfurt\OAVPM3'
+plt.xlim([120, 200])
+plt.savefig(os.path.join(savedir,'OA_VPM3_hdc_example.pdf'))
 #%%
 datadirs = [ r'Y:\Data\FCI\Hedwig\tdc_hDeltaC_GCaMP_RCaMP\260318\f1\Trial3']
 meandat = np.zeros((600,2,len(datadirs)))

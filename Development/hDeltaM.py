@@ -70,7 +70,8 @@ for e in experiment_dirs:
     
 #%%
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
+#datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
+datadir = r'Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250828\f1\Trial4'
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
@@ -92,7 +93,7 @@ plt.plot(t,cd,color='b')
 #plt.plot(t,cd2,color='m')
 plt.plot(t,cxa.ft2['instrip'],color='r')
 plt.figure()
-cxa.mean_jump_arrows(fsb_names=['eb','fsb_lower','fsb_upper'],jsize =3,ascale=100)
+cxa.mean_jump_arrows(fsb_names=['eb','fsb_upper','fsb_lower'],jsize =3,ascale=100)
 
 #%%
 plt.figure()

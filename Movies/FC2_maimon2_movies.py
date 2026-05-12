@@ -589,3 +589,251 @@ savedir = "Y:\Data\FCI\FCI_summaries\FC2_maimon2"
 path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
 path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
 anim.save(os.path.join(savedir,'FC2_eg_phase_pt2_' + name+'.mp4'), writer=writer)
+
+
+
+#%% Movie code version 2 for dual colour
+from scipy import stats
+datadir =     r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260401\f1\Trial3'
+
+regions2 = ['eb_ch1','fsb1_ch1','fsb2_ch2']
+cxa = CX_a(datadir,regions=regions2,yoking=True,denovo=False)
+from Utilities.utils_general import utils_general as ug
+
+
+fc2 = cxa.pdat['phase_fsb1_ch1']
+epg = cxa.pdat['phase_eb_ch1']
+hdc = cxa.pdat['phase_fsb2_ch2']
+hdc_a = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
+offset = stats.circmean(cxa.pdat['phase_eb_ch1']-cxa.ft2['ft_heading'].to_numpy())
+epg = ug.circ_subtract(epg,offset)
+fc2 = ug.circ_subtract(fc2,offset)
+hdc = ug.circ_subtract(hdc,offset)
+
+
+
+cxa.pdat['offset_eb_ch1_phase'] = pd.Series(epg)
+cxa.pdat['offset_fsb1_ch1_phase'] = pd.Series(fc2)
+cxa.pdat['offset_fsb2_ch2_phase'] = pd.Series(hdc)
+#%%
+
+colours = np.array([[0.31764706, 0.23921569, 0.8       ],
+       [0.19215686, 0.38823529, 0.49019608],
+       [0.31764706, 0.61176471, 0.80392157]])
+amp = cxa.amp[:,0]
+amp_eb = cxa.amp_eb
+web = cxa.pdat['wedges_offset_eb_ch1'].copy()
+wfsb = cxa.pdat['wedges_offset_fsb1_ch1'].copy()
+wfsb2 = cxa.pdat['wedges_offset_fsb2_ch2'].copy()
+
+pvfsb = ug.get_pvas(wfsb)
+pvfsb2 = ug.get_pvas(wfsb2)
+pvfsb = 5*pvfsb
+pvfsb2 =5*pvfsb2
+
+
+for i in range(web.shape[1]):
+    web[:,i] = sg.savgol_filter(web[:,i],30,2)
+    wfsb[:,i] = sg.savgol_filter(wfsb[:,i],30,2)
+    wfsb2[:,i] = sg.savgol_filter(wfsb2[:,i],30,2)
+
+vmax_eb=np.nanpercentile(web[:],90)
+vmin_eb=np.nanpercentile(web[:],25)
+vmax_fsb=np.nanpercentile(wfsb[:],90)
+vmin_fsb=np.nanpercentile(wfsb[:],25)
+
+phase = cxa.pdat['offset_fsb1_ch1_phase'].to_numpy()
+phase = ug.savgol_circ(phase, 30, 3)
+
+phase2 = cxa.pdat['offset_fsb2_ch2_phase'].to_numpy()
+phase2 = ug.savgol_circ(phase2, 30, 3)
+
+phase_eb = cxa.pdat['offset_eb_ch1_phase'].to_numpy() 
+phase_eb = ug.savgol_circ(phase_eb, 30, 3)
+
+import matplotlib as mpl
+plt.rcParams['animation.ffmpeg_path'] = 'C:\\ffmpeg\\bin\\ffmpeg'
+import networkx as nx
+
+#mpl.use("TkAgg") 
+from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.animation import ImageMagickFileWriter, ImageMagickWriter,FFMpegWriter
+
+# Your specific x and y values
+x = cxa.ft2['ft_posx'].to_numpy()
+y = cxa.ft2['ft_posy'].to_numpy()
+x,y = cxa.fictrac_repair(x,y)
+jumps = cxa.ft2['jump'].to_numpy()
+instrip = cxa.ft2['instrip'].to_numpy()
+stripdiff = np.diff(instrip)
+stripon = np.where(instrip>0)[0][0]
+xs = np.where(instrip==1)[0][0]
+strts = np.where(stripdiff>0)[0]
+stps = np.where(stripdiff<0)[0]
+x = x-x[xs]
+y = y-y[xs]
+# Create initial line plot
+
+
+fig, axs = plt.subplots(figsize=(15,8))#,ncols=3,width_ratios=[0.4,0.3,0.3])
+axs.set_xticks([])
+axs.set_yticks([])
+axs.get_yaxis().set_visible(False)
+axs.get_xaxis().set_visible(False)
+axs.axis("off")
+# fig, axs = plt.subplots(2, 2, gridspec_kw={'height_ratios': [1, 1], 'width_ratios': [1, 1]})
+# ax = axs[0]
+# ax2 = axs[1]
+
+#fig.subplots_adjust(hspace=0.2, wspace=0.2)
+
+#Arrows
+ax = plt.subplot2grid((1, 3), (0, 0), colspan=1)
+
+# Trajectory
+ax2 = plt.subplot2grid((1, 3), (0, 1))
+
+# Wedges
+ax3 = plt.subplot2grid((1, 3), (0, 2))
+
+ax2.set_xticks([])
+ax2.set_yticks([])
+ax.set_xticks([])
+ax.set_yticks([])
+ax3.set_yticks([])
+ax3.set_xticks([-180,-90,0,90,180])
+for axis in [ax, ax2, ax3]:
+    axis.spines['top'].set_visible(False)
+    axis.spines['left'].set_visible(False)
+    axis.spines['right'].set_visible(False)
+
+    if axis in [ ax3]:
+        axis.spines['bottom'].set_visible(True)
+        axis.xaxis.set_visible(True)
+    else:
+        axis.spines['bottom'].set_visible(False)
+
+line_fc, = ax.plot([],[],lw=3,color=colours[2,:])
+line_fc2, = ax.plot([],[],lw=3,color=colours[1,:])
+line_eb, = ax.plot([],[],lw=3,color=[0.2,0.2,0.2])
+
+
+
+line, = ax2.plot([],[],lw=2,color='k')
+
+xa = np.sin(phase)*pvfsb
+ya = np.cos(phase)*pvfsb
+xa2 = np.sin(phase_eb)
+ya2 = np.cos(phase_eb)
+
+xa3 = np.sin(phase2)*pvfsb2
+ya3 = np.cos(phase2)*pvfsb2
+
+ax.set_xlim(-1.2,1.2)
+ax.set_ylim(-1.2,1.2)
+ax.set_aspect('equal')
+
+ax2.set_aspect('equal')
+xrange2 = np.linspace(-180,180,16)
+ax3.set_xlim(-180,180)
+ax3.set_ylim(-1.3,1.3)
+ax3.set_xlabel('Column phase (deg)')
+ax3.plot([-180,180],[0,0],color='k',linestyle='--')
+ax3.plot([-180,180],[-1,-1],color='k',linestyle='--')
+ax3.plot([0,0],[-1,-0.25],color='k',linestyle='--')
+ax3.plot([0,0],[0,.75],color='k',linestyle='--')
+ax3.plot([90,90],[0,.75],color='r',linestyle='--')
+ax3.plot([90,90],[-1,-0.25],color='r',linestyle='--')
+
+ft2 = cxa.ft2
+
+ins = ft2['instrip'].to_numpy()
+jumps = ft2['jump'].to_numpy()
+tt = cxa.pv2['relative_time'].to_numpy()
+inplume = ins>0
+st  = np.where(ins)[0][0]
+x = x-x[st-1]
+y = y-y[st-1]
+  
+scfc = ax.scatter([],[],color=[1,0.5,0.5],s=100)
+scfc2 = ax.scatter([],[],color=colours[1,:],s=10,alpha=.5)
+
+jumps = jumps-np.mod(jumps,3)
+jd = np.diff(jumps)
+jn = np.where(np.abs(jd)>0)[0]+1
+print(jumps[jn])
+jkeep = np.where(np.diff(jn)>1)[0]
+
+xrange = np.max(x)-np.min(x)
+yrange = np.max(y)-np.min(y)
+
+mrange = np.max([xrange,yrange])+100
+y_med = yrange/2
+x_med = xrange/2
+ylims = [y_med-mrange/2, y_med+mrange/2]
+
+xlims = [x_med-mrange/2, x_med+mrange/2]
+yj = y[jn]
+yj = np.append(yj,y[-1])
+tj = 0
+x1 = 0+5+tj
+x2 = 0-5+tj
+y1 = 0
+y2 = yj[0]
+xvec = np.array([x1,x2,x2,x1])
+yvec = [y1,y1,y2,y2]
+
+cents = [-630,-420,-210, 0,210,420,630]
+ax2.fill(xvec,yvec,color=[0.7,0.7,0.7])
+for c in cents:
+    ax2.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
+    
+for i,j in enumerate(jn):
+    
+    tj = jumps[j]
+    x1 = 0+5+tj
+    x2 = 0-5+tj
+    y1 = yj[i]
+    y2 = yj[i+1]
+    xvec = np.array([x1,x2,x2,x1])
+    yvec = [y1,y1,y2,y2]
+    for c in cents:
+        ax2.fill(xvec+c,yvec,color=[0.7,0.7,0.7])
+        #ax2.plot([xvec[1],xvec[1]-20],yvec[0:2],color=colours[3,:],linewidth=0.75)
+        #ax2.scatter(xvec[1]-20,yvec[0],color=colours[3,:],marker='<')
+
+hist_fc, =ax3.plot([],[],lw=3,color=colours[2,:])
+hist_fc2, =ax3.plot([],[],lw=3,color=colours[1,:])
+hist_eb, =ax3.plot([],[],lw=3,color=[0.2,0.2,0.2])
+hist_fc2_eb, = ax3.plot([],[],lw=3,color=colours[2,:])
+hist_hdc_eb, = ax3.plot([],[],lw=3,color=colours[1,:])
+def update(frame):
+    line_fc.set_data([0,xa[frame] ], [0,ya[frame]])
+    line_eb.set_data([0,xa2[frame] ], [0,ya2[frame]])
+    line_fc2.set_data([0,xa3[frame] ], [0,ya3[frame]])
+    
+    hist_fc.set_data(xrange2,wfsb[frame,:])
+    hist_fc2.set_data(xrange2,wfsb2[frame,:])
+    hist_eb.set_data(xrange2,web[frame,:]-1)
+    hist_fc2_eb.set_data(xrange2,wfsb[frame,:]-1)
+    hist_hdc_eb.set_data(xrange2,wfsb2[frame,:]-1)
+    if frame>50:
+        scfc2.set_offsets(np.column_stack((xa3[frame-50:frame],ya3[frame-50:frame])))
+    
+    
+    if frame>100:
+        line.set_data(x[frame-100:frame], y[frame-100:frame])
+        
+    else:
+        line.set_data(x[:frame], y[:frame])
+    ax2.set_xlim(x[frame]-10,x[frame]+10)
+    ax2.set_ylim(y[frame]-10, y[frame]+10)
+
+# Create animation
+anim = mpl.animation.FuncAnimation(fig, update, frames=np.arange(stripon-200,len(x)), interval=10)
+plt.show()
+writer = FFMpegWriter(fps=20)
+savedir = "Y:\Data\FCI\FCI_summaries\FC2_maimon2"
+path_to_convert = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\convert.exe'
+path_to_magick = r'C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe'
+anim.save(os.path.join(savedir,'FC2_hDC_eg_phase_pt2_' + cxa.name+'.avi'), writer=writer)

@@ -148,7 +148,13 @@ class CX_a:
                             self.phase_offset = np.append(self.phase_offset,o,axis =1)
                             self.amp = np.append(self.amp,a,axis = 1)
                     self.phase_eb,self.phase_offset_eb,self.amp_eb = self.cx.unyoked_phase(self.stab)
-                    self.pdat = self.cx.phase_yoke(self.stab,regions[1:],self.ft2,self.pv2,d7=delta7)
+                    
+                    #check for tn
+                    weddx = np.arange(1,len(regions))
+                    tn_dx = np.char.find(regions[1:],['tn'])==-1 
+                    weddx = weddx[tn_dx]
+                    tregions = np.array(regions)
+                    self.pdat = self.cx.phase_yoke(self.stab,tregions[weddx],self.ft2,self.pv2,d7=delta7)
                 else:
                     for i, r in enumerate(regions):
                         p,o,a = self.cx.unyoked_phase(r)
@@ -496,6 +502,86 @@ class CX_a:
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+    def pseudo_time_data(self,jumps,bins=100,regions=['fsb_upper','fsb_lower'],side_mult=False):
+        
+        retphase = np.zeros((bins,len(regions),len(jumps)))
+        levphase = np.zeros((bins,len(regions),len(jumps)))
+        retxy = np.zeros((bins,2,len(jumps)))
+        levxy = np.zeros((bins,2,len(jumps)))
+        retamp = np.zeros( (bins,2,len(regions),len(jumps)))
+        levamp = np.zeros((bins,2,len(regions),len(jumps)))
+        
+        newtime = np.linspace(0,1,bins)
+        jseries = self.ft2['jump'].to_numpy()
+        
+        ins = self.ft2['instrip']
+        inst = np.where(ins)[0][0]
+        x = self.ft2['ft_posx'].to_numpy()
+        y = self.ft2['ft_posy'].to_numpy()
+        pva = np.zeros((len(x),len(regions)))
+        mnflr = np.zeros((len(x),len(regions)))
+        
+        for ir,r in enumerate(regions):
+            pva[:,ir] = ug.get_pvas(self.pdat['wedges_'+r])
+            mnflr[:,ir] = np.mean(self.pdat['wedges_'+r],axis=1)
+            
+        for i,j in enumerate(jumps):
+            bdx = np.arange(j[0],j[1])
+            adx = np.arange(j[1],j[2])
+            tj = jseries[j[2]]
+            
+            tx = x-x[j[1]-1]
+            ty = y-y[j[1]-1]
+            
+            rx = tx[adx]
+            ry = ty[adx]
+            
+            lx = tx[bdx]
+            ly = ty[bdx]
+            
+            oldtime = np.linspace(0,1,len(rx))
+            retxy[:,0,i] = np.interp(newtime,oldtime,rx)
+            retxy[:,1,i] = np.interp(newtime,oldtime,ry)
+            
+            oldtime = np.linspace(0,1,len(lx))
+            levxy[:,0,i] = np.interp(newtime,oldtime,lx)
+            levxy[:,1,i] = np.interp(newtime,oldtime,ly)
+            for ip,p in enumerate(regions):
+                if p=='ft_heading':
+                    phase = self.ft2[p].to_numpy()
+                else:    
+                    phase = self.pdat['offset_'+p+'_phase'].to_numpy()
+                
+                    
+                    
+                if side_mult:    
+                    phase = -phase*self.side
+                rp = phase[adx]
+                lp = phase[bdx] 
+                
+                rpva = pva[adx,ip]
+                lpva = pva[bdx,ip]
+                
+                rmnflr = mnflr[adx,ip]
+                lmnflr = mnflr[bdx,ip]
+                
+                
+                oldtime = np.linspace(0,1,len(rp))
+                retphase[:,ip,i] = np.interp(newtime,oldtime,rp)
+                retamp[:,0,ip,i] = np.interp(newtime,oldtime,rpva)
+                retamp[:,1,ip,i] = np.interp(newtime,oldtime,rmnflr)
+                
+                oldtime = np.linspace(0,1,len(lp))
+                levphase[:,ip,i] = np.interp(newtime,oldtime,lp)
+                levamp[:,0,ip,i] = np.interp(newtime,oldtime,lpva)
+                levamp[:,1,ip,i] = np.interp(newtime,oldtime,lmnflr)
+                
+            
+            
+        phases = np.append(levphase,retphase,axis=0)
+        trajs = np.append(levxy,retxy,axis=0)
+        amps = np.append(levamp,retamp,axis=0)
+        return phases,trajs,amps
         
     def cxa_stop_start_phase_scatter(self,minsize=3,fsb_region='fsb_upper'):
         plt.close('all')
@@ -777,13 +863,22 @@ class CX_a:
             ie = np.argmin(np.abs(ex))
             t_ent = ie+1
             sub_dx = exts[ie]
-            phase = self.pdat['offset_eb_phase'].to_numpy()
+            try:
+                phase = self.pdat['offset_eb_phase'].to_numpy()
+            except:
+                 phase = self.pdat['offset_eb_ch1_phase'].to_numpy()
+                 
+                 
+                 
             phase = phase.reshape(-1,1)
             for f in fsb_names:
                 phase = np.append(phase,self.pdat['offset_' +f+ '_phase'].to_numpy().reshape(-1,1),axis=1)
             heading = self.ft2['ft_heading'].to_numpy()*side_mult
             phase = phase*side_mult
-            amp = self.pdat['amp_eb']
+            try:
+                amp = self.pdat['amp_eb']
+            except:
+                amp = self.pdat['amp_eb_ch1']
             amp = amp.reshape(-1,1)
             for f in fsb_names:
                 amp = np.append(amp,self.pdat['amp_'+f].reshape(-1,1),axis=1)
@@ -2696,16 +2791,26 @@ class CX_a:
       
         
     def plot_traj_arrow_new(self,regions,a_sep=20,traindat=False,fulldat=True, colours = 
-                            np.array([[228,26,28],[55,126,184],[ 77,175,74],[152,78,163],[255,127,0]])/255):
-        
-        phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
+                            np.array([[228,26,28],[55,126,184],[ 77,175,74],[152,78,163],[255,127,0]])/255,ascale=20):
+        try:
+            phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
+        except:
+            phase_eb = self.pdat['offset_'+self.stab+'_phase']
         phases = np.zeros((len(phase_eb),len(regions)))
-        amps = np.zeros((len(phase_eb),len(regions)))
+        amps = np.ones((len(phase_eb),len(regions)))*.2
+        all_entries = self.get_entries_exits_like_jumps()
         for i,r in enumerate(regions):
-            phases[:,i] = self.pdat['offset_'+r+'_phase'].to_numpy()
-            amps[:,i] = np.mean(self.pdat['wedges_'+r],axis=1)
-            if np.min(amps[:,i])<0:
-                amps[:,i] = amps[:,i]-np.min(amps[amps[:,i]<0,i])
+            try:
+                phases[:,i] = self.pdat['offset_'+r+'_phase'].to_numpy()
+            except:
+                phases[:,i] = self.pdat['offset_'+r+'_phase']
+                
+            try:
+                amps[:,i] = np.mean(self.pdat['wedges_'+r],axis=1)
+                if np.min(amps[:,i])<0:
+                    amps[:,i] = amps[:,i]-np.min(amps[amps[:,i]<0,i])
+            except:
+                print('No amps?')
         amp_eb = self.amp_eb.copy()
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
@@ -2774,14 +2879,17 @@ class CX_a:
             if np.abs(d-t_sep)>a_sep:
                 t_sep = d
                 
-                xa = 20*amp_eb[i]*np.sin(phase_eb[i])
-                ya = 20*amp_eb[i]*np.cos(phase_eb[i])
-                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
+                xa = ascale*amp_eb[i]*np.sin(phase_eb[i])
+                ya = ascale*amp_eb[i]*np.cos(phase_eb[i])
+                plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=.5,color=[0.1,0.1,0.1])
                 for p  in range(len(regions)):
-                    xa = 20*amps[i,p]*np.sin(phases[i,p])
-                    ya = 20*amps[i,p]*np.cos(phases[i,p])
-                    plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
+                    xa = ascale*amps[i,p]*np.sin(phases[i,p])
+                    ya = ascale*amps[i,p]*np.cos(phases[i,p])
+                    plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=.5,color=colours[p,:])
         ax = plt.gca()
+        for ie,e in enumerate(all_entries):
+            plt.text(x[e[0]],y[e[0]],str(ie))
+        
         ax.set_aspect('equal', adjustable='box')
         plt.show()
         
@@ -4044,6 +4152,7 @@ class CX_a:
         #x,y = self.fictrac_repair(x,y)
         th = ft2['train_heading'].to_numpy()
         fh = ft2['fix_heading'].to_numpy()
+        fh = fh.copy()
         bp = ft2['bump'].to_numpy()
         ins = ft2['instrip'].to_numpy()
         #heading = ft2['ft_heading'].to_numpy()

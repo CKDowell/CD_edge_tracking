@@ -63,7 +63,7 @@ cxa.simple_raw_plot(regions=regions[0],yeseb=False,plotphase=False)
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=True)
 
 #%% Quick load
-datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250715\f2\Trial2"
+datadir= r"Y:\Data\FCI\Hedwig\hDeltaC_RCaMP_iGluSNFR8880\250715\f2\Trial1"
 
 regions = ['fsb_upper_ch1','fsb_upper_ch2','fsb_lower_ch1','fsb_lower_ch2']
 cxa = CX_a(datadir,regions=regions,yoking=False)

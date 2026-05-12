@@ -56,7 +56,7 @@ for e in experiment_dirs:
     
     cxa.save_phases()
 #%% Load specific experiment
-datadir= r'Y:\Data\FCI\Hedwig\FS1A_IS71375\260102\f2\Trial1'
+datadir =r'Y:\Data\FCI\Hedwig\FS1A_IS71375\260102\f2\Trial1'
 cxa = CX_a(datadir,regions=regions,yoking=False,denovo=False)
 cxa.simple_raw_plot(regions=['fsb'],yeseb=False)
 cxa.simple_raw_plot(regions=['fsb'],yeseb=False,plotphase=True)
@@ -64,28 +64,42 @@ cxa.simple_raw_plot(regions=['fsb'],yeseb=False,plotphase=True)
 plt.figure()
 ca = cxa.pv2['0_axon']
 ca1= cxa.pv2['1_axon']
+ca[np.isnan(ca)] = 0
+ca1[np.isnan(ca1)] = 0
+ca3 = np.mean(cxa.pdat['wedges_fsb'],axis=1)
+pva = ug.get_pvas(cxa.pdat['wedges_fsb'])
 #ca2 = np.mean(cxa.pdat['wedges_fsb'],axis=1)
+t  = np.arange(0,len(ca))/10
 ins = cxa.ft2['instrip'].to_numpy()
 u = ug()
 _,_,vd = u.get_velocity(cxa.ft2['ft_posx'].to_numpy(),cxa.ft2['ft_posy'].to_numpy(),cxa.pv2['relative_time'].to_numpy())
 vdn = vd/np.std(vd)
 
-plt.plot(ca,color='k')
-plt.plot(ca1,color=[0,0,0.3])
+plt.scatter(t,cxa.ft2['ft_heading'].to_numpy(),color='g',s=5)
+plt.plot(t,3*(ca+ca1)/2 -6,color='k')
+#plt.plot(t,8*ca3 -8,color='r')
+plt.plot(t,pva*10 -10,color='g')
+#plt.plot(ca1,color=[0,0,0.3])
 #plt.plot(ca2*3,color=[0,0,0.6])
-plt.plot(ins,color='r')
-plt.plot(vdn/2-2,color=[0.3,.3,.3])
+plt.plot(t,ins,color='r')
+plt.plot(t[1:],vdn/2-2,color=[0.3,.3,.3])
+
+stats.pearsonr((ca+ca1)/2,pva)
+stats.pearsonr((ca+ca1)/2,ca3)
 #%% 
 phase = cxa.pdat['phase_fsb']
+phase = ug.circ_subtract(phase,stats.circmean(phase,high=np.pi/2,low=-np.pi/2))
+ps = ug.savgol_circ(phase,20,3)
 x = np.arange(0,len(phase))
 plt.figure()
-plt.scatter(x,phase,s=3,color='b')
+plt.scatter(x,ps,s=3,color='b')
+#plt.plot(x,phase,color='b')
 heading  = cxa.ft2['ft_heading'].to_numpy()
 plt.scatter(x,heading,s=3,color='k')
 plt.plot(x,ins-3,color='r')
 #%%
 fci = fci_regmodel(cxa.pv2['0_axon'],cxa.ft2,cxa.pv2)
-fci.example_trajectory_jump(cxa.pv2['0_axon'],cxa.ft,cmin=-1,cmax =1) 
+fci.example_trajectory_jump(cxa.pv2['0_axon'],cxa.ft,cmin=-1.5,cmax =1.5) 
 #%%
 #%% In plume yoking
 colours = np.array([[81,61,204],[49,99,125],[81,156,205]])/255

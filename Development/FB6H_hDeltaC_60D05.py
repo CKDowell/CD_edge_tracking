@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 27 17:01:59 2026
+Created on Fri Apr 24 13:45:56 2026
 
 @author: dowel
 """
@@ -24,19 +24,16 @@ from Utilities.utils_general import utils_general as ug
 from Utilities.utils_plotting import uplt as uplt
 plt.rcParams['pdf.fonttype'] = 42 
 #%%
-experiment_dirs = [
-    #r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial1',
-                   # r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial3',
-                   # r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial4'
-                   r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial5',
-                   r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial6',
-                   r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial7'
-     ]
 
-regions = ['eb']
-for e in experiment_dirs:
-    datadir =os.path.join(e)
-    print(e)
+datadirs = [
+#r'Y:\Data\FCI\Hedwig\FB6H_SS950649_68A10_60D05_sytGCaMP8s_RCaMP3\260423\f2\Trial1',
+        r'Y:\Data\FCI\Hedwig\FB6H_SS950649_68A10_60D05_sytGCaMP8s_RCaMP3\260423\f2\Trial2'    
+            
+            ]
+regions = ['eb','fsb2','fsb1TN']
+for datadir in datadirs:
+   # regions = ['eb','fsb_upper_1','fsb_lower_1','fsb_upper_2']
+    
     d = datadir.split("\\")
     name = d[-3] + '_' + d[-2] + '_' + d[-1]
     
@@ -50,15 +47,15 @@ for e in experiment_dirs:
     cx.crop = False
     cx.save_postprocessing()#upsample to 50Hz
     pv2, ft, ft2, ix = cx.load_postprocessing()
-    cxa = CX_a(datadir,regions=regions,yoking=False)
-    
+    #Channel 2 = Green, Channel 1 = red
+    regions2 = ['eb_ch1','fsb2_ch2','fsb1tn_ch1']
+    cxa = CX_a(datadir,regions=regions2,yoking=True)
     cxa.save_phases()
-    
-    cxa.simple_raw_plot(regions=['eb'],yeseb=False)
-
-
 #%%
-datadir = r'Y:\Data\FCI\Hedwig\Tests\60D05_GtACR2_Check\260127\f1\Trial4'
-regions = ['pb']
-cxa = CX_a(datadir,regions=regions,yoking=False)
-cxa.simple_raw_plot(regions=['pb'],yeseb=False)
+fb6H = cxa.pv2['0_fsb1tn_ch1'].to_numpy()
+hdc = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
+ins = cxa.ft2['instrip'].to_numpy().astype(float)
+plt.plot(fb6H,color='b')
+plt.plot(hdc,color='k')
+plt.plot(ins,color='r')
+

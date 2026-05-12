@@ -88,11 +88,9 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%%  Plot data from ACV training
-
-
 datadir =r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2"
 datadir=  r"Y:\Data\FCI\Hedwig\FC2_PAM\250806\f1\Trial2"
-
+cxa = CX_a(datadir,regions=regions,yoking=True,stim=True)
 #%% Plotting ACV plume pre and post reinforcement
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_PAM'
 datadirs = [r"Y:\Data\FCI\Hedwig\FC2_PAM\250805\f2\Trial2",

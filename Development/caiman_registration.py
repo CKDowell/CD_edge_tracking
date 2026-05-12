@@ -5,28 +5,76 @@ Created on Wed Oct 29 11:37:35 2025
 @author: dowel
 """
 
-rootdir = r"Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260323\f1"
+#%% Multifly
 import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
 import multiprocessing
-for i in [1,4]:
-    datadir =os.path.join(rootdir,'Trial' +str(i))
-    d = datadir.split("\\")
-    name = d[-3] + '_' + d[-2] + '_' + d[-1]
-    #% Registration
-    # ex = im.fly(name, datadir)
-    # ex.register_all_images(overwrite=True)
-    if __name__ == '__main__':
+expdirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1']
+
+for e in expdirs:
+    
+    trial_folders = [name for name in os.listdir(e)
+    if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
+    for t in trial_folders:
+        datadir = os.path.join(e,t)
+        if __name__ == '__main__':
+            
+            multiprocessing.freeze_support()
+            cxcai = CX_cai(datadir,dual_color=True)
+            cxcai.one2other=True
+            cxcai.chreg = 1 
+            cxcai.chmov = 2
+            
+            cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
+            # cxcai.ex.mask_slice = {'All': [1,2,3,4]}
+            # cxcai.ex.t_projection_mask_slice()
+            
+            
+#%% Multifly
+
+
+# expdirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f1',
+#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f2',
+#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f3',
+#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260425\f2',
+#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1']
+from analysis_funs.utilities import imaging as im
+for e in expdirs:
+    
+    trial_folders = [name for name in os.listdir(e)
+    if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
+    for t in trial_folders:
+        datadir = os.path.join(e,t)
+        d = datadir.split("\\")
+        name = d[-3] + '_' + d[-2] + '_' + d[-1]
+        ex = im.fly(name, datadir)
+        ex.mask_slice = {'All': [1,2,3,4]}
+        ex.t_projection_mask_slice()
+#%% Single fly
+
+
+# rootdir = r"Y:\Data\FCI\Hedwig\PFNpm_83D12_FC2_sytGCaMP8s_RCaMP\260426\f2"
+# import os
+# from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
+# import multiprocessing
+# for i in [1,2,3]:
+#     datadir =os.path.join(rootdir,'Trial' +str(i))
+#     d = datadir.split("\\")
+#     name = d[-3] + '_' + d[-2] + '_' + d[-1]
+#     #% Registration
+#     # ex = im.fly(name, datadir)
+#     # ex.register_all_images(overwrite=True)
+#     if __name__ == '__main__':
         
-        multiprocessing.freeze_support()
-        cxcai = CX_cai(datadir,dual_color=True)
-        cxcai.one2other=False
-        cxcai.chreg = 2 
-        cxcai.chmov = 1
+#         multiprocessing.freeze_support()
+#         cxcai = CX_cai(datadir,dual_color=True)
+#         cxcai.one2other=True
+#         cxcai.chreg = 1 
+#         cxcai.chmov = 2
         
-        cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
-        # cxcai.ex.mask_slice = {'All': [1,2,3,4]}
-        # cxcai.ex.t_projection_mask_slice()
+#         cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
+#         # cxcai.ex.mask_slice = {'All': [1,2,3,4]}
+#         # cxcai.ex.t_projection_mask_slice()
         
 #%%
 # datadir = r'Y:\Data\FCI\Hedwig\Tests\BleedThroughCheck\ACV pulses'
@@ -44,15 +92,15 @@ for i in [1,4]:
 #     cxcai.chmov = 1
 #     cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
 #%%
-from analysis_funs.utilities import imaging as im
+# from analysis_funs.utilities import imaging as im
 
-for i in [1,2,3,4]:
-    datadir =os.path.join(rootdir,'Trial' +str(i))
-    d = datadir.split("\\")
-    name = d[-3] + '_' + d[-2] + '_' + d[-1]
-    ex = im.fly(name, datadir)
-    ex.mask_slice = {'All': [1,2,3,4]}
-    ex.t_projection_mask_slice()
+# for i in [1,2,3]:
+#     datadir =os.path.join(rootdir,'Trial' +str(i))
+    # d = datadir.split("\\")
+    # name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    # ex = im.fly(name, datadir)
+    # ex.mask_slice = {'All': [1,2,3,4]}
+    # ex.t_projection_mask_slice()
     
 #%% Jules test
 

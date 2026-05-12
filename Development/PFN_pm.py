@@ -26,7 +26,7 @@ plt.rcParams['pdf.fonttype'] = 42
 
 
 experiment_dirs = [
-   # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1', # Not amazing behaviour but a good start for analysis,
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1', # Not amazing behaviour but a good start for analysis,
                 r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial1',
                 r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial2',
                 r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial5'
@@ -55,17 +55,54 @@ for e in experiment_dirs:
     pv2, ft, ft2, ix = cx.load_postprocessing()
     cxa = CX_a(datadir,regions=regions2,yoking=False)
     
+    # PFN phase adjustment
+    cxa.pdat['phase_pfn_l_16'] = ug.circ_subtract(cxa.pdat['phase_pfn_l_16'],-3*np.pi/16) # My counting is out of alignment by 1.5
     
-        
+    #Explanation: Glom counting in right starts from glom 9, in left from glom 2. Since glom 9 is copy of glom 1 and R glom 1 is 22.5 offset from
+    # L Glom 1, it accounts for 1.5 glom offset, ie 67.5 degrees or 3/16 pi
     
+    cxa.pdat['phase_pfn_l_16_fsb'] = ug.circ_subtract(cxa.pdat['phase_pfn_l_16'],np.pi/4)
+    cxa.pdat['phase_pfn_r_16_fsb'] = ug.circ_subtract(cxa.pdat['phase_pfn_r_16'],-np.pi/4)
+     
     cxa.save_phases()
     
 #%%
-datadir = r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial2'
+datadir =   r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1'
 regions2 = ['pfn_l_16','pfn_r_16'] 
 cxa = CX_a(datadir,regions2,denovo=False)
 cxa.simple_raw_plot(regions = regions2,yeseb=False)
 #cxa.simple_raw_plot(plotphase=True,regions = regions2,yeseb=False)
+#%% 
+heading = cxa.ft2['ft_heading'].to_numpy()
+hdx = np.abs(heading)>np.pi/2
+offset = stats.circmean(ug.circ_subtract(cxa.ft2['ft_heading'][hdx],cxa.pdat['phase_pfn_r_16'].squeeze()[hdx]),low=-np.pi,high=np.pi)
+cxa.pdat['offset_pfn_r_16_phase'] = ug.circ_subtract(cxa.pdat['phase_pfn_r_16'],-offset)
+cxa.pdat['offset_pfn_l_16_phase'] = ug.circ_subtract(cxa.pdat['phase_pfn_l_16'],-offset)
+cxa.pdat['offset_pfn_r_16_fsb_phase'] = ug.circ_subtract(cxa.pdat['phase_pfn_r_16_fsb'],-offset)
+cxa.pdat['offset_pfn_l_16_fsb_phase'] = ug.circ_subtract(cxa.pdat['phase_pfn_l_16_fsb'],-offset)
+#%% weighted sum
+fr  = np.mean(cxa.pdat['wedges_pfn_r_16'],axis=1)
+fl = np.mean(cxa.pdat['wedges_pfn_l_16'],axis=1)
+fr = fr-np.min(fr)
+fl = fl-np.min(fl)
+pr = cxa.pdat['offset_pfn_r_16_fsb_phase'].squeeze()
+pl = cxa.pdat['offset_pfn_l_16_fsb_phase'].squeeze()
+x = np.sin(pl)*fl+np.sin(pr)*fr
+y = np.cos(pl)*fl+np.cos(pr)*fr
+
+ins = cxa.ft2['instrip'].to_numpy()
+
+pw = np.arctan2(x,y)
+x = np.arange(0,len(pw))/10
+pln = cxa.pdat['offset_pfn_l_16_phase'].squeeze()
+plt.scatter(x,pw,color='m',s=5)
+plt.plot(x,heading,color='k')
+plt.scatter(x,pr,color='r',s=5)
+plt.scatter(x,pl,color='b',s=5)
+plt.plot(x,ins,color='r')
+cxa.pdat['offset_fsb_phase'] = pw
+#%%
+cxa.plot_traj_arrow_new(['fsb'],a_sep=5,colours =np.array([[0,1,0]]))
 #%% FSB processing pipeline
 experiment_dirs = [
                 r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial3',
@@ -96,7 +133,7 @@ for e in experiment_dirs:
     cxa.save_phases()
 
 #%%
-datadir = r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial4'
+datadir = r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial3'
 regions2 = ['fsb'] 
 cxa = CX_a(datadir,regions2,denovo=False)
 cxa.simple_raw_plot(regions = regions2,yeseb=False)

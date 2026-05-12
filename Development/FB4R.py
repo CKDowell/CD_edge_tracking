@@ -60,7 +60,35 @@ for d in datadirs:
     cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.4,cmax =0.4) 
     plt.figure()
     cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
+#%%
+datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61645_FB4R\\240911\\f1\\Trial3" # Only 2 jumps
+            
+            ]
+plt.close('all')
+for d in datadirs:
+    cxt = CX_tan(d) 
+    plt.figure()
+    fb5ab = cxt.pv2['0_fsbtn'].to_numpy()
+   
+    #hdc2 = np.mean(cxa.pdat['wedges_fsb2_ch2'],axis=1)
+    t = cxt.pv2['relative_time'].to_numpy()
 
+    plt.plot(t,fb5ab,color='k')
+    #plt.plot(t,-fb5ab+1,color='m')
+    #plt.plot(t,hdc2,color='b')
+    ins = cxt.ft2['instrip'].to_numpy().astype(float)
+
+    if np.sum(ins)>0:
+        #plt.plot(t,ins,color='r')
+        plt.fill_between(t,ins*0-1,ins*.5-1,color=[1,.2,.2])
+    else:
+        ins = cxt.ft2['mfc3_stpt'].to_numpy()>0
+        plt.plot(t,ins,color='g')
+    #plt.plot(t,ins*2.25-1,color=[1,.2,.2])
+    plt.ylabel('dF/F0')
+    plt.xlabel('time (s)')
 #%%
 
 

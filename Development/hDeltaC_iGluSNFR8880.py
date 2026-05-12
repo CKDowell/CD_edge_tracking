@@ -41,7 +41,7 @@ for i in [1]:
 #%%
 experiment_dirs = [
     #"Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial2", #volumetric not many entries
-    "Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial3", # Single plane lots of entries and jumps
+    #"Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial3", # Single plane lots of entries and jumps
     "Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f2\\Trial1",#Volumetric some plume entries
     ]
 #regions = ['fsb_whole','fsb_upper']
@@ -69,9 +69,9 @@ for e in experiment_dirs:
     
 
 
-cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper'],yeseb=False)
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_lower'],yeseb=False)
 #%%
-cxa = CX_a(experiment_dirs[0],regions=['fsb_upper'],yoking=False,denovo=False)
+cxa = CX_a(experiment_dirs[1],regions=['fsb_upper','fsb_lower'],yoking=False,denovo=True)
 cxt = CX_tan(experiment_dirs[1],tnstring='0_fsb_whole')
 plt.figure()
 plt.plot(cxt.ca)
@@ -131,3 +131,21 @@ plt.subplots_adjust(bottom=0.4)
 plt.ylabel('signed delta R2')
 plt.xlabel('Regressor name')
 plt.show()
+#%%
+datadir ="Y:\\Data\\FCI\\Hedwig\\hDeltaC_iGluSNFR8880\\241126\\f1\\Trial3"
+cxa = CX_a(datadir,regions=['fsb_upper'],yoking=False,denovo=True)
+#%%
+
+cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper'],yeseb=False)
+
+plt.figure()
+ins = cxa.ft2['instrip'].to_numpy()
+#y1 = np.mean(cxa.pdat['wedges_fsb_lower'],axis=1)
+y2 = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+#plt.plot(y1,color='b')
+plt.plot(y2,color='k')
+plt.plot(ins,color='r')
+
+
+
+
