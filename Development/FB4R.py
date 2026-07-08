@@ -15,6 +15,8 @@ from scipy import signal as sg
 from analysis_funs.CX_imaging import CX
 from analysis_funs.CX_analysis_tan import CX_tan
 import numpy as np
+from Utilities.utils_general import utils_general as ug
+
 #%% 
 
 
@@ -54,12 +56,27 @@ datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
             "Y:\Data\FCI\\Hedwig\\SS61645_FB4R\\240911\\f1\\Trial3" # Only 2 jumps
             
             ]
+plt.close('all')
 for d in datadirs:
     cxt = CX_tan(d) 
     
     cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.4,cmax =0.4) 
     plt.figure()
     cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
+    
+    ca = cxt.pv2['0_fsbtn'].to_numpy()
+    ins = cxt.ft2['instrip'].to_numpy()
+    u = ug()
+    x = cxt.ft2['ft_posx'].to_numpy()
+    y = cxt.ft2['ft_posy'].to_numpy()
+    
+    tt = cxt.pv2['relative_time'].to_numpy()
+    dx,dx,dd = u.get_velocity(x,y,tt)
+    plt.figure()
+    plt.plot(tt,ca,color='k')
+    plt.plot(tt,-.25+ins*.2,color='r')
+    plt.plot(tt[1:],(dd/20)-1,color=[.5,.5,.5])
+    
 #%%
 datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
             "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
@@ -104,7 +121,7 @@ plt.plot(ft2['instrip'],color='k')
 
 fc = fci_regmodel(y,ft2,pv2)
 fc.example_trajectory(cmin=-0.2,cmax=0.2)
-#%%
+#%% Reg model
 plt.close('all')
 
 regchoice = ['odour onset', 'odour offset', 'in odour', 
@@ -150,7 +167,38 @@ for d in datadirs:
     fc.plot_example_flur()
     plt.xlabel('Regressor name')
     plt.show()
-    
+#%% Response by odour onset
+plt.figure()
+for d in datadirs:
+    cxt = CX_tan(d) 
+    jumps = cxt.get_entries_exits_like_jumps() 
+    ca = cxt.ca.copy()
+    ent_df = np.zeros(len(jumps))
+    for i, j in enumerate(jumps):
+        dx = np.arange(j[0],j[1])
+        dx2 = np.arange(j[0]-20,j[0])
+        ent_df[i] = np.median(ca[dx])-np.median(ca[dx2])
+    plt.plot(ent_df)
+
+#%% Reg model with movement
+plt.close('all')
+
+regchoice = [
+                                'angular velocity pos',
+                                #'translational vel dirs',
+                                'translational vel',
+                                ]
+datadirs = ["Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240828\\f3\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61646_FB4R\\240910\\f1\\Trial1",
+            "Y:\Data\FCI\\Hedwig\\SS61645_FB4R\\240911\\f1\\Trial3" # Only 2 jumps
+            
+            ]
+for d in datadirs:
+    cxt = CX_tan(d) 
+    fc = cxt.fc
+    fc.run(regchoice,partition='pre_air')
+    fc.plot_example_flur(parts=True)
+
     
 #%%
 plt.close('all')

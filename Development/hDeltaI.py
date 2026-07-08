@@ -40,7 +40,7 @@ for i in [1,2]:
     
 #%%
 experiment_dirs = [
-    "Y:\\Data\\FCI\\Hedwig\\hDeltaI_SS60919\\241204\\f1\\Trial1",#Could be contaminated with hDeltaJ
+    "Y:\\Data\\FCI\\Hedwig\\hDeltaI_SS60919\\241204\\f1\\Trial1",#Could be contaminated with hDeltaJ made many jumps
                    "Y:\\Data\\FCI\\Hedwig\\hDeltaI_SS60919\\241204\\f1\\Trial2"#Could be contaminated with hDeltaJ
                    ]
 
@@ -73,3 +73,9 @@ for e in experiment_dirs:
     plt.figure()
     cxa.mean_jump_arrows(fsb_names=['fsb_upper'])
     cxa.mean_jump_lines()
+#%%
+regions = ['fsb_lower','fsb_upper','eb']
+datadir = "Y:\\Data\\FCI\\Hedwig\\hDeltaI_SS60919\\241204\\f1\\Trial1"
+cxa = CX_a(datadir,regions=np.flipud(regions),denovo=False)
+cxa.simple_raw_plot(regions=np.flipud(regions),yeseb=False,plotphase=False)
+cxa.simple_raw_plot(regions=np.flipud(regions),yeseb=False,plotphase=True)

@@ -594,10 +594,13 @@ class fci_regmodel:
         self.dR2_mean = np.mean(dR2,axis=0)
         self.dR2_ttest = ttest
         
-    def plot_example_flur(self):
+    def plot_example_flur(self,parts=False):
         plt.figure(figsize=(18,8))
         plt.plot(self.ts,self.ca,color='k')
-        plt.plot(self.ts_y,self.predy,color='r')
+        if parts:
+            plt.plot(self.ts_y,self.predy_part,color='r')
+        else:
+            plt.plot(self.ts_y,self.predy,color='r')
         
         plt.plot(self.ts,self.ft2['instrip'],color=[0.2,0.2,1])
         plt.xlabel('Time (s)')

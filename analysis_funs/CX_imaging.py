@@ -745,6 +745,7 @@ class CX:
                 return df
 
     def read_log(self):
+        from datetime import datetime, time
         for file in os.scandir(self.datafol):
             if file.name.endswith('.log') and not file.name.startswith('._'):
                 file_path = os.path.join(self.datafol, file.name)
@@ -767,7 +768,15 @@ class CX:
         df['ft_posx'] = df['ft_posx']
 
         #calculate when fly is in strip
-        df['instrip'] = np.where(df['mfc2_stpt']>0.0, True, False)
+        
+        t = df.timestamp[0].to_numpy()
+        t0 = datetime(2026,6,5)
+        t0 = np.datetime64()
+        if t<t0:
+            df['instrip'] = np.where(df['mfc2_stpt']>0.0, True, False)
+        else:
+            df['instrip'] = np.where(df['mfc3_stpt']>0.0, True, False)
+        #
 
         return df
 

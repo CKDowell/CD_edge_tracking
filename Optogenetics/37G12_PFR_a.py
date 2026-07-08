@@ -71,6 +71,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     plt.title(f)
 #%% Test LED ON

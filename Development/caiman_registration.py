@@ -9,21 +9,25 @@ Created on Wed Oct 29 11:37:35 2025
 import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
 import multiprocessing
-expdirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1']
+expdirs = [
+   r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1',
+   r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2'
+
+   ]
 
 for e in expdirs:
     
     trial_folders = [name for name in os.listdir(e)
-    if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
+                        if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
     for t in trial_folders:
         datadir = os.path.join(e,t)
         if __name__ == '__main__':
             
             multiprocessing.freeze_support()
             cxcai = CX_cai(datadir,dual_color=True)
-            cxcai.one2other=True
-            cxcai.chreg = 1 
-            cxcai.chmov = 2
+            cxcai.one2other=False
+            cxcai.chreg = 2
+            cxcai.chmov = 1
             
             cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
             # cxcai.ex.mask_slice = {'All': [1,2,3,4]}

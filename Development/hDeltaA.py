@@ -122,11 +122,12 @@ for e in experiment_dirs:
     cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),cxa.pdat['amp_fsb_upper'],a_sep= 5)
 
 #%%
-datadir=  r"Y:\Data\FCI\Hedwig\hDeltaA_SS64464\\241121\f2\Trial1"
+datadir=  "Y:\\Data\\FCI\\Hedwig\\hDeltaA_SS64464\\241121\\f1\\Trial1"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaA'
 cxa.simple_raw_plot(plotphase=False,regions = ['fsb_upper','fsb_lower'],yk='eb')
+
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_lower_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_lower']/2,axis=1),a_sep= 2)
 
@@ -145,7 +146,16 @@ plt.plot(t,cd,color='b')
 plt.plot(t,cxa.ft2['instrip'],color='r')
 plt.figure()
 cxa.mean_jump_arrows(fsb_names=['fsb_upper','fsb_lower'],jsize =3,ascale=100)
-
+#%% Amplitude
+u = ug()
+dx,dy,dd = u.get_velocity(cxa.ft2['ft_posx'].to_numpy(),cxa.ft2['ft_posy'].to_numpy(),cxa.pv2['relative_time'].to_numpy())
+amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+amp2 = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+plt.plot(amp,color='k')
+plt.plot(amp2*5,color='b')
+ins = cxa.ft2['instrip'].to_numpy()
+plt.plot(ins,color='r')
+plt.plot(-1+dd*.1,color='k')
 #%%
 plt.figure()
 plt.plot([-np.pi,np.pi],[-np.pi,np.pi],linestyle='--',color='r')

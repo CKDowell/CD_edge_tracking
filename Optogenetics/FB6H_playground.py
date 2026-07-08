@@ -60,6 +60,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     plt.title(f)
     savename = f.split('\\')
@@ -103,6 +104,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     plt.title(f)
 
@@ -120,7 +122,7 @@ r'Test\250320\f2\Trial1',# Downwind tracker
 r'Test\250320\f3\Trial1',# Longer plume returns on inhib
 ]
 rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_inhibition'
-meta_data['stim_type'] = 'alternation'
+meta_data['stim_type'] = 'alternation_jump'
 meta_data['act_inhib'] = 'inhib'
 
 for i,f in enumerate(flies):
@@ -131,14 +133,18 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
-    op.plot_plume_simple(meta_data,df)
-    plt.title(f)
-    
+    plt.figure()
+    try:
+        op.plot_plume_simple(meta_data,df)
+        plt.title(f)
+    except:
+        print('blah')
 
 
 #%% Blanket excitation
 savedir = r'Y:\Data\Optogenetics\Summaries\FB6H\Activation'
 meta_data['act_inhib'] = 'act'
+meta_data['stim_type'] = 'alternation'
 plt.close('all')
 rootdir = r'Y:\Data\Optogenetics\FB6H_SS95649\FB6H_activation'
 flies_test = [r'Test\250408\f1\Trial1', # not really ET before act
@@ -174,6 +180,7 @@ for i,f in enumerate(flies_test):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     plt.title(f + ' '+ str(i))
     savename = f.split('\\')

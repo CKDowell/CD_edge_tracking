@@ -203,7 +203,7 @@ class opto:
         led_on = df['led1_stpt'].to_numpy()==0
         instrip = df['instrip'].to_numpy()
         a_s = meta_data['act_inhib']
-        #x,y = self.fictrac_repair(x,y)
+        x,y = self.fictrac_repair(x,y)
         s_type = meta_data['stim_type']
         #plt.figure(figsize=(16,16))
         if a_s=='act':
@@ -219,8 +219,8 @@ class opto:
             y = y-y[pw[0][0]]
             
             
-            yrange = [min(y), max(y)]
-            xrange = [min(x), max(x)]
+            yrange = [min(y[pw[0][0]:]), max(y[pw[0][0]:])]
+            xrange = [min(x[pw[0][0]:]), max(x[pw[0][0]:])]
             xlm = np.max(np.abs(xrange))
             
             # Plt plume
@@ -236,7 +236,7 @@ class opto:
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             else :
                 xp = [-psize/2, yrange[1]*np.tan(pi*(pa/180))-psize/2,yrange[1]*np.tan(pi*(pa/180))+psize/2, psize/2,-psize/2]
-                yp = [0, yrange[1], yrange[1],0,0]
+                yp = [yrange[0], yrange[1], yrange[1],yrange[0],yrange[0]]
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             #pan = meta_data['PlumeAngle']
 
@@ -350,7 +350,7 @@ class opto:
             yp = np.array([0,ym,ym,0])
             plt.fill(xp,yp,color=[0.5,0.5,0.5],alpha=0.5)
             for i,j in enumerate(jumps):
-                jplm = np.max(pw[pw<j])
+                jplm = np.max(pw[pw<=j])
                 
                 tj = ac[j]
                 xpj = xp+tj

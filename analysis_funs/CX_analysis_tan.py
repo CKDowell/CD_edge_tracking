@@ -40,8 +40,9 @@ class CX_tan:
         #self.ca = self.fc.ca
         self.ca = self.pv2[[tnstring]].to_numpy() # keeps nan values, which are useful for plotting
         self.ca_no_nan = self.fc.ca
-        self.fc.rebaseline(span=span,plotfig=False)
-        self.ca_rebase = self.fc.ca
+        
+        #self.fc.rebaseline(span=span,plotfig=False)
+        #self.ca_rebase = self.fc.ca
         self.tnstring = tnstring
         
     def reinit_fc(self):    

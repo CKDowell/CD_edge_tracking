@@ -82,10 +82,48 @@ datadirs=[
     # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial2', # Animal charging through plumes
     # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial3',
     
-    r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1\Trial1', # 4 jumps, EGP signal is a bit weird
+   # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1\Trial1', # 4 jumps, EGP signal is a bit weird
    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1\Trial2',
    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260503\f1\Trial3'
     
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial1', # Both pointing back to plume but did not make jumps
+  # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial2', # 6 jumps and then plume charging where correlation between hdc and fc2 breaks down. v cool
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial3',# downwind charging. Interesting.
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial4', # 1 entry
+    
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f2\Trial1', # Straight walking through plumes
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f2\Trial2', #Staight walking on entry
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f2\Trial3', # one jump nice transition between tracking and charging
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f2\Trial4', # Charging through
+    
+   
+ # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260617\f1\Trial1',
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260617\f1\Trial2', # Anemotaxis all correlated
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260617\f1\Trial3', # animal not walking
+   
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260618\f1\Trial1', # Amenotaxis with some downwind bouts. hDC and FC2 highly correlated. Interesting to see if downwind walking correlates with bump amp size
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260618\f1\Trial2', # Amenotaxis, FC2 signal looks like it drops during amenotaxis
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260618\f1\Trial3', # No ET some circular walking
+   
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260619\f1\Trial1',# Amenotaxis FC2 and hDeltaC correlated, poor signal
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260619\f1\Trial2', # Amenotaxis FC2 and hDeltaC correlated, poor signal
+  #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260619\f1\Trial3', # Amenotaxis FC2 and hDeltaC correlated
+    
+  #r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial1', # Only one odour entry and amenotaxis - had high air flow. Potential for decorrelation of hdc and FC2?
+ # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2', # six jumps lovely dataset with lots of 7 shaped returns.
+  
+ r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial1', # Only one entry, FC2 v quiet
+ r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial2', # 1 jump. FC2 pops in and out of correlation with hDeltaC
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial3', # No jumps but downwind noodling, could be good to look at hDC driving downwind walking
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial4', # FC2 is well correlated with hDeltaC
+
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial1', # Strong hDeltaC correlation after odour onset, no tracking
+ r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial2', # Strong hDeltaC correlation after odour, no tracking
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial3',# Strong hDeltaC correlation after odour, no tracking
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial4',# hDeltaC correlation after odour but no walking
+ 
+    
+ 
     ]
 
   
@@ -116,27 +154,26 @@ for datadir in datadirs:
         cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)
     except:
         print('whoops')
-#%%
+#%% Diagnostic heatmaps
 
 regions = ['eb','fsb1','fsb2']
 plt.close('all')
-datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial1'
+datadir =r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial4'
 #datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1\Trial1'
 regions2 = ['eb_ch1','fsb1_ch1','fsb2_ch2']
 cxa = CX_a(datadir,regions=regions2,yoking=True,denovo=False)
 cxa.simple_raw_plot(regions=regions2,yeseb=False,plotphase=False)
 cxa.simple_raw_plot(regions=regions2,yeseb=False,plotphase=True)
-#%%
+#%% Trajectories
 region1 = "fsb1_ch1"
 region2 = "fsb2_ch2"
 colours =  np.array([[49,99,125],[81,156,205]])/255
 cxa.plot_traj_arrow_new([region2,region1],a_sep=2,colours =colours,ascale=10)
+pva = ug.get_pvas(cxa.pdat['wedges_fsb1_ch1'])
+cxa.plot_traj_arrow_heat([region1],pva,a_sep=2,colormap='coolwarm',cmin=0,cmax=.15)
 
 
-
-    
-
-#%%
+#%% Diagnostic plots
 plt.close('all')
 colours =  np.array([[49,99,125],[81,156,205]])/255
 
@@ -242,6 +279,18 @@ plt.plot([-np.pi/2,-np.pi/2],[-np.pi,np.pi],color='r')
 plt.plot([-np.pi,np.pi],[-np.pi,np.pi],color='r')
 plt.plot([-np.pi,np.pi],[0,0],color='r')
 plt.plot([0,0],[-np.pi,np.pi],color='r')
+
+#%% PVA and goal analysis
+pva_fc2 = ug.get_pvas(cxa.pdat['wedges_fsb1_ch1'])
+fc2 = cxa.pdat['phase_fsb1_ch1'].squeeze()
+epg = cxa.pdat['phase_eb_ch1'].squeeze()
+hdc = cxa.pdat['phase_fsb2_ch2'].squeeze()
+
+f_e_offset = ug.circ_subtract(fc2,epg)
+plt.scatter(pva_fc2,np.abs(f_e_offset),s=1)
+
+
+
 #%% 2 D histogram of variables
 plt.close('all')
 plt.figure()
@@ -677,11 +726,13 @@ regions2 = ['eb_ch1','fsb1_ch1','fsb2_ch2']
 datadirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260331\f1\Trial3', # 6 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1\Trial1', # 8 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial1',# 17 jumps
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial2', # 6 jumps
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2' # 6 jumps
 ]
 for datadir in datadirs:
     etp = ET_paper(datadir,regions=regions2)
     plt.figure()
-    etp.plt_tmp(regions =['eb_ch1','fsb2_ch2','fsb1_ch1'],colours=colours)
+    etp.plt_tmp(regions =['eb_ch1','fsb2_ch2','fsb1_ch1'],colours=colours,phase_num=20)
 #%% Simple mutual information 
 plt.close('all')
 bin_number = 20

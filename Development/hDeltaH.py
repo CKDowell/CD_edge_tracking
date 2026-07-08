@@ -77,7 +77,7 @@ for e in experiment_dirs:
     cxa.save_phases()
 #%% 
 plt.close('all')
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaH_SS92512\260109\f2\Trial1"
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaH_SS92512\260109\f1\Trial3"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 cxa.simple_raw_plot(plotphase=False,regions = ['eb','fsb_upper','fsb_lower'],yk='eb')
 

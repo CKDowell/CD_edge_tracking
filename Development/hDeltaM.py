@@ -71,7 +71,7 @@ for e in experiment_dirs:
 #%%
 plt.close('all')
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
-datadir = r'Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250828\f1\Trial4'
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"   
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
@@ -118,3 +118,16 @@ plt.ylim([-np.pi,np.pi])
 plt.xlabel('FSB upper phase')
 plt.ylabel('FSB lower phase')
 plt.savefig(os.path.join(savedir,'FSB_upper_lower_phase.png'))
+
+
+#%% Plot amplitude and PVA of signal
+
+pva = ug.get_pvas(cxa.pdat['wedges_fsb_upper'])
+amp = np.mean(cxa.pdat['wedges_fsb_upper'],axis=1)
+ins =cxa.ft2['instrip']
+plt.plot(pva*5,color='b')
+plt.plot(amp,color='k')
+plt.plot(ins,color='r')
+
+
+

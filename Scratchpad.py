@@ -26,6 +26,104 @@ from Utilities.utils_general import utils_general as ug
 from scipy.stats import circmean, circstd
 
 plt.rcParams['pdf.fonttype'] = 42 
+#%%
+import numpy as np
+import h5py
+import pandas as pd
+
+datadir = r'D:\FCI\FC2_imaging_26\f1'
+f1 = 'phase_dict.pkl'
+f2 = 'postprocessing.h5'
+
+# Load processed neural phase
+"""
+pdat variables
+
+    regions: eb - ellipsoid body
+            fsb_upper - upper fan-shaped body (FC2 activity in paper)
+            fsb_lower - lower fan-shaped body (lower FC2 neuropil plus additional neurons labelled by 60D05 Gal4)
+    wedges: dF/F0 for columns and wedges. Values can be found in pv2
+    phase: neuronal phase in anatomical coordinates -pi:pi 
+          in fsb from right to left anatomically 0th column is right column
+          in eb from bottom counter clockwise looking from the back of the brain
+    offset: time varying offset between eb phase and heading
+    offset_region_phase: phase with offset subtracted to give allocentric phase
+    fit_wedges: wedges modelled as a sinusoid
+    all_params: parameters for fit_wedges
+    wedges_offset: wedges with columns rotated by offset 
+    amp: population vector amplitude
+
+"""
+pdat = np.load(os.path.join(datadir,f1),allow_pickle=True)
+
+# Load imaging data binned upsampled to 10 Hz
+
+"""
+pv2:
+    seconds: common timebase with ft2
+    #_region: dF/F0 data numbered by column/wedge per region. Same as in pdat['wedges_']
+    absolute_time: 10 Hz timebase on system time
+    relative_time: zeroed 10 Hz timebase used for alignment with behaviour
+
+"""
+
+pv2 = pd.read_hdf(os.path.join(datadir,f2), 'pv2')
+
+# Load behavioural data on acquired timebase - 60 Hz
+"""
+ft/ft2 variables
+
+
+  ft_posx: x position in mm
+  ft_posy: y position in mm
+  heading: ft_heading -pi:pi, 0 =upwind
+  ft_movement_dir: translational direction 0-pi       
+  mfc1_stpt: clean air mass flow controller flow rate
+  mfc2_stpt: ACV mass flow controller flow rate
+  mfc3_stpt: additional odour mass flow controller flow rate 
+  led1_stpt: led stimulation value - not used
+  led2_stpt: additional led stimulation value - not used
+  sig_status: pulse signal sent to synchronise 2 photon
+  bump: bump in motor position during pre-air to test compass 
+  instrip: inside the odour strip
+  jump: jump to odour strip
+  motor_step_command: stepper motor command
+  seconds: common timebase with ft2
+  motor_heading: heading of motor relative to fly -pi:pi
+  x_velocity: x translational velocity
+  y_velocity: y translational velocity
+  ang_velocity: angular velocity rad/s
+  net_motion: ball net motion
+
+  
+  Fictrac outputs:    
+      frame
+      del_rot_error
+      df_pitch
+      df_roll
+      df_yaw 
+      speed
+      timestamp
+      sequence_counter
+      delta_timestep
+      https://github.com/rjdmoore/fictrac/blob/master/doc/data_header.txt
+"""
+
+
+ft = pd.read_hdf(os.path.join(datadir,f2), 'ft')
+
+# Load behavioural data on 10 Hz timebase
+ft2 = pd.read_hdf(os.path.join(datadir,f2), 'ft2')
+
+# Index for conversion between timebases
+ix = pd.read_hdf(os.path.join(datadir,f2), 'ix')
+
+
+
+
+
+
+
 #%% Noelle problem
 datadir = r'Y:\noelle_problem\260107_F1_T1_bad'
 #datadir = r'Y:\noelle_problem\260106_F2_T3_good'

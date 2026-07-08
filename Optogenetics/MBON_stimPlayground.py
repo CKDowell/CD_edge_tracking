@@ -40,13 +40,14 @@ for sdir in savedirs:
     savepath = os.path.join(sdir,lname[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
 #%% No odour stim outside
 plt.close('all')
 meta_data = {'stim_type': 'plume',
              'act_inhib':'act',
     'ledONy': 'all',
-    'ledOny': 0,
+    'ledOny': 'all',
              'ledOffy':'all',
              'LEDoutplume': True,
              'LEDinplume': False,
@@ -74,6 +75,7 @@ for i in range(len(savedirs)):
     df = fc.read_log(savepath)
     meta_data['PlumeWidth'] = plumewidths[i]
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     snames = sdir.split('\\')
     plt.title(snames[-3] + ' ' + snames[-2] + ' ' +snames[-1])
@@ -107,6 +109,7 @@ for i in range(len(savedirs)):
     savepath = os.path.join(sdir,lname[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     snames = sdir.split('\\')
     plt.title(snames[-3] + ' ' + snames[-2] + ' ' +snames[-1])
@@ -180,6 +183,7 @@ for i in range(len(savedirs)):
     savepath = os.path.join(sdir,lname[0])
     df = fc.read_log(savepath)
     op= opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     snames = sdir.split('\\')
     plt.title(snames[-3] + ' ' + snames[-2] + ' ' +snames[-1])
@@ -245,6 +249,7 @@ for i in range(len(savedirs)):
     savepath = os.path.join(sdir,lname[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     op.light_pulse_pre_post(meta_data,df)
 #%% MBON 33 stimulation pulses

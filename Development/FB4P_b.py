@@ -51,8 +51,9 @@ datadirs = [r"Y:\Data\FCI\Hedwig\FB4P_b_SS60296\240912\f2\Trial3",
             ]
 datadir = datadirs[1]
 #%%
+datadir = datadirs[0]
 cxt = CX_tan(datadir)
-cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.5,cmax =0.5,jsize=5) 
+cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.5,cmax =0.5,jsize=3) 
 cxt.fc.example_trajectory_scatter(cmin=-0.5,cmax=0.5)
 savename = os.path.join(datadir , 'Eg_traj'+ name +'.pdf')
 plt.savefig(savename)

@@ -41,6 +41,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
 #%% Stim alternation
 rootdir = 'Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Chrimson_Corridor_outside_alt\Test_Flies'
@@ -56,6 +57,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
     
     
@@ -76,6 +78,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
 #%% Inhibition alternation
 rootdir = r"Y:\Data\Optogenetics\FB4P_b_SS60296\FB4P_b_SS60296_Corridor_Outside_Stim_Inhib\Test"
@@ -114,6 +117,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     op.plot_plume_simple(meta_data,df)
 #%% Sansu test
 rootdir = r"F:\MB022B_GtACR1"
@@ -186,6 +190,7 @@ for i,f in enumerate(flies):
     savepath = os.path.join(datadir,files[0])
     df = fc.read_log(savepath)
     op = opto()
+    plt.figure()
     try:
         meta_data['stim_type'] = 'alternation_jump'
         op.plot_plume_simple(meta_data,df)

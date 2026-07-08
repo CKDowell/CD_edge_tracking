@@ -43,7 +43,7 @@ name = d[-3] + '_' + d[-2] + '_' + d[-1]
 #pv2, ft, ft2, ix = cx.load_postprocessing()
 cxa = CX_a(datadir,Andy='hDeltaB')
 plt.close('all')
-cxa.simple_raw_plot()
+cxa.simple_raw_plot(regions=['fsb'],yeseb=False)
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_phase'],cxa.amp,a_sep=5)
 
 #%% Phase velocity

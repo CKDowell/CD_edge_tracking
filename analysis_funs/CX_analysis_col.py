@@ -377,16 +377,16 @@ class CX_a:
         ebs = []
         if yeseb:
             phase_eb = self.phase_eb.copy() 
-            for i in range(16):
-                ebs.append(str(i) +'_'+yk)
+        #     for i in range(16):
+        #         ebs.append(str(i) +'_'+yk)
                 
-        for r in regions:
-            for i in range(16):
-                ebs.append(str(i) +'_' + r)
+        # for r in regions:
+        #     for i in range(16):
+        #         ebs.append(str(i) +'_' + r)
         
-        eb = self.pv2[ebs].to_numpy()
-        eb[np.isnan(eb)] = 0
-        eb = eb/np.max(eb,axis=0)
+        # eb = self.pv2[ebs].to_numpy()
+        # eb[np.isnan(eb)] = 0
+        # eb = eb/np.max(eb,axis=0)
         
         eb = np.zeros((len(phase),len(regions)*17))-1
         for i,r in enumerate(regions):
@@ -409,7 +409,7 @@ class CX_a:
             off = -0.5
         else:
             off = -0.5
-        reps = phase.shape[1]
+        #reps = phase.shape[1]
         
         for i in range(len(regions)):
             print(i)
@@ -437,6 +437,7 @@ class CX_a:
         sdiff = np.diff(self.ft2['instrip'].to_numpy())
         son = np.where(sdiff>0)[0]+1 
         soff = np.where(sdiff<0)[0]+1 
+        print(son)
         for i,s in enumerate(son):
             plt.plot([off+15, off+31],[s, s],color=[1,0.5,0.5])
             plt.plot([off+15, off+31],[soff[i], soff[i]],color=[1,0.5,0.5])
@@ -2897,8 +2898,9 @@ class CX_a:
         
         
         colours = np.array([[0,140,0],
+                            [55,126,184],
             [228,26,28],
-                    [55,126,184],
+                    
                    [ 77,175,74],
                     [152,78,163],
                     [255,127,0]])/255
@@ -2991,8 +2993,8 @@ class CX_a:
                 ya = 50*amp_eb[i]*np.cos(phase_eb[i])
                 plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
                 for p  in range(len(regions)):
-                    xa = 50*amps[i,p]*np.sin(phases[i,p])
-                    ya = 50*amps[i,p]*np.cos(phases[i,p])
+                    xa = 10*amps[i,p]*np.sin(phases[i,p])
+                    ya = 10*amps[i,p]*np.cos(phases[i,p])
                     plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
