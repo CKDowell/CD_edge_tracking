@@ -10,8 +10,7 @@ import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
 import multiprocessing
 expdirs = [
-   r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1',
-   r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2'
+r'Y:\Data\FCI\Ladybird\hDeltaF_60D05_Gc7f\260715\f2'
 
    ]
 
@@ -24,16 +23,16 @@ for e in expdirs:
         if __name__ == '__main__':
             
             multiprocessing.freeze_support()
-            cxcai = CX_cai(datadir,dual_color=True)
+            cxcai = CX_cai(datadir,dual_color=False)
             cxcai.one2other=False
-            cxcai.chreg = 2
-            cxcai.chmov = 1
+            cxcai.chreg = 1
+            cxcai.chmov = 2
             
             cxcai.register_rigid(params={'max_shifts': (4, 4),'max_deviation_rigid': 2,'pw_rigid':True})
             # cxcai.ex.mask_slice = {'All': [1,2,3,4]}
             # cxcai.ex.t_projection_mask_slice()
             
-            
+
 #%% Multifly
 
 
@@ -42,18 +41,18 @@ for e in expdirs:
 #            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f3',
 #            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260425\f2',
 #            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1']
-from analysis_funs.utilities import imaging as im
-for e in expdirs:
+# from analysis_funs.utilities import imaging as im
+# for e in expdirs:
     
-    trial_folders = [name for name in os.listdir(e)
-    if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
-    for t in trial_folders:
-        datadir = os.path.join(e,t)
-        d = datadir.split("\\")
-        name = d[-3] + '_' + d[-2] + '_' + d[-1]
-        ex = im.fly(name, datadir)
-        ex.mask_slice = {'All': [1,2,3,4]}
-        ex.t_projection_mask_slice()
+#     trial_folders = [name for name in os.listdir(e)
+#     if os.path.isdir(os.path.join(e, name)) and "Trial" in name]
+#     for t in trial_folders:
+#         datadir = os.path.join(e,t)
+#         d = datadir.split("\\")
+#         name = d[-3] + '_' + d[-2] + '_' + d[-1]
+#         ex = im.fly(name, datadir)
+#         ex.mask_slice = {'All': [1,2,3,4]}
+#         ex.t_projection_mask_slice()
 #%% Single fly
 
 

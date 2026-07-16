@@ -112,17 +112,52 @@ datadirs=[
   #r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial1', # Only one odour entry and amenotaxis - had high air flow. Potential for decorrelation of hdc and FC2?
  # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2', # six jumps lovely dataset with lots of 7 shaped returns.
   
- r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial1', # Only one entry, FC2 v quiet
- r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial2', # 1 jump. FC2 pops in and out of correlation with hDeltaC
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial3', # No jumps but downwind noodling, could be good to look at hDC driving downwind walking
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial4', # FC2 is well correlated with hDeltaC
+#  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial1', # Only one entry, FC2 v quiet
+#  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial2', # 1 jump. FC2 pops in and out of correlation with hDeltaC
+# r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial3', # No jumps but downwind noodling, could be good to look at hDC driving downwind walking
+# r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f1\Trial4', # FC2 is well correlated with hDeltaC
 
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial1', # Strong hDeltaC correlation after odour onset, no tracking
- r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial2', # Strong hDeltaC correlation after odour, no tracking
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial3',# Strong hDeltaC correlation after odour, no tracking
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial4',# hDeltaC correlation after odour but no walking
+# r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial1', # Strong hDeltaC correlation after odour onset, no tracking
+#  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial2', # Strong hDeltaC correlation after odour, no tracking
+# r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial3',# Strong hDeltaC correlation after odour, no tracking
+# r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial4',# hDeltaC correlation after odour but no walking
  
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial1', # only one entry
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial2', # only few entries
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial3', # 7 jumps
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial4', # not trackign
+     
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial5', # ACV pulses solenoid nan values, script needs to be adjusted
+    # something wrong in pipeline
+    r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial6', # octanol pulses nan values also
     
+    
+    r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial7',
+    # something wrong in pipeline
+
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f1\Trial1',
+    
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f1\Trial2',
+    
+    #something wrong in pipeline
+   r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f1\Trial3',
+    # something wrong in pipeline
+    
+    r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f1\Trial4', 
+
+
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f2\Trial1', # one jump, nice neural data
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f2\Trial2', # two entries, amenotaxis
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f2\Trial3', # only a couple of entries. Long periods staying still
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260708\f2\Trial4', # two entries
+
+
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260709\f1\Trial1', # looks like there is movement in z for this one
+    #  r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260709\f1\Trial3', # Not many entries but FC2 is highly correlated with heading, largely ignoring hDeltaC
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260709\f1\Trial4', # only two entries
+    # r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260709\f1\Trial5'
+    
+ 
  
     ]
 
@@ -158,7 +193,7 @@ for datadir in datadirs:
 
 regions = ['eb','fsb1','fsb2']
 plt.close('all')
-datadir =r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260629\f2\Trial4'
+datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial5'
 #datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1\Trial1'
 regions2 = ['eb_ch1','fsb1_ch1','fsb2_ch2']
 cxa = CX_a(datadir,regions=regions2,yoking=True,denovo=False)
@@ -727,7 +762,8 @@ datadirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260331\f1\Trial3', # 6
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1\Trial1', # 8 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial1',# 17 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial2', # 6 jumps
-r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2' # 6 jumps
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2', # 6 jumps
+r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial3', # 7 jumps
 ]
 for datadir in datadirs:
     etp = ET_paper(datadir,regions=regions2)

@@ -40,8 +40,8 @@ groups = {
         #r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260401\f1\Trial2', # Some nice tracking 3 jumps
         r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260429\f2\Trial1',# 17 jumps
         r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial2', # 6 jumps
-        r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2' # 6 jumps
-        
+        r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2', # 6 jumps
+        r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial3' # 7 jumps
         ],
     
 
@@ -361,6 +361,9 @@ for di,d in enumerate(dchoice):
 
 plt.figure()
 plt.scatter(tdata,tdata2,c = fall,cmap = 'Paired')
+mns,edges,num = stats.binned_statistic(tdata,tdata2,bins=np.linspace(-np.pi,np.pi,11))
+ex = edges[1:]-np.mean(np.diff(edges))/2
+plt.plot(ex,mns,color='k')
 plt.figure()
 plt.scatter(np.abs(tdata),tdata2,color='k')
 pr = stats.pearsonr(np.abs(tdata),tdata2)

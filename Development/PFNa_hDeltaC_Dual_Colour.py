@@ -30,14 +30,18 @@ datadirs=[
     # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_sytRC3\260615\f1\Trial1',
     # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_sytRC3\260615\f1\Trial2',
     
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial1',
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial2',
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial3',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial1',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial2',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial3',
     
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial1',
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial2',
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial3',
-    r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial4',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial1',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial2',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial3',
+    # r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260618\f2\Trial4',
+    
+    r'Y:\Data\FCI\Hedwig\PFNa_PFNpm\260714\f1\Trial1', #No hDeltaC but v good PFNa signal in ch1
+    r'Y:\Data\FCI\Hedwig\PFNa_PFNpm\260714\f1\Trial2' # No hDeltaC but v good PFNa signal in ch1
+    
           ]
 
   
@@ -70,7 +74,7 @@ for datadir in datadirs:
         print('whoops')
 #%%
 plt.close('all')
-datadir = r'Y:\Data\FCI\Hedwig\68A10_sytGC8s_PFNa_SS02255_sytRC3\260617\f2\Trial3'
+datadir = r'Y:\Data\FCI\Hedwig\PFNa_PFNpm\260714\f1\Trial1'
 cxa = CX_a(datadir,regions=regions,yoking=False,denovo=False)
 regions = ['fsb1_ch1','fsb2_ch2']
 cxa.simple_raw_plot(regions=regions,yeseb=False,plotphase=False)

@@ -27,7 +27,7 @@ plt.rcParams['pdf.fonttype'] = 42
 datadir =r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1"
 #datadir =r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 #datadir= r"Y:\Data\FCI\Hedwig\hDeltaK_SS63089\250807\f2\Trial4"
-datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"
+#datadir = r"Y:\Data\FCI\Hedwig\hDeltaC_SS02863\250605\f2\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 plt.close('all')
 cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'])
@@ -106,6 +106,18 @@ plt.scatter(x[mdl2.delay:],phase_pred,color='r',s=2)
 print(180*(mdl2.res.x/np.pi)) 
 mse = ug.circ_mse(phase[mdl2.delay:],phase_pred)
 print('MSE: ',mse)   
+#%% Model 2.5  - hand crafted. Offset + delay + goal decay
+delay = 10 # approximately 1 s delay
+offset = np.pi # offset by pi radians
+phaseO = cxa.pdat['phase_fsb_upper'][delay:]
+phase1 = ug.circ_subtract(cxa.pdat['phase_eb'][:-delay],np.pi) # default mode
+phase2 = ug.cir
+
+v1 = np.array([np.sin(phase1),np.cos(phase2)])*amp1
+v2 = np.array([np.sin(phase2),np.cos(phase2)])*amp2
+
+
+
 #%% Model 3 - offset and delay in versus out strip
 class model3:
     def __init__(self):

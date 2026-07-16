@@ -126,10 +126,10 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial2'
+datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2'
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
-plt.close('all')
+#plt.close('all')
 cxa.simple_raw_plot(plotphase=True,regions = ['eb','fsb_upper'])
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'],np.mean(cxa.pdat['wedges_fsb_upper']/4,axis=1),a_sep= 4)
 #cxa.simple_raw_plot(plotphase=True)
@@ -216,6 +216,46 @@ plt.scatter(x,phase,s=3,zorder=5,color='r')
 plt.scatter(x,phase_eb,s=3,color='k',zorder=6)
 plt.scatter(x,phase_pred,s=3,color=[0,0.8,0.2],zorder=7)
 plt.scatter(x,phase_pred2,color='m',s=3,zorder=8)
+
+#%% Get immediate post odour phase of hDeltaJ to assess goal encoing
+datadirs = [
+    "Y:\\Data\\FCI\\Hedwig\\hDeltaJ\\240529\\f1\\Trial3",
+    r"Y:\Data\FCI\Hedwig\hDeltaJ\251011\f1\Trial1",
+    r"Y:\Data\FCI\Hedwig\hDeltaJ\251022\f1\Trial2",
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\251121\f2\Trial1',
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2',
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260127\f1\Trial1',
+    r'Y:\Data\FCI\Hedwig\hDeltaJ\260203\f1\Trial2'
+    ]
+plt.close('all')
+x_offset = 0
+minlen = 30
+all_goals = np.zeros(len(datadirs))
+for i,datadir in enumerate(datadirs):
+    d = datadir.split("\\")
+    name = d[-3] + '_' + d[-2] + '_' + d[-1]
+    cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
+    cxa.get_jumps()
+    jumps = cxa.get_entries_exits_like_jumps()
+    jlen = jumps[:,2]-jumps[:,1]
+    jdx = jlen>=minlen
+    jumps = jumps[jdx,:]
+    goal_phase = np.zeros(len(jumps))
+    
+    for ij,j in enumerate(jumps):
+        dx = np.arange(j[1]+10,j[1]+15)
+        goal_phase[ij] = stats.circmean(cxa.pdat['offset_fsb_upper_phase'].to_numpy()[dx],high=np.pi,low=-np.pi)*-cxa.side
+        
+    plt.figure()
+    plt.plot(goal_phase)
+    plt.ylim([-np.pi,np.pi])
+    all_goals[i]  =stats.circmean(goal_phase,low=-np.pi,high=np.pi)
+plt.figure()
+plt.plot(all_goals)        
+plt.ylim([-np.pi,np.pi])
+allmean = stats.circmean(all_goals,high=np.pi,low=-np.pi)
+print(180*allmean/np.pi)
+
 #%% Class model of just weighted phase difference in past
 from scipy.optimize import minimize
 class model1:

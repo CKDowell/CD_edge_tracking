@@ -22,9 +22,12 @@ from caiman.motion_correction import MotionCorrect, tile_and_correct, motion_cor
 from skimage import io,filters
 import numpy as np
 from analysis_funs.utilities import funcs as fn
+import xml.etree.ElementTree as ET
 #%%
 class CX_registration_caiman:
     def __init__(self,datadir,**kwargs):
+        hedwig_id = "7067-FB29-F82D-39B8-5DD1-A6CC-6231-D722"
+        ladybird_id = "3362-E212-BDAD-34ED-2D9A-ACE5-6030-85B6"
         d = datadir.split("\\")
         name = d[-3] + '_' + d[-2] + '_' + d[-1]
         self.ex = im.fly(name,datadir,**kwargs)
@@ -38,6 +41,25 @@ class CX_registration_caiman:
         self.temp_folder = r'D:\FCI\reg_temporary_data'
         self.rigid_out = {}
         self.one2other=False
+        self.flipud = False
+        
+        self.ex.find_xml()
+        xmldir = os.path.join(self.ex.imagefol,self.ex.xmls[0])
+        tree = ET.parse(xmldir)
+        item = tree.find('SystemIDs')
+        self.sysID = item.attrib['SystemID']
+        if self.sysID==hedwig_id:
+            print('Data from Hedwig')
+            self.rig = 'Hedwig'
+        elif self.sysID==ladybird_id:
+            print('Data from lady bird')
+            print('Flipping image.. ')
+            self.flipud = True
+            self.rig = 'LadyBird'
+        else:
+            print('Data from unknown microscope')
+            print('Check image orientation!')
+            self.rig = 'other'
     def register_rigid(self,params=[]):
         new_params = self.default_params.copy()
         if len(params)>0:
@@ -180,6 +202,9 @@ class CX_registration_caiman:
         except: # CD edit -reordeded this since below actually takes some time
             print(chn)
             stack = io.concatenate_images(images)
+            
+        if self.flipud:
+            stack = np.flip(stack,axis=1)
         return stack
     def run_rigid_1_to_other(self,files_Chref,files_Chmov,plane,ref_chan,mov_chan,dview):
         reg_results, registered_blurred,mc = self.run_rigid_register(files_Chref,plane,dview,ch=[ref_chan])
