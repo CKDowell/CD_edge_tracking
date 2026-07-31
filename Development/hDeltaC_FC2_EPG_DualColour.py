@@ -765,10 +765,21 @@ r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260616\f1\Trial2', # 6 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260623\f1\Trial2', # 6 jumps
 r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial3', # 7 jumps
 ]
+savedir = r'Y:\Data\FCI\FCI_summaries\FC2_hDeltaC_comparison'
+plt.close('all')
 for datadir in datadirs:
     etp = ET_paper(datadir,regions=regions2)
     plt.figure()
-    etp.plt_tmp(regions =['eb_ch1','fsb2_ch2','fsb1_ch1'],colours=colours,phase_num=20)
+    etp.plt_tmp(regions =['fsb2_ch2'],colours=colours[1:,:],phase_num=10,scalar=5)
+    plt.ylim([-20,80])
+    plt.savefig(os.path.join(savedir,'return_traj_phase_hDC'+ etp.cxa.name+'.pdf'))
+    
+    
+    plt.figure()
+    etp.plt_tmp(regions =['fsb1_ch1'],colours=colours[[2,0],:],phase_num=10,scalar=5)
+    plt.ylim([-20,80])
+    
+    plt.savefig(os.path.join(savedir,'return_traj_phase_FC2'+ etp.cxa.name+'.pdf'))
 #%% Simple mutual information 
 plt.close('all')
 bin_number = 20

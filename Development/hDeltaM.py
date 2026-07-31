@@ -22,6 +22,8 @@ from analysis_funs.CX_analysis_col import CX_a
 from analysis_funs.utilities import funcs as fn
 from Utilities.utils_general import utils_general as ug
 from Utilities.utils_plotting import uplt as uplt
+from EdgeTrackingOriginal.ETpap_plots.ET_paper import ET_paper
+
 plt.rcParams['pdf.fonttype'] = 42 
 #%% Image registraion
 
@@ -75,10 +77,13 @@ datadir = r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #%%
 savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
+plt.close('all')
 cxa.simple_raw_plot(plotphase=False,regions = ['eb','fsb_upper','fsb_lower'],yk='eb')
 cxa.plot_traj_arrow(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
-cxa.plot_traj_arrow(cxa.pdat['offset_fsb_lower_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_lower']/2,axis=1),a_sep= 2)
-
+p = ug.circ_subtract(cxa.pdat['offset_fsb_upper_phase'].to_numpy(),np.pi)
+cxa.plot_traj_arrow(p,np.mean(cxa.pdat['wedges_fsb_upper']/2,axis=1),a_sep= 2)
+#cxa.plot_traj_arrow(cxa.pdat['offset_fsb_lower_phase'].to_numpy(),np.mean(cxa.pdat['wedges_fsb_lower']/2,axis=1),a_sep= 2)
+#%%
 plt.figure()
 t  = np.arange(0,len(cxa.pdat['phase_eb']))/10
 plt.scatter(t,cxa.pdat['phase_eb'],color='k',s=2)
@@ -129,5 +134,20 @@ plt.plot(pva*5,color='b')
 plt.plot(amp,color='k')
 plt.plot(ins,color='r')
 
+#%% plot hDeltaM jumps
+colours = uplt.columnar_colours()
+colours[0,:] = 0
+regions2 = ['eb','fsb_upper','fsb_lower']
 
-
+datadirs = [r"Y:\Data\FCI\Hedwig\hDeltaM_SS59766\250829\f1\Trial2"  
+]
+savedir = r'Y:\Data\FCI\FCI_summaries\hDeltaM'
+plt.close('all')
+colcul = uplt.columnar_colours()
+colours = np.array([[0, 0,0],[59, 88, 161],[59, 88, 161]])/255
+colours[2,:] = colcul[2,:]
+for datadir in datadirs:
+    etp = ET_paper(datadir,regions=regions2)
+    plt.figure()
+    etp.plt_tmp(regions =['eb','fsb_upper','fsb_lower'],colours=colours,phase_num=6,scalar=7)
+    plt.savefig(os.path.join(savedir,'Upper_lower_phase_'+etp.cxa.name+'.pdf'))

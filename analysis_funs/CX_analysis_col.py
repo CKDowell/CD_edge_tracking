@@ -2897,13 +2897,14 @@ class CX_a:
     def plot_traj_arrow_heat(self,regions,heat,a_sep=20,traindat=False,fulldat=True,colormap='coolwarm',cmin=-1,cmax=1):
         
         
-        colours = np.array([[0,140,0],
-                            [55,126,184],
-            [228,26,28],
+        # colours = np.array([[0,140,0],
+        #                     [55,126,184],
+        #     [228,26,28],
                     
-                   [ 77,175,74],
-                    [152,78,163],
-                    [255,127,0]])/255
+        #            [ 77,175,74],
+        #             [152,78,163],
+        #             [255,127,0]])/255
+        colours = uplt.columnar_colours()
         phase_eb = self.pdat['offset_'+self.stab+'_phase'].to_numpy()
         phases = np.zeros((len(phase_eb),len(regions)))
         amps = np.zeros((len(phase_eb),len(regions)))
@@ -2916,7 +2917,7 @@ class CX_a:
         x = self.ft2['ft_posx'].to_numpy()
         y = self.ft2['ft_posy'].to_numpy()
         led = self.ft2['led1_stpt'].to_numpy()
-        
+        all_entries = self.get_entries_exits_like_jumps()
         x,y = self.fictrac_repair(x,y)
         instrip = self.ft2['instrip'].to_numpy()
         if traindat:
@@ -2997,8 +2998,12 @@ class CX_a:
                     ya = 10*amps[i,p]*np.cos(phases[i,p])
                     plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
         ax = plt.gca()
+        
+        for ie,e in enumerate(all_entries):
+            plt.text(x[e[0]],y[e[0]],str(ie))
         ax.set_aspect('equal', adjustable='box')
         plt.show()
+        
         
     def plot_traj_arrow(self,phase,amp,a_sep= 20,traindat=False,fulldat=True):
         
