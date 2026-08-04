@@ -786,7 +786,7 @@ percent_strip = data_outpd['percent_strip'].to_numpy()
 flies = data_outpd['fly_index']
 projdat = []
 projfly = []
-projmeans = np.zeros((6,2))
+projmeans = np.zeros((6,4))
 
 bins = np.arange(0,6,.5)
 binspva = np.arange(0.025,0.25,.025)
@@ -795,7 +795,7 @@ binscovar = np.arange(-.005,0.03,0.005)
 projbins = np.zeros((6,len(bins)-1))
 pvabins = np.zeros((6,len( binspva)-1))
 covarbins = np.zeros((6,len(binscovar)-1))
-
+phasebins = np.zeros((6,len(bins)-1,2))
 for f in range(6):
     fdx = flies==f
     keepdx = (duration>=minduration)&(stripstart==0)&(duration<=maxduration)&fdx&(percent_strip<strip_percentage)
@@ -830,6 +830,7 @@ for f in range(6):
     plt.title('FC2 pva')
     
     rdpan = data_outpd['rdp_angle'].to_numpy()[keepdx][:,np.newaxis]
+    phases = data_outpd[['hdc_phasemean','fc2_phasemean']].to_numpy()[keepdx]
     plt.figure()
     c = data_outpd['median_covar'].to_numpy()[keepdx][:,np.newaxis]
     rx = np.append(0*np.sin(rdpan),np.sin(rdpan),axis=1)*c
@@ -890,10 +891,20 @@ for f in range(6):
         bins = binscovar
         )[0]
     
+    for pi in range(2):
+        phasebins[f,:,pi] = stats.binned_statistic(
+        cproj, np.abs(phases[:,pi]).squeeze(),
+        statistic=lambda v: stats.circmean(v, low=-np.pi, high=np.pi) if len(v) else np.nan,
+        bins=bins
+        )[0]
+    
+    
+    
 projdat = np.concatenate(projdat, axis=0)   # (sum(N_f), 2)
 projfly = np.concatenate(projfly)
 keepdx = (duration>=minduration)&(stripstart==0)&(duration<=maxduration)&(percent_strip<strip_percentage)
 pvacovar = data_outpd[['median_pvaFC2','median_covar']].to_numpy()[keepdx]
+phases  = data_outpd[['hdc_phasemean','fc2_phasemean']].to_numpy()[keepdx]
 keepdata = data_outpd[keepdx]
 
 #%% Regression fits and plots for covariance of factors
@@ -941,9 +952,10 @@ plt.figure(2)
 plt.savefig(os.path.join(savedir,'PVA_Coherence_Correlation_colour.pdf'))
 #%% Plot projection figure phew, that was a lot of work
 plt.close('all')
-
+colours = uplt.columnar_colours()
 savedir = r'Y:\Data\FCI\FCI_summaries\FC2_hDeltaC_comparison'
 sname = 'FC2_hDeltaC_coherence_PVA_proj_vs_RDP_heading'
+pnames = ['hDeltaC','FC2']
 with plt.rc_context({'font.size': 14}):
     plt.figure()
     
@@ -973,6 +985,20 @@ with plt.rc_context({'font.size': 14}):
     plt.yticks(np.arange(0,225,45))
     plt.savefig(os.path.join(savedir,'projection_summary'+'.png'))
     plt.savefig(os.path.join(savedir,'projection_summary'+'.pdf'))
+    
+    
+    phasebinmean = stats.circmean(phasebins,axis=0,low=-np.pi,high=np.pi,nan_policy='omit')
+    for pi in range(2):
+        plt.figure()
+        plt.scatter(projdat[:,0],180*np.abs(phases[:,pi])/np.pi,color='k',s=20,alpha=.25)
+        plt.plot(pltbins,180*phasebins[:,:,pi].T/np.pi,color=colours[1+pi,:],alpha=.75,linestyle='--')
+        plt.plot(pltbins[:,0],180*phasebinmean[:,pi]/np.pi,color=colours[1+pi,:],linestyle='-',linewidth=3)
+        plt.ylabel('phase (deg)')
+        plt.xlabel('projection')
+        plt.ylim([0,180])
+        plt.yticks(np.arange(0,225,45))
+        plt.savefig(os.path.join(savedir,'projection_summary_phase'+pnames[pi]+'.png'))
+        plt.savefig(os.path.join(savedir,'projection_summary_phase'+pnames[pi]+'.pdf'))
     
     plt.figure()
     plt.scatter(pvacovar[:,1],180*np.abs(projdat[:,1])/np.pi,color='k',s=20,alpha=.25)

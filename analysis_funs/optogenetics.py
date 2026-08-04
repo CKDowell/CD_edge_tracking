@@ -203,7 +203,7 @@ class opto:
         led_on = df['led1_stpt'].to_numpy()==0
         instrip = df['instrip'].to_numpy()
         a_s = meta_data['act_inhib']
-        x,y = self.fictrac_repair(x,y)
+        #x,y = self.fictrac_repair(x,y)
         s_type = meta_data['stim_type']
         #plt.figure(figsize=(16,16))
         if a_s=='act':
@@ -276,9 +276,19 @@ class opto:
             #plt.xlim([-1*(yxlm/2), yxlm/2])
         elif s_type == 'pulse':
             led = df['led1_stpt']==0
-            plt.scatter(x[led],y[led],color=led_colour)
             
-            plt.plot(x,y,color='k')
+            
+            leds,ledsize = ug.find_blocks(led)
+            ledsize +=1
+            #print(leds)
+            ledos,ledsizeo = ug.find_blocks(~led)
+            ledsizeo +=1
+            for il,l in enumerate(leds):
+                plt.plot(x[l:l+ledsize[il]],y[l:l+ledsize[il]],color=led_colour)
+            for il,l in enumerate(ledos):
+                plt.plot(x[l:l+ledsizeo[il]],y[l:l+ledsizeo[il]],color='k')
+            
+            
         elif s_type == 'alternation':
             pon = pd.Series.to_numpy(df['instrip']>0)
             pw = np.where(pon)
@@ -292,7 +302,7 @@ class opto:
             pi = np.pi
             psize =meta_data['PlumeWidth']
             pa = meta_data['PlumeAngle']
-            #plt.scatter(x[led_on],y[led_on],color='r')
+            plt.scatter(x[instrip>0],y[instrip>0],color='r')
             if pa ==90:
                 xp = [xrange[0], xrange[1],xrange[1], xrange[0]]
                 yp = [psize/2, psize/2,-psize/2,-psize/2]
@@ -302,35 +312,29 @@ class opto:
                 yp = [0, yrange[1], yrange[1],0,0]
                 xo = [-xlm,xlm,xlm,-xlm, -xlm ]
             plt.fill(xp,yp,color =[0.8,0.8,0.8],zorder=0)
-            led_diff = np.diff(led_on.astype(int))
-
-            lon = np.where(led_diff>0)[0]
-            loff = np.where(led_diff<0)[0]
-            #print(lon)
-            plt.plot([-100,100],[meta_data['ledOny'],meta_data['ledOny']],color='k',linestyle='--')
-            try:
-                plt.plot(x[0:lon[0]],y[0:lon[0]],color='k')
-                if len(lon)>len(loff):
-                    plt.plot(x[lon[-1]:],y[lon[-1]:],color=led_colour)
-                    lon = lon[:-1]
+            
+            
+            
+            leds,ledsize = ug.find_blocks(led_on>0)
+            ledsize +=1
+            print(leds)
+            ledos,ledsizeo = ug.find_blocks(led_on<1)
+            ledsizeo +=1
+            for il,l in enumerate(leds):
+                plt.plot(x[l:l+ledsize[il]],y[l:l+ledsize[il]],color=led_colour)
+                
+            predx = np.arange(0,np.where(instrip>0)[0][0])
+            plt.plot(x[predx],y[predx],color=[0.7,0.7,1])
+                
+            for il,l in enumerate(ledos):
+                if il==0:
+                    plt.plot(x[max(l,np.max(predx)):l+ledsizeo[il]],y[max(l,np.max(predx)):l+ledsizeo[il]],color='k')
                 else:
-                    plt.plot(x[loff[-1]:],y[loff[-1]:],color='k')
-                    
-                for il,l in enumerate(lon):
-                    plt.plot(x[l:loff[il]],y[l:loff[il]],color=led_colour)
-                for il,l in enumerate(loff[:-1]):
-                    print(l)
-                    xsmall = x[loff[il]+1:lon[il+1]-2]
-                    ysmall = y[loff[il]+1:lon[il+1]-2]
-                    
-                    plt.plot(xsmall,ysmall,color='k')
-                    
-                    inplume = instrip[loff[il]+1:lon[il+1]-2]
-                    
-                    #plt.plot(xsmall[inplume],ysmall[inplume],color='k')
-                    #plt.plot(xsmall[inplume==False],ysmall[inplume==False],color=[0.5,0.5,1])
-            except:
-                plt.plot(x,y,color='k')
+                    plt.plot(x[l:l+ledsizeo[il]],y[l:l+ledsizeo[il]],color='k')
+                
+            
+            
+           
         elif s_type=='alternation_jump':
             ac = df['adapted_center'].to_numpy()
             psize =meta_data['PlumeWidth']
