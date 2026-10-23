@@ -26,10 +26,25 @@ plt.rcParams['pdf.fonttype'] = 42
 
 
 experiment_dirs = [
-                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1', # Not amazing behaviour but a good start for analysis,
-                r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial1',
-                r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial2',
-                r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial5'
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1', # Not amazing behaviour but a good start for analysis,
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial1',
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial2',
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS52245\260108\f1\Trial5'
+                
+              #  r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1\Trial1',
+              #  r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1\Trial2',
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1\Trial3',
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1\Trial4', # ACV pulses
+                # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1\Trial5', # Oct pulses
+                
+                
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial1',
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial2',
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial3',#Nice signal and tracking decent heading signal when upwind or downwind
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial4', # ACV pulses
+                r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial5' # oct pulses
+                
+                
                    ]
 regions = ['PFN_L','PFN_R']
 regions2 = ['pfn_l_16','pfn_r_16']
@@ -67,7 +82,7 @@ for e in experiment_dirs:
     cxa.save_phases()
     
 #%%
-datadir =   r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\251210\f1\Trial1'
+datadir =   r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1\Trial3'
 regions2 = ['pfn_l_16','pfn_r_16'] 
 cxa = CX_a(datadir,regions2,denovo=False)
 cxa.simple_raw_plot(regions = regions2,yeseb=False)
@@ -83,6 +98,11 @@ cxa.pdat['offset_pfn_l_16_fsb_phase'] = ug.circ_subtract(cxa.pdat['phase_pfn_l_1
 #%% weighted sum
 fr  = np.mean(cxa.pdat['wedges_pfn_r_16'],axis=1)
 fl = np.mean(cxa.pdat['wedges_pfn_l_16'],axis=1)
+
+# fr = ug.get_pvas(cxa.pdat['wedges_pfn_r_16'])
+
+# fl = ug.get_pvas(cxa.pdat['wedges_pfn_l_16'])
+
 fr = fr-np.min(fr)
 fl = fl-np.min(fl)
 pr = cxa.pdat['offset_pfn_r_16_fsb_phase'].squeeze()
@@ -101,6 +121,45 @@ plt.scatter(x,pr,color='r',s=5)
 plt.scatter(x,pl,color='b',s=5)
 plt.plot(x,ins,color='r')
 cxa.pdat['offset_fsb_phase'] = pw
+
+plt.figure()
+plt.plot(x,heading,color='k')
+plt.scatter(x,pw,color='b',s=5,zorder=5)
+plt.plot(x,ins,color='r')
+
+plt.figure()
+plt.scatter(heading,pw,color='k',s=1)
+
+
+#%% Odour pulse data
+
+# ACV
+
+# Octanol
+
+
+
+#%% 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #%%
 cxa.plot_traj_arrow_new(['fsb'],a_sep=5,colours =np.array([[0,1,0]]))
 #%% FSB processing pipeline

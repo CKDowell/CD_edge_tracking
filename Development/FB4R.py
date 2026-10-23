@@ -60,7 +60,7 @@ plt.close('all')
 for d in datadirs:
     cxt = CX_tan(d) 
     
-    cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=-0.4,cmax =0.4) 
+    cxt.fc.example_trajectory_jump(cxt.fc.ca,cxt.ft,cmin=0,cmax =1) 
     plt.figure()
     cxt.fc.mean_traj_nF_jump(cxt.fc.ca,plotjumps=True)
     

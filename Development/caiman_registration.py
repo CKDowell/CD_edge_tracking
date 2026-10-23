@@ -10,8 +10,44 @@ import os
 from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
 import multiprocessing
 expdirs = [
-r'Y:\Data\FCI\Ladybird\hDeltaL_sytGCaMP7f\260716\f1'
-
+   # r'Y:\Data\FCI\Hedwig\FB5A\260812\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaF_SS53683_sytGCaMP7f\260812\f1'
+   #r'Y:\Data\FCI\Hedwig\PFNa_EPG\260814\f1'
+   # r'Y:\Data\FCI\Hedwig\hDeltaF_SS53683_sytGCaMP7f\260813\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaF_SS53683_sytGCaMP7f\260813\f2'
+   #r'Y:\Data\FCI\Hedwig\PFNa_EPG\260818\f2'
+  # r'Y:\Data\FCI\Hedwig\hDeltaF_SS53683_sytGCaMP7f\260818\f1'
+   # r'Y:\Data\FCI\Hedwig\hDeltaD_sytGCaMP7f\260819\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaD_sytGCaMP7f\260819\f2'
+   
+   # r'Y:\Data\FCI\Hedwig\hDeltaD_SS65202_sytGCaMP7f\260820\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaD_SS65202_sytGCaMP7f\260820\f2',
+  # r'Y:\Data\FCI\Hedwig\Gr64f_hDeltaC_EPG_RCaMP\260824\f1'
+  # r'Y:\Data\FCI\Hedwig\hDeltaD_SS65202_sytGCaMP7f\260825\f1'
+   
+   # r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\260826\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaD_SS65202_sytGCaMP7f\260826\f1'
+   #r'Y:\Data\FCI\Hedwig\FB5A_60D05\260831\f2'
+   #r'Y:\Data\FCI\Hedwig\Gr64f_hDeltaC_EPG_RCaMP\260901\f1'
+   # r'Y:\Data\FCI\Hedwig\Gr64f_hDeltaC_EPG_RCaMP\260911\f1',
+   # r'Y:\Data\FCI\Hedwig\Gr64f_hDeltaC_EPG_RCaMP\260911\f2',
+  # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\260911\f1'
+   #r'Y:\Data\FCI\Hedwig\Gr64f_hDeltaC_EPG_RCaMP\260914\f1'
+   #r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\260918\f1',
+   
+   # r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\260922\f1',
+   # r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\260922\f2'
+   # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1',
+   # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260923\f1'
+  # r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\260923\f1'
+  #r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\261008\f1'
+  #r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1',
+  #r'Y:\Data\FCI\Hedwig\hDeltaJ_Gr64f_EPG_RCaMP\261009\f1'
+  #r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1'
+  #r'Y:\Data\FCI\Hedwig\FC2_FB5A\261015\f1'
+  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1',
+  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f2',
+  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3'
    ]
 
 for e in expdirs:
@@ -23,7 +59,7 @@ for e in expdirs:
         if __name__ == '__main__':
             
             multiprocessing.freeze_support()
-            cxcai = CX_cai(datadir,dual_color=False)
+            cxcai = CX_cai(datadir,dual_color=True)
             cxcai.one2other=False
             cxcai.chreg = 1
             cxcai.chmov = 2
@@ -36,11 +72,9 @@ for e in expdirs:
 #%% Multifly
 
 
-# expdirs = [r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f1',
-#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f2',
-#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260424\f3',
-#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260425\f2',
-#            r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1']
+expdirs = [
+     r'Y:\Data\FCI\Hedwig\hDeltaJ_Gr64f_EPG_RCaMP\261009\f1'
+]
 from analysis_funs.utilities import imaging as im
 for e in expdirs:
     
@@ -56,11 +90,11 @@ for e in expdirs:
 #%% Single fly
 
 
-# rootdir = r"Y:\Data\FCI\Hedwig\PFNpm_83D12_FC2_sytGCaMP8s_RCaMP\260426\f2"
+# rootdir = r'Y:\Data\FCI\Hedwig\FC2_GCaMP8s_hDeltaJ_RCaMP3\261008\f1'
 # import os
 # from analysis_funs.CX_registration_caiman import CX_registration_caiman as CX_cai
 # import multiprocessing
-# for i in [1,2,3]:
+# for i in [3,4]:
 #     datadir =os.path.join(rootdir,'Trial' +str(i))
 #     d = datadir.split("\\")
 #     name = d[-3] + '_' + d[-2] + '_' + d[-1]
@@ -71,7 +105,7 @@ for e in expdirs:
         
 #         multiprocessing.freeze_support()
 #         cxcai = CX_cai(datadir,dual_color=True)
-#         cxcai.one2other=True
+#         cxcai.one2other=False
 #         cxcai.chreg = 1 
 #         cxcai.chmov = 2
         

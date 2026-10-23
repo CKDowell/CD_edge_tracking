@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from Utilities.utils_general import utils_general as ug
+from scipy import stats
 #%%
 class opto:
     def __init__(self):
@@ -196,6 +197,107 @@ class opto:
         plt.show()
         
         
+    def plot_returns_in_sequence_horz(self,meta_data,df):
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        a_s = meta_data['act_inhib']
+        if a_s=='act':
+            led_colour = [1,0.8,0.8]
+        elif a_s=='inhib':
+            led_colour = [0.7, 1, 0.7]
+        led_on = df['led1_stpt'].to_numpy()==0
+        instrip = df['instrip'].to_numpy()
+        t = ug.get_ft_time(df)
+        dt = np.mean(np.diff(t))
+        mthresh = int(.25/dt)
+        bstart,bsize = ug.find_blocks(instrip,mergeblocks=True,merg_threshold=mthresh)
+        ents = np.zeros((len(bstart),3),dtype='int')
+        for ib,b in enumerate(bstart):
+            ents[ib,0] = b
+            ents[ib,1] = b+bsize[ib]
+            if ib==len(bstart)-1:
+                ents[ib,2] = len(x)
+            else:
+                ents[ib,2] = bstart[ib+1] 
+        
+        
+        
+        offset=0
+        dx = np.arange(0,ents[0,0])
+        tx = x[dx];tx = tx-tx[0]
+        ty = y[dx];ty = ty-ty[0]
+        offset = offset+abs(min(tx))
+        plt.scatter(tx[0]+offset,ty[0],color='r',s=50)
+        plt.plot(tx+offset,ty,color=[.8,.8,1])
+        offset = offset+abs(max(tx))+25
+        for ie,e in enumerate(ents):
+            dx = np.arange(e[1],e[2])
+            if e[1]==e[2]: # ends in plume
+                continue
+            tx = x[dx];tx = tx-tx[0]
+            ty = y[dx];ty = ty-ty[0]
+            offset = offset+abs(min(tx))
+            plt.scatter(tx[0]+offset,ty[0],color='r',s=50)
+            if led_on[dx[-1]]:
+                plt.plot(tx+offset,ty,color=led_colour)
+                
+            else:
+                plt.plot(tx+offset,ty,color='k')
+            
+            plt.text(np.median(tx)+offset,-30,str(ie))
+            offset = offset+abs(max(tx))+25
+        plt.gca().set_aspect('equal')
+    def plot_returns_in_sequence_vert(self,meta_data,df):
+        x = pd.Series.to_numpy(df['ft_posx'])
+        y = pd.Series.to_numpy(df['ft_posy'])
+        a_s = meta_data['act_inhib']
+        if a_s=='act':
+            led_colour = [1,0.8,0.8]
+        elif a_s=='inhib':
+            led_colour = [0.7, 1, 0.7]
+        led_on = df['led1_stpt'].to_numpy()==0
+        instrip = df['instrip'].to_numpy()
+        t = ug.get_ft_time(df)
+        dt = np.mean(np.diff(t))
+        mthresh = int(.25/dt)
+        bstart,bsize = ug.find_blocks(instrip,mergeblocks=True,merg_threshold=mthresh)
+        ents = np.zeros((len(bstart),3),dtype='int')
+        for ib,b in enumerate(bstart):
+            ents[ib,0] = b
+            ents[ib,1] = b+bsize[ib]
+            if ib==len(bstart)-1:
+                ents[ib,2] = len(x)
+            else:
+                ents[ib,2] = bstart[ib+1] 
+        
+        
+        
+        offset=0
+        dx = np.arange(0,ents[0,0])
+        tx = x[dx];tx = tx-tx[0]
+        ty = y[dx];ty = ty-ty[0]
+        offset = offset+abs(min(ty))
+        plt.scatter(tx[0],ty[0]+offset,color='r',s=50)
+        plt.plot(tx,ty+offset,color=[.8,.8,1])
+        offset = offset+abs(max(ty))+25
+        for ie,e in enumerate(ents):
+            dx = np.arange(e[1],e[2])
+            if e[1]==e[2]: # ends in plume
+                continue
+            tx = x[dx];tx = tx-tx[0]
+            ty = y[dx];ty = ty-ty[0]
+            offset = offset+abs(min(ty))
+            plt.scatter(tx[0],ty[0]+offset,color='r',s=50)
+            if led_on[dx[-1]]:
+                plt.plot(tx,ty+offset,color=led_colour)
+                
+            else:
+                plt.plot(tx,ty+offset,color='k')
+            
+            plt.text(-30,ty[0]+offset,str(ie))
+            offset = offset+abs(max(ty))+25
+        plt.gca().set_aspect('equal')
+        
     def plot_plume_simple(self,meta_data,df):
         
         x = pd.Series.to_numpy(df['ft_posx'])
@@ -336,6 +438,7 @@ class opto:
             
            
         elif s_type=='alternation_jump':
+            pa = meta_data['PlumeAngle']
             ac = df['adapted_center'].to_numpy()
             psize =meta_data['PlumeWidth']
             pon = pd.Series.to_numpy(df['instrip']>0)
@@ -347,28 +450,51 @@ class opto:
             d_ac = np.diff(ac)
             jumps = np.where(np.abs(d_ac)>0)[0]+1
             # Plot first plume
-            xp = np.array([-psize/2,-psize/2,psize/2,psize/2])
-           
-            jplm = np.max(pw[pw<jumps[0]])
-            ym = y[jplm]
-            yp = np.array([0,ym,ym,0])
-            plt.fill(xp,yp,color=[0.5,0.5,0.5],alpha=0.5)
-            for i,j in enumerate(jumps):
-                jplm = np.max(pw[pw<=j])
-                
-                tj = ac[j]
-                xpj = xp+tj
-                ymin = y[jplm]
-                if i<len(jumps)-1:
-                    ymax =y[np.max(pw[pw<jumps[i+1]])]
-                else:
-                    ymax = np.max(y)
-                yp = np.array([ymin,ymax,ymax,ymin])
-                plt.fill(xpj,yp,color=[0.5,0.5,0.5],alpha=0.5)
+            if pa ==0:
+            
+                xp = np.array([-psize/2,-psize/2,psize/2,psize/2])
+                jplm = np.max(pw[pw<jumps[0]])
+                ym = y[jplm]
+                yp = np.array([0,ym,ym,0]) 
+                plt.fill(xp,yp,color=[0.5,0.5,0.5],alpha=0.5)
+                for i,j in enumerate(jumps):
+                    
+                    
+                    jplm = np.max(pw[pw<=j])
+                    
+                    tj = ac[j]
+                    xpj = xp+tj
+                    ymin = y[jplm]
+                    if i<len(jumps)-1:
+                        ymax =y[np.max(pw[pw<jumps[i+1]])]
+                    else:
+                        ymax = np.max(y)
+                    yp = np.array([ymin,ymax,ymax,ymin])
+                    plt.fill(xpj,yp,color=[0.5,0.5,0.5],alpha=0.5)
+            elif pa==90:
+                yp = np.array([-psize/2,-psize/2,psize/2,psize/2])
+                jplm = np.max(pw[pw<jumps[0]])
+                xm = y[jplm]
+                xp = np.array([0,xm,xm,0]) 
+                plt.fill(xp,yp,color=[0.5,0.5,0.5],alpha=0.5)
+                for i,j in enumerate(jumps):
+
+                    jplm = np.max(pw[pw<=j])
+                    
+                    tj = ac[j]
+                    ypj = yp+tj
+                    xmin = x[jplm]
+                    if i<len(jumps)-1:
+                        xmax =x[np.max(pw[pw<jumps[i+1]])]
+                    else:
+                        xmax = np.max(x)
+                    xp = np.array([xmin,xmax,xmax,xmin])
+                    plt.fill(xp,ypj,color=[0.5,0.5,0.5],alpha=0.5)
                 
             #plt.scatter(x[pon],y[pon],color='r')    
-            plt.scatter(x[led_on],y[led_on],color=led_colour)                     
-            plt.plot(x,y,color='k')
+            plt.scatter(x[led_on],y[led_on],color=led_colour)
+            plt.plot(x[:pw[0]],y[:pw[0]],color=[.8,.8,1])                     
+            plt.plot(x[pw[0]:],y[pw[0]:],color='k')
             
         plt.gca().set_aspect('equal')
         plt.show()
@@ -497,6 +623,152 @@ class opto:
             
             y[f:] = y[f:]- (y[f]-y[f-1])
         return x, y
+    
+    def get_return_metrics(self,meta_data,df,ent_duration = .5):
+        """
+        Function returns an array of metrics for each return to the plume. These
+        standard datasets can then be used for further analysis.
+        Metrics: 
+            1) Max X distance
+            2) Max Y distance
+            3) Total distance
+            4) time of return
+            5) LED on
+            6) jump
+            7) tortuosity
+        """
+        # Get entries and exits
+        e_e = self.get_entries_exits(df,ent_duration=ent_duration)
+        x = df['ft_posx'].to_numpy()
+        y = df['ft_posy'].to_numpy()
+        ledon = df['led1_stpt'].to_numpy()==0
+        adapted_cent =df['adapted_center'].to_numpy()
+        outdata = np.zeros((len(e_e),7))*np.nan
+        pa = meta_data['PlumeAngle']
+        t = ug.get_ft_time(df)
+        projvector= np.array([np.cos(pa),np.sin(pa)])
+        
+        for i,e in enumerate(e_e):
+            
+            dx = np.arange(e[1],e[2])
+            tx = x[dx];ty = y[dx]
+            xz = tx-tx[0];yz = ty-ty[0]
+            
+            # Max x position
+            mxi = np.argmax(np.abs(xz))
+            outdata[i,0] = xz[mxi]
+            
+            #Max y position
+            myi = np.argmax(yz)
+            outdata[i,1] = yz[myi]
+            
+            # total distance
+            dxd = np.diff(tx)
+            dy = np.diff(ty)
+            dd = np.sqrt(dxd**2+dy**2)
+            dist = np.sum(dd)
+            outdata[i,2] = dist
+            
+            # time to return
+            tt = t[dx]
+            outdata[i,3] = tt[-1]-tt[0]
+            
+            # led on 
+            outdata[i,4] = ledon[dx[2]]
+            
+            # jump
+            outdata[i,5] = adapted_cent[dx[2]]
+            
+            # tortuosity - 
+            # find max perp distance from plume
+            txy = np.append(xz[:,np.newaxis],yz[:,np.newaxis],axis=1)
+            
+            tproj = txy@projvector[:,np.newaxis]
+            pmax = np.argmax(np.abs(tproj))
+            xy3 = txy[[0,pmax,len(tx)-1],:]
+            xy3diff = np.diff(xy3,axis=0)
+            xy3dist = np.sum(np.sum(xy3diff**2,axis=1))
+            outdata[i,6] = dist/xy3dist 
+            
+            
+        output = pd.DataFrame(outdata,columns=['max_x','max_y','distance','time','led','jump','tortuosity'])
+        return output
+    
+    def apply_cutoffs(self,df,meta_data,max_from_plume=400,max_downwind=200,max_time=15*60*60):
+        x = df['ft_posx'].to_numpy();y = df['ft_posy'].to_numpy()
+        ac = df['adapted_center'].to_numpy()
+        pa = meta_data['PlumeAngle']
+        ac[np.isnan(ac)] = 0
+        ins = df['instrip'].to_numpy()
+        pst = np.where(ins>0)[0][0]
+        t = ug.get_ft_time(df)
+        t0 = t-t[pst]
+        t0 = t0[pst:]
+        x = x-x[pst];y=y-y[pst]
+        x0 = x[pst:];y0 = y[pst:]
+        
+        if pa==0:
+            dmet = x0-ac[pst:]
+            dwind = y0
+        elif pa ==90:
+            dmet = y0-ac[pst:]
+            dwind = dmet
+        
+        toofar = np.abs(dmet)>max_from_plume
+        toolong = t0>max_time
+        toodownwind = dwind<-max_downwind
+        all_and = toofar | toolong | toodownwind
+        co = np.where(all_and)[0]
+        if co.size > 0:
+            coff = co[0]+pst
+            df = df[:coff]
+            print('need cut offs')
+            
+            
+        return df
+        
+        
+        
+        
+        
+    def get_entries_exits(self,df,ent_duration=0.5,odour='ACV'):
+        if odour =='ACV':
+            ins = df['instrip'].to_numpy()
+        elif odour=='Oct':
+            ins = df['mfc3_stpt'].to_numpy()>0
+        elif odour =='universal':
+            od = df['mfc1_stpt'].to_numpy()
+            odmod = stats.mode(od)[0]
+            ins = od<odmod
+            
+        
+        tt = ug.get_ft_time(df)
+        td = np.mean(np.diff(tt))
+        block,blocksize = ug.find_blocks(ins)
+        
+        block_o = block.copy()
+        thresh = np.round(ent_duration/td).astype(int)
+        bdx = blocksize>=thresh
+        block = block[bdx]
+        blocksize = blocksize[bdx]
+        e_ex = np.zeros((len(block),3),dtype='int')
+        print(block.shape)
+        for i,b in enumerate(block):
+            e_ex[i,0] = b
+            e_ex[i,1] = b+blocksize[i]
+            try:
+                next_block = np.min(block_o[block_o>b])
+                e_ex[i,2] = next_block
+            except:
+                e_ex[i,2] = 0
+        if e_ex[-1,2]==0: # if animal does not return to plume put in last measured timepoint
+            e_ex[-1,2] = len(tt)
+            
+        if e_ex[-1,1]==e_ex[-1,2]:
+            e_ex = e_ex[:-1,:] # clip off if ends in plume
+        return e_ex
+        
+    
     def extract_stats(self,meta_data,df):
         
         # Stats to get: med max dist from plume, med time outside plume, length traj outside,
@@ -664,38 +936,38 @@ class opto:
             output[i] = np.sum(d_d)
             
         return output            
-    def get_entries_exits(self,df,ent_duration=.25,ex_duration=.25):
+    # def get_entries_exits(self,df,ent_duration=.25,ex_duration=.25):
         
-        try:
-            ins = df['instrip'].to_numpy()
-        except:
-            ins = df['mfc2_stpt'].to_numpy()>0
-            if np.sum(ins)==0:
-                ins = df['mfc3_stpt'].to_numpy()>0
-                if np.sum(ins)==0:
-                    print('Cannot detect odour onset')
-                    return
-            ins = ins.astype(int)
-        tt = ug.get_ft_time(df)
-        td = np.mean(np.diff(tt))
-        block,blocksize = ug.find_blocks(ins)
-        block_o = block.copy()
-        thresh = np.round(td/ent_duration).astype(int)
-        bdx = blocksize>=thresh
-        block = block[bdx]
-        blocksize = blocksize[bdx]
-        e_ex = np.zeros((len(block),3),dtype='int')
-        for i,b in enumerate(block):
-            e_ex[i,0] = b
-            e_ex[i,1] = b+blocksize[i]
-            try:
-                next_block = np.min(block_o[block_o>b])
-                e_ex[i,2] = next_block
-            except:
-                e_ex[i,2] = 0
-        if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
-            e_ex = e_ex[:-1,:]
-        return e_ex
+    #     try:
+    #         ins = df['instrip'].to_numpy()
+    #     except:
+    #         ins = df['mfc2_stpt'].to_numpy()>0
+    #         if np.sum(ins)==0:
+    #             ins = df['mfc3_stpt'].to_numpy()>0
+    #             if np.sum(ins)==0:
+    #                 print('Cannot detect odour onset')
+    #                 return
+    #         ins = ins.astype(int)
+    #     tt = ug.get_ft_time(df)
+    #     td = np.mean(np.diff(tt))
+    #     block,blocksize = ug.find_blocks(ins)
+    #     block_o = block.copy()
+    #     thresh = np.round(td/ent_duration).astype(int)
+    #     bdx = blocksize>=thresh
+    #     block = block[bdx]
+    #     blocksize = blocksize[bdx]
+    #     e_ex = np.zeros((len(block),3),dtype='int')
+    #     for i,b in enumerate(block):
+    #         e_ex[i,0] = b
+    #         e_ex[i,1] = b+blocksize[i]
+    #         try:
+    #             next_block = np.min(block_o[block_o>b])
+    #             e_ex[i,2] = next_block
+    #         except:
+    #             e_ex[i,2] = 0
+    #     if e_ex[-1,2]==0: # clip off last epoch if animal does not return to plume. V common event
+    #         e_ex = e_ex[:-1,:]
+    #     return e_ex
     def extract_stats_alternation(self,meta_data,df):
         """
         

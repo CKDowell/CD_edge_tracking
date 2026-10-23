@@ -12,6 +12,7 @@ from analysis_funs.optogenetics import opto
 import os
 import matplotlib.pyplot as plt
 plt.rcParams['pdf.fonttype'] = 42 
+from Utilities.utils_general import utils_general as ug
 
 #%%
 plt.close('all')
@@ -37,6 +38,7 @@ savedirs = ["Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240118\\f2\Trial1",
         "Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\\240124\\f4\Trial1",
         ]
 figdir = r'Y:\Data\Optogenetics\Gr64-f\Gr64af_Horizontal\SummaryFigures'
+xall = np.array([]);yall = np.array([])
 for i in range(len(savedirs)):
     sdir = savedirs[i]
     lname = os.listdir(sdir)
@@ -47,6 +49,55 @@ for i in range(len(savedirs)):
     snames = sdir.split('\\')
     plt.savefig(os.path.join(figdir,snames[-3]+snames[-2]+snames[-1] +'.png'))
     plt.savefig(os.path.join(figdir,snames[-3]+snames[-2]+snames[-1] +'.pdf'))
+    
+    
+    
+    
+    plt.figure(101)
+    if i ==0:
+        plt.fill([-0,2000,2000,-0],[25,25,-25,-25],color=[.8,.8,.8])
+        reprange = np.arange(10,2000,250)
+        for r in reprange:
+            plt.fill([r,r,r+20,r+20],[-25,25,25,-25],color=[1,.8,.8])
+            #plt.fill([-r,-r,-r-20,-r-20],[-25,25,25,-25],color=[1,.8,.8])
+        plt.gca().set_aspect('equal')
+        plt.ylim([-50,50])
+    ins = df['instrip'].to_numpy()
+    st = np.where(ins>0)[0][0]
+    x = df['ft_posx'].to_numpy()
+    y = df['ft_posy'].to_numpy()
+    x,y = op.fictrac_repair(x, y)
+    x= x-x[st];y = y-y[st]
+    
+    if x[-1]<0:
+        x = -x
+    
+    tins,inss = ug.find_blocks(ins)
+    t = ug.get_ft_time(df)
+    dt = np.mean(np.diff(t))
+    tint = int(.5/dt)
+    tins = tins[inss>=tint]
+    inss = inss[inss>=tint]
+    plt.scatter(x[tins],y[tins],s=1)
+    xall = np.append(xall,x[tins])
+    
+    plt.figure()
+    t = t-t[st]
+    plt.plot(x,t,color='k')
+    tled = df['led1_stpt'].to_numpy()==0
+    plt.scatter(x[tled],t[tled],color='r',s=10,zorder=10)
+    for r in reprange:
+        plt.fill([r,r,r+20,r+20],[0,t[-1],t[-1],0],color=[1,.8,.8])
+        plt.fill([-r,-r,-r-20,-r-20],[0,t[-1],t[-1],0],color=[1,.8,.8])
+    
+    
+    
+plt.figure()
+plt.hist(xall,bins = np.arange(0,2000,10))
+for r in reprange:
+    #plt.plot([r,r],[0,30],color='r',linestyle='--',linewidth=.5)
+    #plt.plot([r+20,r+20],[0,30],color='r',linestyle='--',linewidth=.5)
+    plt.scatter([r,r+20],[30,30],color='r',s=20)
     
 #%% Horizontal delay
 

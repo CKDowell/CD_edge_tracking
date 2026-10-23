@@ -620,8 +620,8 @@ pltbins = np.round(pltbins,decimals=2)
 plt.xticks(xticks,labels=pltbins)
 plt.yticks([0,100],labels=['hDeltaC and FC2 coherent','FC2 and hDeltaC not coherent'])
 plt.xlabel('FC2 PVA')
-#%% Variation on above, except I break down the behaviour into movement bouts
-# these can then be broken down further by the rdp algorithm
+#%% Break down the behaviour into movement bouts ###########################
+# these can then be broken down further by the rdp algorithm ##############
 plt.close('all')
 from rdp import rdp
 dchoices = ['hDeltaC_FC2_EPG']#,'hDeltaC_FC2_EPG_ok_trackers']
@@ -693,6 +693,7 @@ for di,d in enumerate(dchoices):
                 
                 rxy = rxy[dkeep,:]
                 
+                # Merge RDP segments where the angle does not change much
                 rdx = dx[msk][dkeep]
                 if len(dkeep)<len(dangle):
                     print('Merge occured')
@@ -702,19 +703,42 @@ for di,d in enumerate(dchoices):
                 rvec = rxy[ir+1,:] -rxy[ir,:]
                 rangle = np.angle(rvec[1]+1j*rvec[0])
                 thisdx = np.arange(r,rdx[ir+1])
+                predx = np.arange(r-10,r)
+                if r==b:
+                    bst = 1 
+                else:
+                    bst = 0
+                if rdx[ir+1]==dx[-1]:
+                    be = 1 
+                else:
+                    be = 0
+                
                 datarray = np.array(
                 [r,rdx[ir+1], # RDP index
                  (rdx[ir+1]-r)/10, # time of epoch
                  rangle, # RDP angle
                  rvec[0],
                  rvec[1],
+                 
+                 #During
                  np.nanmedian(cvar[thisdx]), # median covariance between hDeltaC and FC2
                  np.median(pva[thisdx]), # median PVA of FC2
-                 stats.circmean(epgp[thisdx],low=-np.pi,high=np.pi), # Phase means
+                 stats.circmean(epgp[thisdx],low=-np.pi,high=np.pi), # 
                  stats.circmean(hdcp[thisdx],low=-np.pi,high=np.pi),
                  stats.circmean(fc2p[thisdx],low=-np.pi,high=np.pi),
+                 
+                 # Pre 1s
+                 np.nanmedian(cvar[predx]), # median covariance between hDeltaC and FC2
+                 np.median(pva[predx]), # median PVA of FC2
+                 stats.circmean(epgp[predx],low=-np.pi,high=np.pi), # 
+                 stats.circmean(hdcp[predx],low=-np.pi,high=np.pi),
+                 stats.circmean(fc2p[predx],low=-np.pi,high=np.pi),
+                 
+                 
                  inso[thisdx[0]], #start instrip
                  inso[thisdx[-1]], # end instrip
+                 bst, # Start of movement block
+                 be, # End of movement block
                  np.sum(inso[thisdx])/len(thisdx), # percent in strip
                  np.mean(hdcw[thisdx,:]),
                  np.mean(fc2w[thisdx,:]),
@@ -736,10 +760,147 @@ for di,d in enumerate(dchoices):
         # plt.plot(vel)
 data_out = np.array(datalist)
 data_outpd = pd.DataFrame(data=data_out,columns = [
-    'start','end','duration','rdp_angle','rdpx','rdpy','median_covar',
-    'median_pvaFC2','epg_phasemean','hdc_phasemean','fc2_phasemean','strip_start','strip_end',
+    'start','end','duration','rdp_angle','rdpx','rdpy',
+    
+    'median_covar','median_pvaFC2','epg_phasemean','hdc_phasemean','fc2_phasemean',
+    'median_covar_pre','median_pvaFC2_pre','epg_phasemean_pre','hdc_phasemean_pre','fc2_phasemean_pre',
+    'strip_start','strip_end','move_start','move_end',
     'percent_strip','mean_col_hdc','mean_col_fc2','data_index','fly_index']
                           )
+
+
+
+#%% Turn-onset detection: visual comparison of three options ###############
+plt.close('all')
+try:
+    import ruptures as rpt
+    HAS_RUPTURES = True
+except ImportError:
+    HAS_RUPTURES = False
+    print('ruptures not installed - changepoint option will be skipped')
+
+def find_turn_onset_hysteresis(av,r,corner,turn_sign,high=0.5,low=0.15,min_dur=3):
+    """Scan forward from r for the first sustained (min_dur samples), correctly
+    signed, supra-'high'-threshold run of angular velocity that was preceded
+    by a sub-'low'-threshold sample (or the segment start)."""
+    for i in range(r,corner-min_dur+1):
+        window = av[i:i+min_dur]
+        if np.all(np.sign(window)==turn_sign) and np.all(np.abs(window)>high):
+            if i==r or np.abs(av[i-1])<low:
+                return i
+    return corner
+
+def find_turn_onset_progress(heading,r,corner,rangle_in,rangle_out,frac=0.1,min_dur=3):
+    """Onset = first sustained crossing of 'frac' of the net heading change
+    between the incoming and outgoing RDP segment headings."""
+    seg_heading = heading[r:corner+1]
+    total_turn = ug.circ_subtract(rangle_out,rangle_in)
+    if np.abs(total_turn)<1e-6:
+        return corner
+    progress = ug.circ_subtract(seg_heading,rangle_in)/total_turn
+    for i in range(len(progress)-min_dur):
+        if np.all(progress[i:i+min_dur]>frac):
+            return r+i
+    return corner
+
+def find_turn_onset_changepoint(av,r,corner,pen=1):
+    """Onset = single changepoint fit to the (smoothed) angular velocity trace
+    - detects the shift from noisy-flat to sustained turning."""
+    seg = av[r:corner+1].reshape(-1,1)
+    if len(seg)<5:
+        return corner
+    algo = rpt.Pelt(model='rbf',min_size=2).fit(seg)
+    cps = algo.predict(pen=pen)
+    return r+cps[0] if len(cps)>1 else corner
+
+d = dchoices[0]
+fly = 1
+n_blocks_to_plot = 3 # inspect the n largest movement bouts for this fly
+
+etp = all_flies[d][fly]
+cxa = etp.cxa
+x = cxa.ft2['ft_posx'].to_numpy();y = cxa.ft2['ft_posy'].to_numpy()
+x,y = cxa.fictrac_repair(x,y)
+heading = cxa.ft2['ft_heading'].to_numpy()
+t = np.arange(0,len(x))/10
+_,_,vel = u.get_velocity(x,y,t)
+av = ug.get_ang_velocity(heading,t)
+av = np.append(av,av[-1]) # pad to align with x,y,heading,t indices
+av_smooth = sg.savgol_filter(av,5,2) if len(av)>5 else av
+
+still = ug.get_still(0.5,vel)
+mov = still==0
+blocks,bsize = ug.find_blocks(mov,mergeblocks=True,merg_threshold=5)
+
+block_choice = np.argsort(bsize)[::-1][:n_blocks_to_plot]
+
+for ib in block_choice:
+    b = blocks[ib]
+    dx = np.arange(b,b+bsize[ib])
+    if len(dx)<10:
+        continue
+    tx = x[dx];ty = y[dx];tt = t[dx]
+
+    txy = np.append(tx[:,np.newaxis],ty[:,np.newaxis],axis=1)
+    msk = rdp(txy,epsilon=1,return_mask=True)
+    rxy = txy[msk,:]
+    rdx = dx[msk] # RDP vertex indices, in the coordinates of the full trace
+
+    if rxy.shape[0]<3:
+        continue
+
+    rvec = rxy[1:,:]-rxy[:-1,:]
+    rangles = np.angle(rvec[:,1]+1j*rvec[:,0]) # one heading estimate per RDP segment
+
+    corner_idxs = rdx[1:-1] # exclude block start/end - only interior vertices are turns
+    onset_hyst,onset_prog,onset_cp = [],[],[]
+    for ic,corner in enumerate(corner_idxs):
+        seg_start = rdx[ic]
+        rangle_in = rangles[ic]
+        rangle_out = rangles[ic+1]
+        turn_sign = np.sign(ug.circ_subtract(rangle_out,rangle_in))
+
+        onset_hyst.append(find_turn_onset_hysteresis(av_smooth,seg_start,corner,turn_sign))
+        onset_prog.append(find_turn_onset_progress(heading,seg_start,corner,rangle_in,rangle_out))
+        if HAS_RUPTURES:
+            onset_cp.append(find_turn_onset_changepoint(av_smooth,seg_start,corner))
+
+    onset_hyst = np.array(onset_hyst,dtype=int)
+    onset_prog = np.array(onset_prog,dtype=int)
+    onset_cp = np.array(onset_cp,dtype=int)
+
+    # --- trajectory plot ---
+    plt.figure()
+    plt.plot(tx,ty,color=[.7,.7,.7],zorder=0,label='raw trajectory')
+    plt.plot(rxy[:,0],rxy[:,1],color='k',marker='o',markersize=3,zorder=1,label='RDP segments')
+    if len(corner_idxs):
+        plt.scatter(x[corner_idxs],y[corner_idxs],color='k',marker='x',s=70,zorder=3,label='RDP corner')
+        plt.scatter(x[onset_hyst],y[onset_hyst],color='r',marker='^',s=60,zorder=3,label='hysteresis onset')
+        plt.scatter(x[onset_prog],y[onset_prog],color='b',marker='s',s=60,zorder=3,label='progress onset')
+        if HAS_RUPTURES:
+            plt.scatter(x[onset_cp],y[onset_cp],color='g',marker='*',s=100,zorder=3,label='changepoint onset')
+    plt.gca().set_aspect('equal')
+    plt.legend()
+    plt.title(f'Fly {fly}, block {ib} (n={bsize[ib]}): trajectory')
+
+    # --- heading vs time plot ---
+    plt.figure()
+    plt.plot(tt,heading[dx],color=[.7,.7,.7],zorder=0,label='raw heading')
+    for ic in range(len(rdx)-1):
+        plt.hlines(rangles[ic],t[rdx[ic]],t[rdx[ic+1]],color='k',zorder=1,
+                    label='RDP heading' if ic==0 else None)
+    if len(corner_idxs):
+        plt.scatter(t[corner_idxs],heading[corner_idxs],color='k',marker='x',s=70,zorder=3,label='RDP corner')
+        
+        plt.scatter(t[onset_prog],heading[onset_prog],color='b',marker='s',s=60,zorder=3,label='progress onset')
+        plt.scatter(t[onset_hyst],heading[onset_hyst],color='r',marker='^',s=100,zorder=3,label='hysteresis onset')
+        if HAS_RUPTURES:
+            plt.scatter(t[onset_cp],heading[onset_cp],color='g',marker='*',s=100,zorder=3,label='changepoint onset')
+    plt.xlabel('time (s)')
+    plt.ylabel('heading (rad)')
+    plt.legend()
+    plt.title(f'Fly {fly}, block {ib} (n={bsize[ib]}): heading')
+
 #%% Diagnostic plot for one fly
 plt.close('all')
 fly = 2
@@ -821,7 +982,7 @@ for f in range(6):
     plt.ylabel('y');plt.xlabel('x')
     plt.title('covar')
     
-    c2 = data_outpd['median_pvaFC2'].to_numpy()[keepdx]
+    c2 = data_outpd['median_pvaFC2_pre'].to_numpy()[keepdx]
     c2[c2>.2] = .2 
     plt.subplot(2,2,4)
     plt.scatter(x,y,c=c2)
@@ -830,7 +991,7 @@ for f in range(6):
     plt.title('FC2 pva')
     
     rdpan = data_outpd['rdp_angle'].to_numpy()[keepdx][:,np.newaxis]
-    phases = data_outpd[['hdc_phasemean','fc2_phasemean']].to_numpy()[keepdx]
+    phases = data_outpd[['hdc_phasemean_pre','fc2_phasemean']].to_numpy()[keepdx]
     plt.figure()
     c = data_outpd['median_covar'].to_numpy()[keepdx][:,np.newaxis]
     rx = np.append(0*np.sin(rdpan),np.sin(rdpan),axis=1)*c
@@ -856,6 +1017,9 @@ for f in range(6):
     yp = reg.predict(xp.reshape(-1,1))
     plt.plot(xp,yp,color='b')
     plt.scatter(xfit,yfit,c=np.abs(rdpan[fdx.squeeze(),:]),cmap = 'cividis')
+    plt.xlabel('covariance (scored)')
+    plt.ylabel('pva (scored)')
+    
     proj_vec = np.array([1,reg.coef_[0]]);proj_vec = proj_vec/np.sqrt(np.sum(proj_vec**2))
     
     Cmat = np.append(c[:,np.newaxis],c2[:,np.newaxis]-.05,axis=1)
@@ -1645,7 +1809,7 @@ for di,d in enumerate(dchoice):
         f = f+1
         # 4 has very nice phase transitions
         etp = all_flies[d][fly]
-        data = etp.turn2plume_metrics(epsilon=2,regions=regions)
+        data = etp.turn2plume_metrics(epsilon=1,regions=regions,run_len=3,plotting=False,to_plume=True,jumps='all')
         tphase = data['phase']
         if len(tphase)==0:
             continue
@@ -1668,18 +1832,25 @@ for di,d in enumerate(dchoice):
             tdata  = ug.circ_subtract(tphase[:,1],rdpang)
             tdata2 = tpva[:,1]
             tdata3 = tamp[:,1]
+            pdata = tphase[:,1]
+            rdata = rdpang
             fall = np.zeros(len(tamp))+f
         else:
             tdata = np.append(tdata,ug.circ_subtract(tphase[:,1],rdpang))
             tdata2 = np.append(tdata2,tpva[:,1])
             tdata3 = np.append(tdata3,tamp[:,1])
+            pdata = np.append(pdata,tphase[:,1])
+            rdata = np.append(rdata,rdpang)
             fall = np.append(fall,np.zeros(len(tamp))+f)
 
 plt.figure()
-plt.scatter(tdata,tdata2,c = fall,cmap = 'Paired')
-mns,edges,num = stats.binned_statistic(tdata,tdata2,bins=np.linspace(-np.pi,np.pi,16))
+plt.scatter(180*(tdata/np.pi),tdata2,c = fall,cmap = 'Paired')
+#plt.scatter(180*(tdata/np.pi),tdata2,color = 'k',s=30)
+plt.ylabel('PVA')
+plt.xlabel('fc2phase - traj direction (degrees)')
+mns,edges,num = stats.binned_statistic(tdata,tdata2,bins=np.linspace(-np.pi,np.pi,32))
 ex = edges[1:]-np.mean(np.diff(edges))/2
-plt.plot(ex,mns,color='k')
+plt.plot(180*ex/np.pi,mns,color='r')
 plt.figure()
 plt.scatter(np.abs(tdata),tdata2,color='k')
 pr = stats.pearsonr(np.abs(tdata),tdata2)
@@ -1693,6 +1864,18 @@ plt.xlabel('trajectory - FC2 error (radians)')
 plt.text(np.pi/2,.2,"Peason's r: " + str(ug.round_to_sig_figs(np.array([pr[0]]), 2)[0]),color='r')
 plt.text(np.pi/2,.175,"p : " + str(ug.round_to_sig_figs(np.array([pr[1]]), 2)[0]),color='r')
 plt.title('To plume')
+plt.figure()
+tc = tdata2
+tc[tc>.15] = .15 
+
+plt.scatter(rdata,pdata,c = tc,s=20)
+plt.ylabel('fc2 phase')
+plt.xlabel('traj direction')
+
+plt.figure()
+plt.scatter(rdata[tc>=.15],pdata[tc>=.15],c = fall[tc>=.15],cmap='Paired')
+plt.plot([-np.pi/2,0],[-np.pi,0],color='r')
+plt.plot([-np.pi,0],[-np.pi,0],color='k')
 #plt.ylim([-3.25,3.25])
 
 plt.figure()

@@ -75,7 +75,7 @@ meta_data = {'stim_type':  'alternation',
               
               }
 
-rootdir = r'\\hermes.rockefeller.edu\Katie\Odor\PulsePlumePairs\horizontal_plume_pairings\hDeltaC\HorizontalPlumeLEDAlt'
+rootdir = r'\\hermes.rockefeller.edu\Katie\\Odor\Inhibition\PulsePlumePairs\horizontal_plume_pairings\hDeltaC\HorizontalPlumeLEDAlt'
 
 # flies = [
     
@@ -148,6 +148,7 @@ maxy = 400+stripwidth
 miny = -200-stripwidth
 maxt = 15*60
 savedir = r'Y:\Data\Optogenetics\Summaries\hDeltaC'
+club400 = []
 for i in range(len(flies)):
     sdir = os.path.join(rootdir, flies[i],'trial1')
     lname = np.array( os.listdir(sdir))
@@ -211,6 +212,8 @@ for i in range(len(flies)):
         #ydata[di,1] = np.max(y[dx2]-y[dx2[0]])
     #plt.scatter(ydata[:,0],ydata[:,1])   
      
+    if ug.round_to_sig_figs(ydata[-1,-1],2)==400:
+        club400.append(flies[i])
     
         
     
@@ -220,7 +223,7 @@ for i in range(len(flies)):
     plt.savefig(os.path.join(savedir,'HorizontalTraj' + fname[0]+fname[1]+'.pdf'))
     plt.figure(101)
     if led_index[-1,-1]>=len(ins):
-        print('clipping')
+        
         plt.scatter(ydata[:-1,0],ydata[:-1,1],color='k',s=20,alpha=.25,linewidth=0)
         plt.scatter(ydata[-1,0],ydata[-1,1],color='g',s=20,linewidth=0)
         
@@ -258,6 +261,110 @@ plt.plot(x,np.nanmedian(plotmat,axis=0),linewidth=3,color='k')
 plt.ylabel('median max y displacement (mm)')
 plt.text(.5,110,str(ug.round_to_sig_figs(pval, 2)),horizontalalignment='center')
 plt.ylim([-10,120])
+
+#%% plot plume and pulse data for 400 club flies
+
+pulseroot = r'\\hermes.rockefeller.edu\Katie\Odor\PulsePlumePairs\horizontal_plume_pairings\hDeltaC\led_pulses'
+plumeroot =  r'\\hermes.rockefeller.edu\Katie\Odor\PulsePlumePairs\horizontal_plume_pairings\hDeltaC\HorizontalPlumeLEDAlt'
+meta_data_plume = {'stim_type':  'alternation',
+              'act_inhib':'inhib',            
+              'ledOnx':0,
+              'ledOffx':0,
+              'ledOny':0,
+              'ledOffy':0,
+              'PlumeWidth': float(50),
+              'PlumeAngle': 90,
+              
+              }
+meta_data_pulse = {'stim_type':  'pulse',
+              'act_inhib':'inhib',            
+              'ledOnx':0,
+              'ledOffx':0,
+              'ledOny':0,
+              'ledOffy':0,
+              'PlumeWidth': float(50),
+              'PlumeAngle': 90,
+              
+              }
+plt.close('all')
+data = np.zeros((len(club400),3))
+savedir = r'Y:\Data\Optogenetics\Summaries\hDeltaC'
+
+for i in range(len(club400)):
+    sdir = os.path.join(plumeroot, club400[i],'trial1')
+    lname = np.array( os.listdir(sdir))
+    
+    lname = ug.get_folder(sdir)   
+    print(len(lname))
+    datadir = os.path.join(sdir,lname[-1])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure(i+1)
+    plt.subplot(1,2,1)
+    op.plot_plume_simple(meta_data_plume,df)
+    plt.title(flies[i])
+    
+    
+    sdir = os.path.join(pulseroot, club400[i],'trial1')
+    lname = np.array( os.listdir(sdir))
+    
+    lname = ug.get_folder(sdir)   
+    print(len(lname))
+    datadir = os.path.join(sdir,lname[-1])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    
+    plt.subplot(1,2,2)
+    op.plot_plume_simple(meta_data_pulse,df)
+    plt.title(flies[i])
+    tt = ug.get_ft_time(df)
+    dt = np.mean(np.diff(tt))
+    t_int = int(10/dt)
+    x = df['ft_posx'].to_numpy()
+    y = df['ft_posy'].to_numpy()
+    led = df['led1_stpt'].to_numpy()<1
+    
+    ledblk,ledsize = ug.find_blocks(led)
+    ledblk = ledblk[:10];ledsize = ledsize[:10]
+    
+    blkoff = ledblk+ledsize+1
+    
+    preon = ledblk-t_int-1
+    preoff = ledblk-1
+    
+    poston = blkoff+1
+    postoff = poston+t_int
+    
+    prey = y[preoff]-y[preon]
+    ledy = y[blkoff] - y[ledblk]
+    posty = y[postoff] - y[poston]
+    
+    preym = np.mean(prey)
+    ledym = np.mean(ledy)
+    postym = np.mean(posty)
+    data[i,0] = preym
+    data[i,1] = ledym
+    data[i,2] = postym
+
+plt.figure()
+x = np.arange(0,3)
+xgrid = np.tile(x[np.newaxis,:],(len(club400),1))
+# plt.figure()
+# plt.subplot(1,2,1)
+plt.plot(x,data.T,color='k',alpha=.25)
+plt.scatter(xgrid[:,0],data[:,0],color=[.7,.7,.7],zorder=2,alpha=1)
+plt.scatter(xgrid[:,1],data[:,1],color=[.7,1,.7],zorder=2,alpha=1)
+plt.scatter(xgrid[:,2],data[:,2],color=[.7,.7,.7],zorder=2,alpha=1)
+plt.xticks(x,labels=['10 s pre','10 s led','10 s post'])
+plt.ylabel('mean y displacement (mm)')
+yl = plt.gca().get_ylim()
+plt.ylim([yl[0],105])
+plt.savefig(os.path.join(savedir,'400_club_pulse_data.png'))
+
 #%% pulses
     
 plt.close('all')
@@ -490,9 +597,176 @@ plt.plot(x[:2],np.median(pdata,axis=0),color='k',linewidth=3)
 
 
 
+#%% hDeltaC flies - horizontal jumping plume
+rootdir = r'\\hermes.rockefeller.edu\Katie\Odor\Inhibition\PulsePlumePairs\horizontal_plume_pairings\hDeltaC\horizontal_led_alternation_jump'
+
+flies = [
+    r'260730\f1\trial1', # little discernable effect
+    #r'260730\f2\trial1', pre odour downwind bias exclude
+    r'260730\f3\trial1', # hard to parse
+    r'260730\f4\trial1', # strong upwind pre air, expected effect
+    r'260730\f5\trial1',# down and up pre air, otherwise decent
+    #r'260730\f7\trial1', No LED
+    r'260730\f8\trial1',# poor pre air, slightly downwind, exlude maybe
+    
+    r'260731\f1\trial1', # downwind pre air, exclude maybe
+    r'260731\f2\trial1',# downwind pre air, exclude maybe
+    r'260731\f3\trial1', # smooth walking, fly walks off but not during stim
+    #r'260731\f4\trial1', No LED
+    r'260731\f5\trial1', # does a decent job
+    r'260731\f7\trial1', # hard to parse but food enough behaviour
+   
+   # r'260804\f1\trial1', # circling exclude
+    r'260804\f2\trial1', # downwind pre air, otherwise Ok, maybe exclude
+   # r'260804\f3\trial1', # No LEDs
+    
+    r'260805\f1\trial1', # downwind pre air okish behaviour, maybe exclude
+    r'260805\f2\trial1', # downwind pre air, lots of entries, maybe exclude
+    r'260805\f4\trial1', # downwind pre air exlude, otherwise okish
+    #r'260805\f6\trial1', # went through plume
+    
+    #r'260910\f1\trial1', # No LEDs
+   # r'260910\f2\trial1', # No LED
+    
+    #r'260910\f3\trial1', tracking errors
+    #r'260910\f4\trial1', # No LED
+    #r'260910\f5\trial1', # No LED
+    #r'260910\f6\trial1', No LED
+   # r'260910\f7\trial1',## return to this one not plotting
+    
+    
+    r'260911\f1\trial1', #  decent data, left with LED
+    #r'260911\f2\trial1', # No LED
+    #r'260911\f4\trial1', # downwind pre air through plume
+    #r'260911\f5\trial1', # No LED
+    
+    #r'260917\f1\trial1', # No LED
+    r'260917\f2\trial1', # little to no phenotype
+    r'260917\f3\trial1', # okish walker
+    
+    r'260918\f1\trial1', # downwind pre air, v good tracker, maybe exclude
+    r'260918\f2\trial1', # downwind pre air exclude
+   # r'260918\f3\trial1', # No LED
+   # r'260918\f4\trial1', # No LED
+   # r'260918\f5\trial1',# No LED
+    
+    ]
+
+plt.close('all')
+meta_data = {'stim_type':  'alternation_jump',
+              'act_inhib':'inhib',            
+              'ledOnx':0,
+              'ledOffx':0,
+              'ledOny':0,
+              'ledOffy':0,
+              'PlumeWidth': float(50),
+              'PlumeAngle': 90,
+              
+              }
+
+
+
+for i in range(len(flies)):
+    sdir = os.path.join(rootdir, flies[i])
+    lname = np.array( os.listdir(sdir))
+    
+    lname = ug.get_folder(sdir)   
+    print(len(lname))
+    datadir = os.path.join(sdir,lname[-1])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure()
+    op.plot_returns_in_sequence_horz(meta_data,df)
+    #plt.subplot(1,2,1)
+    #op.plot_plume_simple(meta_data,df)
+   #plt.subplot(1,2,2)
+    df = op.apply_cutoffs(df, meta_data,max_from_plume=400,max_downwind=np.inf,max_time=np.inf)
+    plt.figure()
+    op.plot_returns_in_sequence_horz(meta_data,df)
+    plt.title(flies[i])
+    plt.ylim([-100,400])
+    
+    # collect fourth and fifth entry
+    
+    data = op.get_return_metrics(meta_data,df,ent_duration=.1)
+    first_led = np.where(data['led']==1)[0][0]
+    my1 = data['max_y'][first_led]
+    my2 = data['max_y'][first_led-1]
+    
+    plt.figure(101)
+    plt.scatter(my2,my1,color='k')
+plt.plot([0,400],[0,400],color='k',linestyle='--')
+#%% hDeltaC control animals horizontal jumping plume
+# I think these are w- X GtACR1 raised on SY food
+
+
+
+
+#%% hDeltaJ flies - vertical jumping plume
+rootdir = r'\\hermes.rockefeller.edu\Katie\Odor\Inhibition\PulsePlumePairs\vertical_plume_pairings\hDeltaJ\VerticalPlumeLEDAlt'
+flies = [r'260625\f1\trial1',
+         r'260625\f2\trial1', # LED on after cross over, struggles to return
+         r'260625\f3\trial1', # one led stim
+        # r'260625\f4\trial1', # downwind tracker exclude
+         r'260625\f5\trial1', # v long returns after cross over
+        # r'260625\f6\trial1', did not make jumps
+         
+         #r'260626\f1\trial1', circling
+         
+         r'260707\f1\trial1', # shorter returns with LED on
+        # r'260707\f2\trial1', circling
+         #r'260707\f3\trial1', circling
+         r'260707\f4\trial1', # decent tracker, pre-odour bias maintained maybe
+         
+        # r'260709\f1\trial1', No led
+        # r'260709\f2\trial1', # downwind tracker exclude
+         r'260709\f3\trial1', # Walk off after final LED stim
+         r'260709\f4\trial1', # walk off after final LED stim
+        # r'260709\f5\trial1', no jumps
+         r'260709\f6\trial1', # not great walking but made an LED stim
+         
+         r'260716\f1\trial1', # walk off with LED on
+         #r'260716\f2\trial1', did not make LEDs
+         #r'260716\f3\trial1', downwind tracking
+         r'260716\f4\trial1', # decent tracking, walks off after plume cross over and stim on.
+        # r'260716\f6\trial1', did not make LEDs
+         
+         r'260717\f1\trial1',
+         #r'260717\f2\trial1', circling
+         r'260717\f3\trial1', # exclude as cut off before tracking
+         r'260717\f4\trial1', # Decent tracking, straigher walking with LED on 
+         ]
     
 
+plt.close('all')
+meta_data = {'stim_type':  'alternation_jump',
+              'act_inhib':'inhib',            
+              'ledOnx':0,
+              'ledOffx':0,
+              'ledOny':0,
+              'ledOffy':0,
+              'PlumeWidth': float(50),
+              'PlumeAngle': 0,
+              
+              }
+for i in range(len(flies)):
+    sdir = os.path.join(rootdir, flies[i])
+    lname = np.array( os.listdir(sdir))
     
+    lname = ug.get_folder(sdir)   
+    print(len(lname))
+    datadir = os.path.join(sdir,lname[-1])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure()
+   
+    op.plot_plume_simple(meta_data,df)
+    op.plot_returns_in_sequence_vert(meta_data,df)
+    plt.title(flies[i])
     
     
     

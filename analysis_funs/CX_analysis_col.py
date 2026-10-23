@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import circmean, circstd
+from scipy import stats
 from analysis_funs.utilities import funcs as fn
 import pickle
 from scipy.stats import circmean, circstd
@@ -159,8 +160,11 @@ class CX_a:
                     for i, r in enumerate(regions):
                         p,o,a = self.cx.unyoked_phase(r)
                         wedges = self.pv2.filter(regex=r)
+                        
                         wedges.fillna(method='ffill', inplace=True)
                         wedges = wedges.to_numpy()
+                        if wedges.shape[1]==17: # edit because tangential labels are picked up as an extra column
+                            wedges = wedges[:,:16]
                         
                         if i==0:
                             self.phase =p
@@ -424,6 +428,7 @@ class CX_a:
         off = off-10
         new_heading = self.ft2['ft_heading'].to_numpy()
         new_heading = np.interp(new_heading, (new_heading.min(), new_heading.max()), (off+15, off+31))
+        rcolours = uplt.columnar_colours()
         for i in range(len(regions)):
             try:
                 p = self.pdat['offset_'+ regions[i]+'_phase']
@@ -432,7 +437,7 @@ class CX_a:
             #p = phase[:,i]
             new_phase = np.interp(p, (-np.pi, np.pi), (off+15, off+31))
             if plotphase:
-                plt.plot(new_phase,t,color='b',linewidth=0.5)
+                plt.scatter(new_phase,t,color=rcolours[i,:],linewidth=0.5,s=6)
         plt.plot(new_heading,t,color='k')
         sdiff = np.diff(self.ft2['instrip'].to_numpy())
         son = np.where(sdiff>0)[0]+1 
@@ -814,7 +819,7 @@ class CX_a:
             plt.plot([-2+offset,2+offset],[t[-idx_af],t[-idx_af]],linestyle='--',color='k')
             offset = offset+mult*2
     def mean_jump_lines(self,fsb_names=['fsb_upper','fsb_lower'],p_amp=[False],time_threshold = 60):
-         
+        colours = uplt.columnar_colours()
         plt.figure(figsize=(20,20))
         from scipy.stats import circmean, circstd
         ft2 = self.ft2
@@ -886,7 +891,7 @@ class CX_a:
             # in plume
             ipdx = np.arange(ents[ie],ents[t_ent],step=1,dtype=int)
             
-            t_p = phase[ipdx,1]
+            
             ta = p_amp[ipdx]
             ta = ta-np.percentile(ta,5)
             t_t = self.pv2['relative_time'].to_numpy()
@@ -895,8 +900,9 @@ class CX_a:
             t_t = t_t-t_t[-1]            
             t_ext = sub_dx-ents[ie]
             #plt.plot(t_t+offset,t_p+offsety,color=[0.2,0.2,1])
-            
-            plt.scatter(t_t+offset,t_p+offsety,color=[0.2,0.2,1],s=5,zorder=10)
+            for t in range(len(fsb_names)):
+                t_p = phase[ipdx,1+t]
+                plt.scatter(t_t+offset,t_p+offsety,color=colours[t,:],s=5,zorder=10)
             plt.plot([t_t[0]+offset,t_t[-1]+offset],[0+offsety,0+offsety],color='k',linestyle='--')
             plt.plot([t_t[0]+offset,t_t[t_ext]+offset],[np.pi/2+offsety,np.pi/2+offsety],color=[0.8,0.2,0.2],linestyle='--')
             plt.plot([t_t[t_ext]+offset,t_t[-1]+offset],[-np.pi/2+offsety,-np.pi/2+offsety],color=[0.8,0.2,0.2],linestyle='--')
@@ -2080,7 +2086,7 @@ class CX_a:
         tt = self.pv2['relative_time'].to_numpy()
         td = np.mean(np.diff(tt))
         block,blocksize = ug.find_blocks(ins)
-        thresh = np.round(td/ent_duration).astype(int)
+        thresh = np.round(ent_duration/td).astype(int)
         bdx = blocksize>=thresh
         entries = block[bdx]
         exits = entries+blocksize[bdx]
@@ -2090,12 +2096,17 @@ class CX_a:
             ins = self.ft2['instrip'].to_numpy()
         elif odour=='Oct':
             ins = self.ft2['mfc3_stpt'].to_numpy()>0
+        elif odour =='universal':
+            od = self.ft2['mfc1_stpt'].to_numpy()
+            odmod = stats.mode(od)[0]
+            ins = od<odmod
+            
         tt = self.pv2['relative_time'].to_numpy()
         td = np.mean(np.diff(tt))
         block,blocksize = ug.find_blocks(ins)
         
         block_o = block.copy()
-        thresh = np.round(td/ent_duration).astype(int)
+        thresh = np.round(ent_duration/td).astype(int)
         bdx = blocksize>=thresh
         block = block[bdx]
         blocksize = blocksize[bdx]
@@ -2894,7 +2905,7 @@ class CX_a:
         ax.set_aspect('equal', adjustable='box')
         plt.show()
         
-    def plot_traj_arrow_heat(self,regions,heat,a_sep=20,traindat=False,fulldat=True,colormap='coolwarm',cmin=-1,cmax=1):
+    def plot_traj_arrow_heat(self,regions,heat,a_sep=20,traindat=False,fulldat=True,colormap='coolwarm',cmin=-1,cmax=1,scaler=50):
         
         
         # colours = np.array([[0,140,0],
@@ -2990,12 +3001,12 @@ class CX_a:
             if np.abs(d-t_sep)>a_sep:
                 t_sep = d
                 
-                xa = 50*amp_eb[i]*np.sin(phase_eb[i])
-                ya = 50*amp_eb[i]*np.cos(phase_eb[i])
+                xa = scaler*amp_eb[i]*np.sin(phase_eb[i])
+                ya = scaler*amp_eb[i]*np.cos(phase_eb[i])
                 plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=[0.1,0.1,0.1])
                 for p  in range(len(regions)):
-                    xa = 10*amps[i,p]*np.sin(phases[i,p])
-                    ya = 10*amps[i,p]*np.cos(phases[i,p])
+                    xa = scaler*amps[i,p]*np.sin(phases[i,p])
+                    ya = scaler*amps[i,p]*np.cos(phases[i,p])
                     plt.arrow(x[i],y[i],xa,ya,length_includes_head=True,head_width=1,color=colours[p,:])
         ax = plt.gca()
         

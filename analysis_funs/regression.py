@@ -423,6 +423,7 @@ class fci_regmodel:
         self.r2forward = r2forward
         reg.fit(xft,y)
         self.r2 = reg.score
+        
     def run(self,regchoice,partition=False,cirftau =[0.3,0.01],odour_num=0):
         # Set up regessors
         #print('Determining regressors')
@@ -761,9 +762,16 @@ class fci_regmodel:
         x = self.ft2['ft_posx']
         y = self.ft2['ft_posy']
         x,y = self.fictrac_repair(x,y)
-        acv = self.ft2['instrip'].to_numpy()
-        inplume = acv>0
-        st  = np.where(inplume)[0][0]
+        try:
+            acv = self.ft2['instrip'].to_numpy()
+            inplume = acv>0
+            st  = np.where(inplume)[0][0]
+        except:
+            mfc1= self.ft2['mfc1_stpt'].to_numpy()
+            mmode = stats.mode(mfc1)[0]
+            
+            inplume = mfc1<mmode
+            st  = np.where(inplume)[0][0]
         x = x-x[st]
         y = y-y[st]
         

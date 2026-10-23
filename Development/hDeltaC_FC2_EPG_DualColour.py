@@ -193,7 +193,7 @@ for datadir in datadirs:
 
 regions = ['eb','fsb1','fsb2']
 plt.close('all')
-datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial5'
+datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260707\f1\Trial3'
 #datadir = r'Y:\Data\FCI\Hedwig\68A10_60D05_FC2_GC8s_RC3\260426\f1\Trial1'
 regions2 = ['eb_ch1','fsb1_ch1','fsb2_ch2']
 cxa = CX_a(datadir,regions=regions2,yoking=True,denovo=False)

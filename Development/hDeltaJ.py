@@ -126,7 +126,7 @@ for e in experiment_dirs:
     
 #%% Data exploration
 
-datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\260115\f1\Trial2'
+datadir =r'Y:\Data\FCI\Hedwig\hDeltaJ\251023\f1\Trial4'
 #datadir = r"Y:\Data\FCI\Hedwig\hDeltaJ\251028\f1\Trial2"
 cxa = CX_a(datadir,regions=['eb','fsb_upper','fsb_lower'],denovo=False)
 #plt.close('all')
