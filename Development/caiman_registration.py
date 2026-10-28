@@ -45,9 +45,11 @@ expdirs = [
   #r'Y:\Data\FCI\Hedwig\hDeltaJ_Gr64f_EPG_RCaMP\261009\f1'
   #r'Y:\Data\FCI\Hedwig\PFNpm_SS00191\261013\f1'
   #r'Y:\Data\FCI\Hedwig\FC2_FB5A\261015\f1'
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1',
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f2',
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3'
+  # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1',
+  # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f2',
+  # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3'
+ # r'Y:\Data\FCI\Ladybird\hDeltaE\261023\f1'
+  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261027\f1'
    ]
 
 for e in expdirs:
@@ -72,9 +74,9 @@ for e in expdirs:
 #%% Multifly
 
 
-expdirs = [
-     r'Y:\Data\FCI\Hedwig\hDeltaJ_Gr64f_EPG_RCaMP\261009\f1'
-]
+# expdirs = [
+#      r'Y:\Data\FCI\Hedwig\hDeltaJ_Gr64f_EPG_RCaMP\261009\f1'
+# ]
 from analysis_funs.utilities import imaging as im
 for e in expdirs:
     

@@ -665,6 +665,7 @@ meta_data = {'stim_type':  'alternation_jump',
               }
 
 
+test_first_data  = np.zeros((len(flies),2))
 
 for i in range(len(flies)):
     sdir = os.path.join(rootdir, flies[i])
@@ -697,13 +698,123 @@ for i in range(len(flies)):
     
     plt.figure(101)
     plt.scatter(my2,my1,color='k')
-plt.plot([0,400],[0,400],color='k',linestyle='--')
+    test_first_data[i,0] = my1
+    test_first_data[i,1] = my2
+plt.plot([0,400],[0,400],color='k',linestyle='--')    
+plt.figure(101)
+plt.xscale('log')
+plt.yscale('log')
 #%% hDeltaC control animals horizontal jumping plume
 # I think these are w- X GtACR1 raised on SY food
+rootdir = r'\\hermes.rockefeller.edu\Katie\Odor\Inhibition\PulsePlumePairs\horizontal_plume_pairings\SYhorizontal_control\horizontal_led_alternation_jump'
+flies = [
+    #r'260729\f4\trial1', experiment not coded correctly
+    #r'260729\f5\trial1', #fly circling remove
+    
+    r'260730\f1\trial1', #decent
+    r'260730\f3\trial1', # fly went through plume - look into discarding
+    r'260730\f5\trial1', # decent
+    #r'260730\f7\trial1',#no led
+    
+    r'260731\f1\trial1', # ok though not best walking
+    r'260731\f3\trial1',# went through plume, clip appropriately
+    r'260731\f5\trial1', # decent though slightly strange walker
+    r'260731\f7\trial1', # decent
+    
+    r'260811\f2\trial1', # tracked for vast distance
+    r'260811\f3\trial1',#decent but with strange pre air behaviour and downwind tracking
+    r'260811\f4\trial1',# tracked for a vast distance
+    
+    r'260812\f1\trial1', # decent
+    r'260812\f2\trial1', # decent
+    r'260812\f3\trial1', # decent
+    r'260812\f4\trial1', # decent, early downwind bias
+    r'260812\f5\trial1', # decent
+    r'260812\f6\trial1', # deent with downwind bias
+    
+    r'260826\f1\trial1', #inlcude though strange walking
+    r'260826\f3\trial1', # decent
+    r'260826\f4\trial1', # decent though strange walking
+    
+    r'260924\f2\trial1', # decent again strange walking
+    
+    #r'260925\f1\trial1', # circling and through plume exclude
+    r'260925\f3\trial1', #decent with some cross-wind casting
+    
+    r'260929\f1\trial1', # decent and strange walkger
+   # r'260929\f2\trial1', #did not make LEDS exclude
+    
+    r'260930\f1\trial1', # did not make back after first lED but kind of stopped walking
+    
+    r'261001\f1\trial1', #decent
+   r'261001\f2\trial1', # decent
+   r'261001\f4\trial1', #decent
+    ]
 
+plt.close('all')
+meta_data = {'stim_type':  'alternation_jump',
+              'act_inhib':'inhib',            
+              'ledOnx':0,
+              'ledOffx':0,
+              'ledOny':0,
+              'ledOffy':0,
+              'PlumeWidth': float(50),
+              'PlumeAngle': 90,
+              
+              }
 
+control_first_data  = np.zeros((len(flies),2))
 
-
+for i in range(len(flies)):
+    sdir = os.path.join(rootdir, flies[i])
+    lname = np.array( os.listdir(sdir))
+    
+    lname = ug.get_folder(sdir)   
+    print(len(lname))
+    datadir = os.path.join(sdir,lname[-1])
+    files = os.listdir(datadir)
+    savepath = os.path.join(datadir,files[0])
+    df = fc.read_log(savepath)
+    op = opto()
+    plt.figure()
+    op.plot_returns_in_sequence_horz(meta_data,df)
+    #plt.subplot(1,2,1)
+    #op.plot_plume_simple(meta_data,df)
+    plt.title(flies[i])
+#    #plt.subplot(1,2,2)
+    df = op.apply_cutoffs(df, meta_data,max_from_plume=400,max_downwind=np.inf,max_time=np.inf)
+    plt.figure()
+    op.plot_returns_in_sequence_horz(meta_data,df)
+    plt.title(flies[i])
+    plt.ylim([-100,400])
+    
+    # collect fourth and fifth entry
+    
+    data = op.get_return_metrics(meta_data,df,ent_duration=.1)
+    first_led = np.where(data['led']==1)[0][0]
+    my1 = data['max_y'][first_led]
+    my2 = data['max_y'][first_led-1]
+    
+    plt.figure(101)
+    plt.scatter(my2,my1,color='k')
+    control_first_data[i,0] = my1
+    control_first_data[i,1] = my2
+plt.plot([0,400],[0,400],color='k',linestyle='--')
+plt.figure(101)
+plt.xscale('log')
+plt.yscale('log')
+#%%
+plt.close('all')
+plt.scatter(test_first_data[:,1],test_first_data[:,0],color='r')
+plt.scatter(control_first_data[:,1],control_first_data[:,0],color='k')
+plt.plot([0,400],[0,400],color='k',linestyle='--')
+plt.xscale('log')
+plt.yscale('log')
+stats.ttest_ind(test_first_data[:,0], control_first_data[:,0])
+stats.wilcoxon(test_first_data[:,0],y= test_first_data[:,1])
+plt.xlim([.1,400])
+plt.ylim([.1,400])
+stats.wilcoxon(control_first_data[:,0],y= control_first_data[:,1])
 #%% hDeltaJ flies - vertical jumping plume
 rootdir = r'\\hermes.rockefeller.edu\Katie\Odor\Inhibition\PulsePlumePairs\vertical_plume_pairings\hDeltaJ\VerticalPlumeLEDAlt'
 flies = [r'260625\f1\trial1',

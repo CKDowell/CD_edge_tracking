@@ -32,15 +32,24 @@ experiment_dirs = [
     
 # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1\Trial1',
 # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1\Trial2',
+r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1\Trial3',
+r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1\Trial4',
 #   r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260923\f1\Trial1', # Octanol pulses
 #   r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260923\f1\Trial2', # ACV pulses
   
-  r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial1',
-  r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial2',#ET
-  r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial3',# Octanol
-  r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial4', # wrong pulse interval
-  r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial5' #weird activity, maybe fly is dying.
+  # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial1',
+  # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial2',#ET
+  # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial3',# Octanol
+  # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial4', # wrong pulse interval
+  # r'Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\261008\f1\Trial5' #weird activity, maybe fly is dying.
+  
+  # r'Y:\Data\FCI\Ladybird\hDeltaE\261023\f1\Trial1', # decent walking and plume interactions, no clear bump
+  # r'Y:\Data\FCI\Ladybird\hDeltaE\261023\f1\Trial2', #ACV pulses not walking
+  # r'Y:\Data\FCI\Ladybird\hDeltaE\261023\f1\Trial3' # Oct pulses not walking
+  
+  
                    ]
+
 
 regions = ['fsb']
 for e in experiment_dirs:
@@ -63,3 +72,8 @@ for e in experiment_dirs:
     cxa.save_phases()
     plt.figure()
     cxa.simple_raw_plot(plotphase=False,regions = ['fsb'],yeseb=False)
+#%% 
+regions = ['fsb']
+datadir = r"Y:\Data\FCI\Hedwig\hDeltaE_sytGCaMP7f\260922\f1\Trial2"
+cxa = CX_a(datadir,regions=np.flipud(regions),denovo=False)
+cxa.simple_raw_plot(regions=np.flipud(regions),yeseb=False,plotphase=False)

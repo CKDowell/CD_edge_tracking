@@ -30,17 +30,19 @@ datadirs=[
   # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\260911\f1\Trial2',
   # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\260911\f1\Trial3'
   
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial1', # only one entry and drift towards the end
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial2',# lots of circling
- r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial3',# not tracking
+ #  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial1', # only one entry and drift towards the end
+ #  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial2',# lots of circling
+ # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f1\Trial3',# not tracking
   
   
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f2\Trial1', # Not tracking
+ #  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f2\Trial1', # Not tracking
   
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial1', # Charging through plumes
-  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial2', #some plume interactions
- r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial3'
+ #  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial1', # Charging through plumes
+ #  r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial2', #some plume interactions
+ # r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261020\f3\Trial3'
  
+ r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261027\f1\Trial1',
+ r'Y:\Data\FCI\Hedwig\hDeltaJ_hDeltaB_EPG\261027\f1\Trial2'
     ]
 
   
